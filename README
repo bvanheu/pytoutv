@@ -1,3 +1,17 @@
 This is a tou.tv console application.
 
 You may list episodes, get information on emissions or download emissions.
+
+Dependencies
+~~~~~~~~~~~~
+- python 2.7
+- suds
+https://fedorahosted.org/suds/
+
+Bugs
+~~~~
+Contact Benjamin Vanheuverzwijn <bvanheu@gmail.com>
+
+Thanks
+~~~~~~
+Thanks to Marc-Etienne M. Leveille
