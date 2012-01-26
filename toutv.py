@@ -771,7 +771,7 @@ class ToutvConsoleApp():
     def build_argparser(self):
         parser = argparse.ArgumentParser(description='Tou.tv console script')
 
-        subparsers = parser.add_subparsers(dest="command", help='sub-command help')
+        subparsers = parser.add_subparsers(dest="command", help='Sub-commands help')
 
         # list command
         parser_list = subparsers.add_parser('list', help='List emissions or episodes of an emission')
@@ -789,8 +789,8 @@ class ToutvConsoleApp():
         parser_fetch = subparsers.add_parser('fetch', help='Fetch one or all episodes of an emission')
         parser_fetch.add_argument('emission', action="store", nargs=1, type=int, help='Fetch all episodes of the provided emission')
         parser_fetch.add_argument('episode', action="store", nargs="?", type=int, help='Fetch the episode')
-        parser_fetch.add_argument('--bitrate', action="store", nargs=1, type=int, default=1255000, help='Specify the bitrate (typical values: 250000, 391000, 491000, 791000 or 1255000)')
-        parser_fetch.add_argument('--directory', action="store", nargs=1, default="~/tou.tv", help='Output directory')
+        parser_fetch.add_argument('--bitrate', action="store", nargs=1, default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the bitrate (default: AVERAGE)')
+        parser_fetch.add_argument('--directory', action="store", nargs=1, default="~/tou.tv", help='Output directory (default: ~/tou.tv/<file>)')
         parser_fetch.set_defaults(func=self.command_fetch)
 
         # search command
@@ -821,7 +821,7 @@ class ToutvConsoleApp():
             self.info_emission(args.emission[0])
 
     def command_fetch(self, args):
-        self.fetch_episodes(args.emission[0], args.episode, args.directory, args.bitrate)
+        self.fetch_episodes(args.emission[0], args.episode, args.directory, args.bitrate[0])
 
     def list_emissions(self, all=False):
         if all:
@@ -915,22 +915,22 @@ class ToutvConsoleApp():
         else:
             print("No description")
 
-    def fetch_episodes(self, emission_id, episode_id, directory="~/tou.tv", bitrate=491000):
+        print("Available bandwidth:")
+
+    def fetch_episodes(self, emission_id, episode_id, directory="~/tou.tv", bitrate="AVERAGE"):
         emissions = self.toutvclient.get_emissions()
         emission = emissions[emission_id]
 
-        print("Emission:")
-        print("\t" + emission.Title)
 
         episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
         if len(episodes) == 0:
-            print("No episodes")
+            print("No episodes for <" + emission.Title + ">")
             sys.exit(1)
 
         episode = episodes[episode_id]
 
-        print("Title:")
-        print("\t" + episode.Title + "\t(" + episode.SeasonAndEpisode + ")")
+        print("Emission and episode:")
+        print("\t" + emission.Title + " - " + episode.Title + "\t(" + episode.SeasonAndEpisode + ")")
 
         urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar())))
 
@@ -942,9 +942,7 @@ class ToutvConsoleApp():
 
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
 
-        for stream in playlist.streams:
-            if stream.bandwidth == bitrate:
-                break
+        stream = self.get_video_stream_bandwidth(playlist, bitrate)
 
         request = urllib2.Request(stream.uri, None, {'User-Agent': IPHONE4_USER_AGENT} )
         m3u8_file = urllib2.urlopen(request).read()
@@ -986,6 +984,30 @@ class ToutvConsoleApp():
         output_file.close()
 
         return None
+
+    """
+    They dont' use the "AUDIO" or "VIDEO" m3u8 tag so we must parse the URL
+    index_X_av.m3u8 -> audio-video (av)
+    index_X_a.m3u8 -> audio (a)
+    """
+    def get_video_stream_bandwidth(self, playlist, bitrate_type):
+        bitrates = []
+        for stream in playlist.streams:
+            index = os.path.basename(stream.uri)
+            if index.split("_", 2)[2][0:2] == "av":
+                bitrates.append(stream.bandwidth)
+
+        if bitrate_type == "MIN":
+            bandwidth = min(bitrates, key=int)
+        elif bitrate_type == "MAX":
+            bandwidth = max(bitrates, key=int)
+        else:
+            # AVERAGE
+            bandwidth =  bitrates[((len(bitrates)+1)/2 if len(bitrates)%2 else len(bitrates)/2)]
+
+        for stream in playlist.streams:
+            if stream.bandwidth == bandwidth:
+                return stream
 
 #
 # _/~MAIN~\_
