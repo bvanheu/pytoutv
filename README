@@ -7,6 +7,8 @@ Dependencies
 - python 2.7
 - suds
 https://fedorahosted.org/suds/
+- pycrypto
+https://www.dlitz.net/software/pycrypto/
 
 Bugs
 ~~~~
