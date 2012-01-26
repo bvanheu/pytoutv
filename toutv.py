@@ -921,7 +921,6 @@ class ToutvConsoleApp():
         emissions = self.toutvclient.get_emissions()
         emission = emissions[emission_id]
 
-
         episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
         if len(episodes) == 0:
             print("No episodes for <" + emission.Title + ">")
