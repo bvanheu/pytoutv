@@ -611,6 +611,9 @@ class CacheShelve(Cache):
     def set(self, key, value):
         self.shelve[key] = value
 
+    def __del__(self):
+        self.shelve.close()
+
 class Transport():
     def __init__(self):
         pass
