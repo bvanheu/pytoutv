@@ -6,8 +6,18 @@ Usage
 ~~~~~
 $ ./toutv.py --help
 
-Example fetching an episode:
+Example
+~~~~~~~
+* Searching
+$ ./toutv.py search bourassa
+Query:
+    bourassa
+Results:
+    Episode:
+        Les Cris de la baie James revendiquent leurs droits
+[...]
 
+* Listing all emissions
 $ ./toutv.py list
 [...]
 1597224814 - Campus
@@ -15,6 +25,7 @@ $ ./toutv.py list
 2166270270 - Pour ne pas les oublier
 [...]
 
+* Listing all episodes from 'Physique ou chimie'
 $ ./toutv.py list 2157713779
 Title:
     Physique ou chimie
@@ -23,6 +34,7 @@ Episodes:
     2172164238 - La vie en cadeau
     ...
 
+* Getting more info about an emission
 $ ./toutv.py info 2157713779 2161200777
 Title:
     Égoïsme raisonnable     (S01E09)
@@ -32,6 +44,7 @@ Description
     Ruth hérite d’une grosse somme d’argent provenant de l’assurance-vie de ses parents. On découvre que
     Joy est victime de racket.
 
+* Downloading an emission
 $ ./toutv.py fetch --bitrate MAX 2157713779 2161200777
 Emission and episode:
         Physique ou chimie - Égoïsme raisonnable        (S01E09)
