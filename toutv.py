@@ -375,6 +375,8 @@ class Mapper():
         self.classes['Genre'] = Genre
         self.classes['Episode'] = Episode
         self.classes['EmissionRepertoire'] = EmissionRepertoire
+        self.classes['SearchResults'] = SearchResults
+        self.classes['SearchResultData'] = SearchResultData
 
     def factory(self, class_type):
         return self.classes[class_type]()
@@ -392,6 +394,10 @@ class MapperSoap(Mapper):
             elif isinstance(value, object):
                 if value.__class__.__name__ == "GenreDTO":
                     value = self.dto_to_bo(value, "Genre")
+                elif value.__class__.__name__ == "EmissionDTO":
+                    value = self.dto_to_bo(value, "Emission")
+                elif value.__class__.__name__ == "EpisodeDTO":
+                    value = self.dto_to_bo(value, "Episode")
 
             setattr(bo, key, value)
 
@@ -584,6 +590,16 @@ class EmissionRepertoire():
         self.TitreIndex = None
         self.Url = None
 
+class SearchResults():
+    def __init__(self):
+        self.ModifiedQuery = None
+        self.Results = None
+
+class SearchResultData():
+    def __init__(self):
+        self.Emission = None
+        self.Episode = None
+
 class Cache():
     def __init__(self):
         pass
@@ -697,6 +713,21 @@ class TransportSoap():
 
         return repertoire
 
+    def search_terms(self, query):
+        searchresults_dto = self.soap.service.SearchTerms(query)
+        searchresults = None
+        searchresultdatas = []
+
+        if len(searchresults_dto) > 0:
+            searchresults = self.mapper.dto_to_bo(searchresults_dto, "SearchResults")
+            if searchresults.Results is not None:
+                for searchresultdata_dto in searchresults.Results[0]:
+                    searchresultdatas.append(self.mapper.dto_to_bo(searchresultdata_dto, "SearchResultData"))
+
+            searchresults.Results = searchresultdatas
+
+        return searchresults
+
 class ToutvClient():
     def __init__(self, transport=None, cache=None):
         self.transport = transport
@@ -758,6 +789,12 @@ class ToutvClient():
 
         return repertoire
 
+    def search_terms(self, query):
+        return self.transport.search_terms(query)
+
+    def search_terms_max(self, query, max_results):
+        pass
+
 class ToutvConsoleApp():
     def __init__(self):
         self.argparse = self.build_argparser()
@@ -775,7 +812,7 @@ class ToutvConsoleApp():
         # list command
         parser_list = subparsers.add_parser('list', help='List emissions or episodes of an emission')
         parser_list.add_argument('emission', action="store", nargs="?", default=0, type=int, help='List all episodes of an emission')
-        parser_list.add_argument('--all', action="store_true", help='List emissions without any episodes listed')
+        parser_list.add_argument('-a', '--all', action="store_true", help='List emissions without any episodes listed')
         parser_list.set_defaults(func=self.command_list)
 
         # info command
@@ -788,14 +825,15 @@ class ToutvConsoleApp():
         parser_fetch = subparsers.add_parser('fetch', help='Fetch one or all episodes of an emission')
         parser_fetch.add_argument('emission', action="store", nargs=1, type=int, help='Fetch all episodes of the provided emission')
         parser_fetch.add_argument('episode', action="store", nargs="?", type=int, help='Fetch the episode')
-        parser_fetch.add_argument('--bitrate', action="store", nargs=1, default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the bitrate (default: AVERAGE)')
-        parser_fetch.add_argument('--directory', action="store", nargs=1, default="~/tou.tv", help='Output directory (default: ~/tou.tv/<file>)')
+        parser_fetch.add_argument('-b', '--bitrate', action="store", nargs=1, default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the bitrate (default: AVERAGE)')
+        parser_fetch.add_argument('-d', '--directory', action="store", nargs=1, default="~/tou.tv", help='Output directory (default: ~/tou.tv/<file>)')
         parser_fetch.set_defaults(func=self.command_fetch)
 
         # search command
         parser_search = subparsers.add_parser('search', help='Search into toutv emission and episodes')
         parser_search.add_argument('query', action="store", nargs=1, type=str, help='Search query')
-        parser_search.set_defaults(func=self.command_fetch)
+        parser_search.add_argument('-m', '--max', action="store", nargs=1, default=0, type=int, help='Maximum number of results (default: infinite)')
+        parser_search.set_defaults(func=self.command_search)
 
         return parser
 
@@ -821,6 +859,38 @@ class ToutvConsoleApp():
 
     def command_fetch(self, args):
         self.fetch_episodes(args.emission[0], args.episode, args.directory, args.bitrate[0])
+
+    def command_search(self, args):
+        self.search(' '.join(args.query))
+
+    def search(self, query):
+        searchresult = self.toutvclient.search_terms(query)
+
+        print("Query:")
+        if searchresult.ModifiedQuery != query:
+            print("\t" + searchresult.ModifiedQuery + " (" + query + ")")
+        else:
+            print("\t" + searchresult.ModifiedQuery)
+
+        print("Results:")
+        if len(searchresult.Results) == 0:
+                print("\tNo result found for " + query)
+        else:
+            for result in searchresult.Results:
+                if result.Emission is not None:
+                    print("\tEmission:")
+                    print("\t\t" + result.Emission.Title)
+                    if result.Emission.Description:
+                        description = textwrap.wrap(result.Emission.Description, 100)
+                        for line in description:
+                            print("\t\t\t" + line)
+                if result.Episode is not None:
+                    print("\tEpisode:")
+                    print("\t\t" + result.Episode.Title)
+                    if result.Episode.Description:
+                        description = textwrap.wrap(result.Episode.Description, 100)
+                        for line in description:
+                            print("\t\t\t" + line)
 
     def list_emissions(self, all=False):
         if all:
