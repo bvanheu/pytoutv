@@ -388,9 +388,8 @@ class MapperSoap(Mapper):
             value = getattr(dto, key)
 
             if isinstance(value, suds.sax.text.Text):
-                # Unicode hack
-                value = "".join(value)
-            if isinstance(value, object):
+                value = value.encode("utf-8")
+            elif isinstance(value, object):
                 if value.__class__.__name__ == "GenreDTO":
                     value = self.dto_to_bo(value, "Genre")
 
