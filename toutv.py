@@ -901,7 +901,7 @@ class ToutvConsoleApp():
             repertoire = self.toutvclient.get_page_repertoire()
             emissionrepertoires = repertoire["emissionrepertoire"]
 
-            for k in emissionrepertoires:
+            for k in sorted(emissionrepertoires, key=lambda er: emissionrepertoires[er].Titre):
                 print(emissionrepertoires[k].Titre + " - " + str(emissionrepertoires[k].Id))
 
     def list_episodes(self, emission_id):
@@ -917,8 +917,8 @@ class ToutvConsoleApp():
         if len(episodes) == 0:
             print("\tNo episodes for the provided emission ("+emission.Title+")")
         else:
-            for k in episodes:
-                print("\t" + str(episodes[k].Id) + " - " + episodes[k].Title)
+            for k in sorted(episodes, key=lambda e: episodes[e].SeasonAndEpisode):
+                print("\t" + episodes[k].SeasonAndEpisode + " - " + episodes[k].Title + " - " + str(episodes[k].Id))
 
     def info_emission(self, emission_id):
         emissions = self.toutvclient.get_emissions()
