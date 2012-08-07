@@ -826,7 +826,7 @@ class ToutvConsoleApp():
         parser_fetch.add_argument('emission', action="store", nargs=1, type=int, help='Fetch all episodes of the provided emission')
         parser_fetch.add_argument('episode', action="store", nargs="?", type=int, help='Fetch the episode')
         parser_fetch.add_argument('-b', '--bitrate', action="store", nargs=1, default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the bitrate (default: AVERAGE)')
-        parser_fetch.add_argument('-d', '--directory', action="store", nargs=1, default="~/tou.tv", help='Output directory (default: ~/tou.tv/<file>)')
+        parser_fetch.add_argument('-d', '--directory', action="store", nargs=1, default=os.getcwd(), help='Output directory (default: ' + os.getcwd() + '/<file>)')
         parser_fetch.set_defaults(func=self.command_fetch)
 
         # search command
@@ -986,7 +986,7 @@ class ToutvConsoleApp():
 
         print("Available bandwidth:")
 
-    def fetch_episodes(self, emission_id, episode_id, directory="~/tou.tv", bitrate="AVERAGE"):
+    def fetch_episodes(self, emission_id, episode_id, directory, bitrate="AVERAGE"):
         emissions = self.toutvclient.get_emissions()
         emission = emissions[emission_id]
 
@@ -1022,7 +1022,7 @@ class ToutvConsoleApp():
 
         # Output file handling
         if directory is None:
-            directory = "~/tou.tv"
+            directory = os.getcwd()
 
         if not os.path.exists(os.path.expanduser(directory)):
             os.mkdir(os.path.expanduser(directory))
