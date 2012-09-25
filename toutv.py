@@ -39,6 +39,7 @@ import json
 import urllib2
 import cookielib
 import os
+import re
 from Crypto.Cipher import AES
 
 IPHONE4_USER_AGENT = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7"
@@ -283,7 +284,6 @@ class M3u8_Parser():
         if not self.validate(lines):
             raise Exception("invalid m3u8 file <" + lines[0] + ">")
 
-
         for count in range(1, len(lines)):
 
             if not (self.line_is_tag(lines[count])):
@@ -327,7 +327,9 @@ class M3u8_Parser():
             elif tagname == M3u8_Tag.EXT_X_STREAM_INF:
                 stream = M3u8_Stream()
 
-                attributes = attributes.split(",")
+                # Will match <PROGRAM-ID=1,BANDWIDTH=461000,RESOLUTION=480x270,CODECS="avc1.66.30, mp4a.40.5">
+                attributes = re.findall(r"([\w-]+=(?:[a-zA-Z0-9]|\"[a-zA-Z0-9,. ]*\")+),?", attributes)
+
                 for attribute in attributes:
                     (name, value) = attribute.split("=")
                     stream.set_attribute(name.strip(), value.strip())
