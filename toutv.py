@@ -29,7 +29,6 @@
 
 
 import struct
-import suds
 import logging
 import argparse
 import sys
@@ -385,28 +384,6 @@ class Mapper():
     def factory(self, class_type):
         return self.classes[class_type]()
 
-class MapperSoap(Mapper):
-    def dto_to_bo(self, dto, class_type):
-        bo = self.factory(class_type)
-        bo_vars = vars(bo)
-
-        for key in bo_vars.keys():
-            value = getattr(dto, key)
-
-            if isinstance(value, suds.sax.text.Text):
-                value = value.encode("utf-8")
-            elif isinstance(value, object):
-                if value.__class__.__name__ == "GenreDTO":
-                    value = self.dto_to_bo(value, "Genre")
-                elif value.__class__.__name__ == "EmissionDTO":
-                    value = self.dto_to_bo(value, "Emission")
-                elif value.__class__.__name__ == "EpisodeDTO":
-                    value = self.dto_to_bo(value, "Episode")
-
-            setattr(bo, key, value)
-
-        return bo
-
 class MapperJson(Mapper):
     def dto_to_bo(self, dto, class_type):
         bo = self.factory(class_type)
@@ -670,6 +647,31 @@ class Transport():
         pass
 
 class TransportJson(Transport):
+    """
+        GetArborescence()
+        GetBlocPromo()
+        GetBlocPromoItems()
+        GetCarrousel(xs:string playlistName, )
+        GetCollections()
+        GetConfiguration()
+        GetEmissions()
+        GetEmissionsContenusCourts()
+        GetEmissionsExclusiviteRogers()
+        GetEpisodesExclusiviteRogers()
+        GetEpisodesForEmission(xs:long emissionId, )
+        GetGenres()
+        GetOldestEpisode(xs:long emissionId, )
+        GetPageAccueil()
+        GetPageEmission(xs:long emissionId, )
+        GetPageEpisode(xs:long episodeId, )
+        GetPageGenre(xs:string genre, )
+        GetPageRepertoire()
+        GetPartenaires()
+        GetPays()
+        GetTeaser(xs:long emissionId, )
+        SearchTerms(xs:string query, )
+        SearchTermsMax(xs:string query, xs:int maximumNumberOfResults, )
+    """
     def __init__(self):
         self.json_decoder = json.JSONDecoder()
         self.mapper = MapperJson()
@@ -726,92 +728,6 @@ class TransportJson(Transport):
 
     def search_terms(self, query):
         searchresults_dto = self._do_query("SearchTerms", "query=" + query)
-        searchresults = None
-        searchresultdatas = []
-
-        if len(searchresults_dto) > 0:
-            searchresults = self.mapper.dto_to_bo(searchresults_dto, "SearchResults")
-            if searchresults.Results is not None:
-                for searchresultdata_dto in searchresults.Results[0]:
-                    searchresultdatas.append(self.mapper.dto_to_bo(searchresultdata_dto, "SearchResultData"))
-
-            searchresults.Results = searchresultdatas
-
-        return searchresults
-
-class TransportSoap():
-    """
-        GetArborescence()
-        GetBlocPromo()
-        GetBlocPromoItems()
-        GetCarrousel(xs:string playlistName, )
-        GetCollections()
-        GetConfiguration()
-        GetEmissions()
-        GetEmissionsContenusCourts()
-        GetEmissionsExclusiviteRogers()
-        GetEpisodesExclusiviteRogers()
-        GetEpisodesForEmission(xs:long emissionId, )
-        GetGenres()
-        GetOldestEpisode(xs:long emissionId, )
-        GetPageAccueil()
-        GetPageEmission(xs:long emissionId, )
-        GetPageEpisode(xs:long episodeId, )
-        GetPageGenre(xs:string genre, )
-        GetPageRepertoire()
-        GetPartenaires()
-        GetPays()
-        GetTeaser(xs:long emissionId, )
-        SearchTerms(xs:string query, )
-        SearchTermsMax(xs:string query, xs:int maximumNumberOfResults, )
-    """
-    def __init__(self):
-        self.soap = suds.client.Client(TOUTV_WSDL_URL)
-        self.soap.set_options(headers={"User-Agent" : IPHONE4_USER_AGENT})
-
-        self.mapper = MapperSoap()
-
-    def get_emissions(self):
-        emissions_dto = self.soap.service.GetEmissions()
-        emissions = {}
-
-        for emission_dto in emissions_dto[0]:
-            emission = self.mapper.dto_to_bo(emission_dto, "Emission")
-            emissions[emission.Id] = emission
-
-        return emissions
-
-    def get_episodes_for_emission(self, emission_id):
-        episodes_dto = self.soap.service.GetEpisodesForEmission(emission_id)
-        episodes = {}
-
-        if len(episodes_dto) > 0:
-            for episode_dto in episodes_dto[0]:
-                episode = self.mapper.dto_to_bo(episode_dto, "Episode")
-                episodes[episode.Id] = episode
-
-        return episodes
-
-    def get_page_repertoire(self):
-        repertoire = {}
-        repertoire_dto = self.soap.service.GetPageRepertoire()
-
-        if len(repertoire_dto) > 0:
-            # EmissionRepertoire
-            if len(repertoire_dto[0]) > 0:
-                emissionrepertoires = {}
-                for emissionrepertoire_dto in repertoire_dto[0][0]:
-                    emissionrepertoire = self.mapper.dto_to_bo(emissionrepertoire_dto, "EmissionRepertoire")
-                    emissionrepertoires[emissionrepertoire.Id] = emissionrepertoire
-                repertoire["emissionrepertoire"] = emissionrepertoires
-            # Genre
-            if len(repertoire_dto[1]) > 0:
-                pass
-
-        return repertoire
-
-    def search_terms(self, query):
-        searchresults_dto = self.soap.service.SearchTerms(query)
         searchresults = None
         searchresultdatas = []
 
