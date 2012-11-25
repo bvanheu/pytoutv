@@ -992,8 +992,8 @@ class ToutvConsoleApp():
     def list_emissions(self, all=False):
         if all:
             emissions = self.toutvclient.get_emissions()
-            for e in emissions:
-                print(e.Title + " - " + str(e.Id))
+            for k in emissions:
+                print(emissions[k].Title + " - " + str(emissions[k].Id))
         else:
             repertoire = self.toutvclient.get_page_repertoire()
             emissionrepertoires = repertoire["emissionrepertoire"]
