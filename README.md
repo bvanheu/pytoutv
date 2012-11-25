@@ -49,10 +49,10 @@ You may list episodes, get information on shows or download shows.
             Physique ou chimie - Égoïsme raisonnable        (S01E09)
     Downloading 312 segments...
     [ ##                                                                 ] 2%
-    
+
     $ ls ~/tou.tv/
     Physique ou chimie-Égoïsme raisonnable.ts
-    
+
     $ mplayer ~/tou.tv/Physique\ ou\ chimie-Égoïsme\ raisonnable.ts
 
 Have fun!
@@ -60,7 +60,6 @@ Have fun!
 ## Dependencies:
 
 - python 2.7
-- [suds](https://fedorahosted.org/suds/)
 - [pycrypto](https://www.dlitz.net/software/pycrypto/)
 
 ## Bugs
