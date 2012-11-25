@@ -45,6 +45,8 @@ from Crypto.Cipher import AES
 IPHONE4_USER_AGENT = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7"
 TOUTV_WSDL_URL = "http://api.tou.tv/v1/TouTVAPIService.svc?wsdl"
 TOUTV_PLAYLIST_URL = "http://api.radio-canada.ca/validationMedia/v1/Validation.html?appCode=thePlatform&deviceType=iphone4&connectionType=wifi&idMedia=%s&output=json"
+TOUTV_JSON_URL = "https://api.tou.tv/v1/toutvapiservice.svc/json/"
+
 
 # The next license only apply for the class ProgressBar
 #
@@ -405,6 +407,26 @@ class MapperSoap(Mapper):
 
         return bo
 
+class MapperJson(Mapper):
+    def dto_to_bo(self, dto, class_type):
+        bo = self.factory(class_type)
+        bo_vars = vars(bo)
+
+        for key in bo_vars.keys():
+            value = dto[key]
+
+            if isinstance(value, dict):
+                if value["__type"] == "GenreDTO:#RC.Svc.Web.TouTV":
+                    value = self.dto_to_bo(value, "Genre")
+                elif value["__type"] == "EmissionDTO:#RC.Svc.Web.TouTV":
+                    value = self.dto_to_bo(value, "Emission")
+                elif value["__type"] == "EpisodeDTO:#RC.Svc.Web.TouTV":
+                    value = self.dto_to_bo(value, "Episode")
+
+            setattr(bo, key, value)
+
+        return bo
+
 class Emission():
     def __init__(self):
         self.CategoryURL = None
@@ -644,6 +666,79 @@ class Transport():
     def get_page_repertoire(self):
         pass
 
+    def search_terms(self, query):
+        pass
+
+class TransportJson(Transport):
+    def __init__(self):
+        self.json_decoder = json.JSONDecoder()
+        self.mapper = MapperJson()
+
+    def _do_query(self, method, parameter=""):
+        request = urllib2.Request(TOUTV_JSON_URL + method, None, {"User-Agent" : IPHONE4_USER_AGENT})
+        json_decoded = self.json_decoder.decode(urllib2.urlopen(request).read())
+        return json_decoded["d"]
+
+    def get_emissions(self):
+        emissions_dto = self._do_query("GetEmissions")
+
+        emissions = {}
+
+        for emission_dto in emissions_dto:
+            emission = self.mapper.dto_to_bo(emission_dto, "Emission")
+            emissions[emission.Id] = emission
+
+        return emissions
+
+    def get_episodes_for_emission(self, emission_id):
+        episodes_dto = self._do_query("GetEpisodesForEmission", "emissionid=" + str(emission_id))
+
+        episodes = {}
+
+        if len(episodes_dto) > 0:
+            for episode_dto in episodes_dto:
+                episode = self.mapper.dto_to_bo(episode_dto, "Episode")
+                episodes[episode.Id] = episode
+
+        return episodes
+
+    def get_page_repertoire(self):
+        repertoire_dto = self._do_query("GetPageRepertoire")
+
+        repertoire = {}
+
+        if len(repertoire_dto) > 0:
+            # EmissionRepertoire
+            if len(repertoire_dto) > 0:
+                emissionrepertoires = {}
+                for emissionrepertoire_dto in repertoire_dto["Emissions"]:
+                    emissionrepertoire = self.mapper.dto_to_bo(emissionrepertoire_dto, "EmissionRepertoire")
+                    emissionrepertoires[emissionrepertoire.Id] = emissionrepertoire
+                repertoire["emissionrepertoire"] = emissionrepertoires
+            # Genre
+            if len(repertoire_dto["Genres"]) > 0:
+                pass
+            # Country
+            if len(repertoire_dto["Pays"]) > 0:
+                pass
+
+        return repertoire
+
+    def search_terms(self, query):
+        searchresults_dto = self._do_query("SearchTerms", "query=" + query)
+        searchresults = None
+        searchresultdatas = []
+
+        if len(searchresults_dto) > 0:
+            searchresults = self.mapper.dto_to_bo(searchresults_dto, "SearchResults")
+            if searchresults.Results is not None:
+                for searchresultdata_dto in searchresults.Results[0]:
+                    searchresultdatas.append(self.mapper.dto_to_bo(searchresultdata_dto, "SearchResultData"))
+
+            searchresults.Results = searchresultdatas
+
+        return searchresults
+
 class TransportSoap():
     """
         GetArborescence()
@@ -840,7 +935,7 @@ class ToutvConsoleApp():
         return parser
 
     def build_toutvclient(self):
-        transport = TransportSoap()
+        transport = TransportJson()
         cache = CacheShelve()
 
         toutvclient = ToutvClient(transport, cache)
