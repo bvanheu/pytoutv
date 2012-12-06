@@ -1003,6 +1003,11 @@ class ToutvConsoleApp():
 
     def fetch_episodes(self, emission_id, episode_id, directory, bitrate="AVERAGE"):
         emissions = self.toutvclient.get_emissions()
+        
+        if emission_id not in emissions:
+            print("Show " + str(emission_id) + " does not exist.")
+            sys.exit(1)
+            
         emission = emissions[emission_id]
 
         episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
