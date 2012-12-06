@@ -677,7 +677,7 @@ class TransportJson(Transport):
         self.mapper = MapperJson()
 
     def _do_query(self, method, parameter=""):
-        request = urllib2.Request(TOUTV_JSON_URL + method, None, {"User-Agent" : IPHONE4_USER_AGENT})
+        request = urllib2.Request(TOUTV_JSON_URL + method + "?" + parameter, None, {"User-Agent" : IPHONE4_USER_AGENT})
         json_decoded = self.json_decoder.decode(urllib2.urlopen(request).read())
         return json_decoded["d"]
 
