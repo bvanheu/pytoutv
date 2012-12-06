@@ -676,8 +676,10 @@ class TransportJson(Transport):
         self.json_decoder = json.JSONDecoder()
         self.mapper = MapperJson()
 
-    def _do_query(self, method, parameter=""):
-        request = urllib2.Request(TOUTV_JSON_URL + method, None, {"User-Agent" : IPHONE4_USER_AGENT})
+    def _do_query(self, method, parameters={}):
+        parameters_list = [key + '=' + parameters[key] for key in parameters]
+        url = TOUTV_JSON_URL + method + '?' + '&'.join(parameters_list)
+        request = urllib2.Request(url, None, {"User-Agent" : IPHONE4_USER_AGENT})
         json_decoded = self.json_decoder.decode(urllib2.urlopen(request).read())
         return json_decoded["d"]
 
@@ -693,7 +695,7 @@ class TransportJson(Transport):
         return emissions
 
     def get_episodes_for_emission(self, emission_id):
-        episodes_dto = self._do_query("GetEpisodesForEmission", "emissionid=" + str(emission_id))
+        episodes_dto = self._do_query("GetEpisodesForEmission", {"emissionid": str(emission_id)})
 
         episodes = {}
 
@@ -727,7 +729,7 @@ class TransportJson(Transport):
         return repertoire
 
     def search_terms(self, query):
-        searchresults_dto = self._do_query("SearchTerms", "query=" + query)
+        searchresults_dto = self._do_query("SearchTerms", {"query": query})
         searchresults = None
         searchresultdatas = []
 
