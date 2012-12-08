@@ -745,10 +745,11 @@ class ToutvConsoleApp():
         emission = emissions[emission_id]
 
         episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
-        if len(episodes) == 0:
-            print("No episodes")
-            sys.exit(1)
-
+        
+        if episode_id not in episodes:
+            print("This episode does not exist.");
+            return
+            
         episode = episodes[episode_id]
 
         print("Emission:")
@@ -775,14 +776,15 @@ class ToutvConsoleApp():
         
         if emission_id not in emissions:
             print("Show " + str(emission_id) + " does not exist.")
-            sys.exit(1)
+            return
             
         emission = emissions[emission_id]
 
         episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
-        if len(episodes) == 0:
-            print("No episodes for <" + emission.Title + ">")
-            sys.exit(1)
+        
+        if episode_id not in episodes:
+            print("This episode does not exist");
+            return
 
         episode = episodes[episode_id]
 
