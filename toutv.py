@@ -27,557 +27,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-import struct
-import logging
 import argparse
-import sys
-import shelve
-import textwrap
-import json
-import urllib2
-import cookielib
 import os
-
-import m3u8
-
+import sys
+import cookielib
+import urllib2
 from Crypto.Cipher import AES
+import struct
+import textwrap
 
-IPHONE4_USER_AGENT = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7"
-TOUTV_WSDL_URL = "http://api.tou.tv/v1/TouTVAPIService.svc?wsdl"
-TOUTV_PLAYLIST_URL = "http://api.radio-canada.ca/validationMedia/v1/Validation.html?appCode=thePlatform&deviceType=iphone4&connectionType=wifi&idMedia=%s&output=json"
-TOUTV_JSON_URL = "https://api.tou.tv/v1/toutvapiservice.svc/json/"
-
-
-# The next license only apply for the class ProgressBar
-#
-# A Python Library to create a Progress Bar.
-# Copyright (C) 2008  BJ Dierkes <wdierkes@5dollarwhitebox.org>
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-#
-# This class is an improvement from the original found at:
-#
-#   http://code.activestate.com/recipes/168639/
-#
-class ProgressBar:
-    def __init__(self, min_value = 0, max_value = 100, width=77,**kwargs):
-        self.char = kwargs.get('char', '#')
-        self.mode = kwargs.get('mode', 'dynamic') # fixed or dynamic
-        if not self.mode in ['fixed', 'dynamic']:
-            self.mode = 'fixed'
-
-        self.bar = ''
-        self.min = min_value
-        self.max = max_value
-        self.span = max_value - min_value
-        self.width = width
-        self.amount = 0       # When amount == max, we are 100% done
-        self.update_amount(0)
-
-
-    def increment_amount(self, add_amount = 1):
-        """
-        Increment self.amount by 'add_ammount' or default to incrementing
-        by 1, and then rebuild the bar string.
-        """
-        new_amount = self.amount + add_amount
-        if new_amount < self.min: new_amount = self.min
-        if new_amount > self.max: new_amount = self.max
-        self.amount = new_amount
-        self.build_bar()
-
-
-    def update_amount(self, new_amount = None):
-        """
-        Update self.amount with 'new_amount', and then rebuild the bar
-        string.
-        """
-        if not new_amount: new_amount = self.amount
-        if new_amount < self.min: new_amount = self.min
-        if new_amount > self.max: new_amount = self.max
-        self.amount = new_amount
-        self.build_bar()
-
-
-    def build_bar(self):
-        """
-        Figure new percent complete, and rebuild the bar string base on
-        self.amount.
-        """
-        diff = float(self.amount - self.min)
-        percent_done = int(round((diff / float(self.span)) * 100.0))
-
-        # figure the proper number of 'character' make up the bar
-        all_full = self.width - 2
-        num_hashes = int(round((percent_done * all_full) / 100))
-
-        if self.mode == 'dynamic':
-            # build a progress bar with self.char (to create a dynamic bar
-            # where the percent string moves along with the bar progress.
-            self.bar = self.char * num_hashes
-        else:
-            # build a progress bar with self.char and spaces (to create a
-            # fixe bar (the percent string doesn't move)
-            self.bar = self.char * num_hashes + ' ' * (all_full-num_hashes)
-
-        percent_str = str(percent_done) + "%"
-        self.bar = '[ ' + self.bar + ' ] ' + percent_str
-
-
-    def __str__(self):
-        return str(self.bar)
-
-class Mapper():
-    def __init__(self):
-        self.classes = {}
-        self.classes['Emission'] = Emission
-        self.classes['Genre'] = Genre
-        self.classes['Episode'] = Episode
-        self.classes['EmissionRepertoire'] = EmissionRepertoire
-        self.classes['SearchResults'] = SearchResults
-        self.classes['SearchResultData'] = SearchResultData
-
-    def factory(self, class_type):
-        return self.classes[class_type]()
-
-class MapperJson(Mapper):
-    def dto_to_bo(self, dto, class_type):
-        bo = self.factory(class_type)
-        bo_vars = vars(bo)
-
-        for key in bo_vars.keys():
-            value = dto[key]
-
-            if isinstance(value, dict):
-                if value["__type"] == "GenreDTO:#RC.Svc.Web.TouTV":
-                    value = self.dto_to_bo(value, "Genre")
-                elif value["__type"] == "EmissionDTO:#RC.Svc.Web.TouTV":
-                    value = self.dto_to_bo(value, "Emission")
-                elif value["__type"] == "EpisodeDTO:#RC.Svc.Web.TouTV":
-                    value = self.dto_to_bo(value, "Episode")
-
-            setattr(bo, key, value)
-
-        return bo
-
-class Emission():
-    def __init__(self):
-        self.CategoryURL = None
-        self.ClassCategory = None
-        self.ContainsAds = None
-        self.Country = None
-        self.DateRetraitOuEmbargo = None
-        self.Description = None
-        self.DescriptionOffline = None
-        self.DescriptionUnavailable = None
-        self.DescriptionUnavailableText = None
-        self.DescriptionUpcoming = None
-        self.DescriptionUpcomingText = None
-        self.EstContenuJeunesse = None
-        self.EstExclusiviteRogers = None
-        self.GeoTargeting = None
-        self.Genre = None
-        self.Id = None
-        self.ImageBackground = None
-        self.ImagePromoLargeI = None
-        self.ImagePromoLargeJ = None
-        self.ImagePromoNormalK = None
-        self.Network = None
-        self.Network2 = None
-        self.Network3 = None
-        self.ParentId = None
-        self.Partner = None
-        self.PlaylistExist = None
-        self.PromoDescription = None
-        self.PromoTitle = None
-        self.RelatedURL1 = None
-        self.RelatedURL2 = None
-        self.RelatedURL3 = None
-        self.RelatedURL4 = None
-        self.RelatedURL5 = None
-        self.RelatedURLImage1 = None
-        self.RelatedURLImage2 = None
-        self.RelatedURLImage3 = None
-        self.RelatedURLImage4 = None
-        self.RelatedURLImage5 = None
-        self.RelatedURLText1 = None
-        self.RelatedURLText2 = None
-        self.RelatedURLText3 = None
-        self.RelatedURLText4 = None
-        self.RelatedURLText5 = None
-        self.SeasonNumber = None
-        self.Show = None
-        self.ShowSearch = None
-        self.SortField = None
-        self.SortOrder = None
-        self.SubCategoryType = None
-        self.Title = None
-        self.TitleIndex = None
-        self.Url = None
-        self.Year = None
-
-class Genre():
-    def __init__(self):
-        self.CategoryURL = None
-        self.ClassCategory = None
-        self.Description = None
-        self.Id = None
-        self.ImageBackground = None
-        self.ParentId = None
-        self.Title = None
-        self.Url = None
-
-class Episode():
-    def __init__(self):
-        self.AdPattern = None
-        self.AirDateFormated = None
-        self.AirDateLongString = None
-        self.Captions = None
-        self.CategoryId = None
-        self.ChapterStartTimes = None
-        self.ClipType = None
-        self.Copyright = None
-        self.Country = None
-        self.DateSeasonEpisode = None
-        self.Description = None
-        self.DescriptionShort = None
-        self.EpisodeNumber = None
-        self.EstContenuJeunesse = None
-        self.Event = None
-        self.EventDate = None
-        self.FullTitle = None
-        self.GenreTitle = None
-        self.Id = None
-        self.ImageBackground = None
-        self.ImagePlayerLargeA = None
-        self.ImagePlayerNormalC = None
-        self.ImagePromoLargeI = None
-        self.ImagePromoLargeJ = None
-        self.ImagePromoNormalK = None
-        self.ImageThumbMicroG = None
-        self.ImageThumbMoyenL = None
-        self.ImageThumbNormalF = None
-        self.IsMostRecent = None
-        self.IsUniqueEpisode = None
-        self.Keywords = None
-        self.LanguageCloseCaption = None
-        self.Length = None
-        self.LengthSpan = None
-        self.LengthStats = None
-        self.LengthString = None
-        self.LiveOnDemand = None
-        self.MigrationDate = None
-        self.Musique = None
-        self.Network = None
-        self.Network2 = None
-        self.Network3 = None
-        self.NextEpisodeDate = None
-        self.OriginalAirDate = None
-        self.PID = None
-        self.Partner = None
-        self.PeopleAuthor = None
-        self.PeopleCharacters = None
-        self.PeopleCollaborator = None
-        self.PeopleColumnist = None
-        self.PeopleComedian = None
-        self.PeopleDesigner = None
-        self.PeopleDirector = None
-        self.PeopleGuest = None
-        self.PeopleHost = None
-        self.PeopleJournalist = None
-        self.PeoplePerformer = None
-        self.PeoplePersonCited = None
-        self.PeopleSpeaker = None
-        self.PeopleWriter = None
-        self.PromoDescription = None
-        self.PromoTitle = None
-        self.Rating = None
-        self.RelatedURL1 = None
-        self.RelatedURL2 = None
-        self.RelatedURL3 = None
-        self.RelatedURL4 = None
-        self.RelatedURL5 = None
-        self.RelatedURLText1 = None
-        self.RelatedURLText2 = None
-        self.RelatedURLText3 = None
-        self.RelatedURLText4 = None
-        self.RelatedURLText5 = None
-        self.RelatedURLimage1 = None
-        self.RelatedURLimage2 = None
-        self.RelatedURLimage3 = None
-        self.RelatedURLimage4 = None
-        self.RelatedURLimage5 = None
-        self.SeasonAndEpisode = None
-        self.SeasonAndEpisodeLong = None
-        self.SeasonNumber = None
-        self.Show = None
-        self.ShowSearch = None
-        self.ShowSeasonSearch = None
-        self.StatusMedia = None
-        self.Subtitle = None
-        self.Team1CountryCode = None
-        self.Team2CountryCode = None
-        self.Title = None
-        self.TitleID = None
-        self.TitleSearch = None
-        self.Url = None
-        self.UrlEmission = None
-        self.Year = None
-        self.iTunesLinkUrl = None
-
-class EmissionRepertoire():
-    def __init__(self):
-        self.AnneeProduction = None
-        self.CategorieDuree = None
-        self.DateArrivee = None
-        self.DateDepart = None
-        self.DateRetraitOuEmbargo = None
-        self.DescriptionUnavailableText = None
-        self.DescriptionUpcomingText = None
-        self.Genre = None
-        self.Id = None
-        self.ImagePromoNormalK = None
-        self.IsGeolocalise = None
-        self.NombreEpisodes = None
-        self.NombreSaisons = None
-        self.ParentId = None
-        self.Pays = None
-        self.SaisonsDisponibles = None
-        self.Titre = None
-        self.TitreIndex = None
-        self.Url = None
-
-class SearchResults():
-    def __init__(self):
-        self.ModifiedQuery = None
-        self.Results = None
-
-class SearchResultData():
-    def __init__(self):
-        self.Emission = None
-        self.Episode = None
-
-class Cache():
-    def __init__(self):
-        pass
-
-    def has_key(self, key):
-        pass
-
-    def get(self, key):
-        pass
-
-    def set(self, key, value):
-        pass
-
-class CacheShelve(Cache):
-    def __init__(self):
-        self.shelve = shelve.open(".toutv_cache")
-
-    def has_key(self, key):
-        return self.shelve.has_key(key)
-
-    def get(self, key):
-        return self.shelve[key]
-
-    def set(self, key, value):
-        self.shelve[key] = value
-
-    def __del__(self):
-        self.shelve.close()
-
-class Transport():
-    def __init__(self):
-        pass
-
-    def get_emissions(self):
-        pass
-
-    def get_episodes_for_emission(self, emission_id):
-        pass
-
-    def get_page_repertoire(self):
-        pass
-
-    def search_terms(self, query):
-        pass
-
-class TransportJson(Transport):
-    """
-        GetArborescence()
-        GetBlocPromo()
-        GetBlocPromoItems()
-        GetCarrousel(xs:string playlistName, )
-        GetCollections()
-        GetConfiguration()
-        GetEmissions()
-        GetEmissionsContenusCourts()
-        GetEmissionsExclusiviteRogers()
-        GetEpisodesExclusiviteRogers()
-        GetEpisodesForEmission(xs:long emissionId, )
-        GetGenres()
-        GetOldestEpisode(xs:long emissionId, )
-        GetPageAccueil()
-        GetPageEmission(xs:long emissionId, )
-        GetPageEpisode(xs:long episodeId, )
-        GetPageGenre(xs:string genre, )
-        GetPageRepertoire()
-        GetPartenaires()
-        GetPays()
-        GetTeaser(xs:long emissionId, )
-        SearchTerms(xs:string query, )
-        SearchTermsMax(xs:string query, xs:int maximumNumberOfResults, )
-    """
-    def __init__(self):
-        self.json_decoder = json.JSONDecoder()
-        self.mapper = MapperJson()
-
-    def _do_query(self, method, parameters={}):
-        parameters_list = [key + '=' + parameters[key] for key in parameters]
-        url = TOUTV_JSON_URL + method + '?' + '&'.join(parameters_list)
-        request = urllib2.Request(url, None, {"User-Agent" : IPHONE4_USER_AGENT})
-        json_decoded = self.json_decoder.decode(urllib2.urlopen(request).read())
-        return json_decoded["d"]
-
-    def get_emissions(self):
-        emissions_dto = self._do_query("GetEmissions")
-
-        emissions = {}
-
-        for emission_dto in emissions_dto:
-            emission = self.mapper.dto_to_bo(emission_dto, "Emission")
-            emissions[emission.Id] = emission
-
-        return emissions
-
-    def get_episodes_for_emission(self, emission_id):
-        episodes_dto = self._do_query("GetEpisodesForEmission", {"emissionid": str(emission_id)})
-
-        episodes = {}
-
-        if len(episodes_dto) > 0:
-            for episode_dto in episodes_dto:
-                episode = self.mapper.dto_to_bo(episode_dto, "Episode")
-                episodes[episode.Id] = episode
-
-        return episodes
-
-    def get_page_repertoire(self):
-        repertoire_dto = self._do_query("GetPageRepertoire")
-
-        repertoire = {}
-
-        if len(repertoire_dto) > 0:
-            # EmissionRepertoire
-            if len(repertoire_dto) > 0:
-                emissionrepertoires = {}
-                for emissionrepertoire_dto in repertoire_dto["Emissions"]:
-                    emissionrepertoire = self.mapper.dto_to_bo(emissionrepertoire_dto, "EmissionRepertoire")
-                    emissionrepertoires[emissionrepertoire.Id] = emissionrepertoire
-                repertoire["emissionrepertoire"] = emissionrepertoires
-            # Genre
-            if len(repertoire_dto["Genres"]) > 0:
-                pass
-            # Country
-            if len(repertoire_dto["Pays"]) > 0:
-                pass
-
-        return repertoire
-
-    def search_terms(self, query):
-        searchresults_dto = self._do_query("SearchTerms", {"query": query})
-        searchresults = None
-        searchresultdatas = []
-
-        if len(searchresults_dto) > 0:
-            searchresults = self.mapper.dto_to_bo(searchresults_dto, "SearchResults")
-            if searchresults.Results is not None:
-                for searchresultdata_dto in searchresults.Results[0]:
-                    searchresultdatas.append(self.mapper.dto_to_bo(searchresultdata_dto, "SearchResultData"))
-
-            searchresults.Results = searchresultdatas
-
-        return searchresults
-
-class ToutvClient():
-    def __init__(self, transport=None, cache=None):
-        self.transport = transport
-        self.cache = cache
-
-    def get_emissions(self, use_cache=True):
-        emissions = {}
-
-        if use_cache:
-            if not self.cache.has_key('emissions'):
-                # Init cache
-                self.cache.set('emissions', self.transport.get_emissions())
-            emissions = self.cache.get('emissions')
-        else:
-            emissions = self.transport.get_emissions()
-            # Refresh cache
-            self.cache.set('emissions', emissions)
-
-        return emissions
-
-    """
-    TODO - Implement use_cache flag
-    """
-    def get_episodes_for_emission(self, emission_id, use_cache=True):
-        episodes_per_emission = {}
-
-        if not self.cache.has_key('episodes'):
-            self.cache.set('episodes', episodes_per_emission)
-
-        episodes_per_emission = self.cache.get('episodes')
-
-        if not (emission_id in episodes_per_emission):
-            episodes_per_emission[emission_id] = self.transport.get_episodes_for_emission(emission_id)
-            self.cache.set('episodes', episodes_per_emission)
-
-        return episodes_per_emission[emission_id]
-
-    def fetch_playlist_url(self, episode_pid):
-        req = urllib2.Request(TOUTV_PLAYLIST_URL % episode_pid, None, {"User-Agent" : IPHONE4_USER_AGENT})
-
-        response = json.load(urllib2.urlopen(req))
-
-        return response['url']
-
-    """
-    TODO - Implement use_cache flag
-    """
-    def get_page_repertoire(self, use_cache=True):
-        repertoire = {}
-
-        if not self.cache.has_key('repertoire'):
-            self.cache.set('repertoire', repertoire)
-
-        repertoire = self.cache.get('repertoire')
-
-        if not ("emissionrepertoire" in repertoire):
-            repertoire = self.transport.get_page_repertoire()
-            self.cache.set('repertoire', repertoire)
-
-        return repertoire
-
-    def search_terms(self, query):
-        return self.transport.search_terms(query)
-
-    def search_terms_max(self, query, max_results):
-        pass
+from toutv import client, cache, m3u8, progressbar
 
 class ToutvConsoleApp():
     def __init__(self):
@@ -622,10 +81,10 @@ class ToutvConsoleApp():
         return parser
 
     def build_toutvclient(self):
-        transport = TransportJson()
-        cache = CacheShelve()
+        transport_impl = client.TransportJson()
+        cache_impl = cache.CacheShelve(".toutv_cache")
 
-        toutvclient = ToutvClient(transport, cache)
+        toutvclient = client.ToutvClient(transport_impl, cache_impl)
 
         return toutvclient
 
@@ -794,7 +253,7 @@ class ToutvConsoleApp():
         urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar())))
 
         url = self.toutvclient.fetch_playlist_url(episode.PID)
-        request = urllib2.Request(url, None, {"User-Agent" : IPHONE4_USER_AGENT})
+        request = urllib2.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
         m3u8_file = urllib2.urlopen(request).read()
 
         m3u8_parser = m3u8.M3u8_Parser()
@@ -803,13 +262,13 @@ class ToutvConsoleApp():
 
         stream = self.get_video_stream_bandwidth(playlist, bitrate)
 
-        request = urllib2.Request(stream.uri, None, {'User-Agent': IPHONE4_USER_AGENT} )
+        request = urllib2.Request(stream.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT} )
         m3u8_file = urllib2.urlopen(request).read()
 
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(stream.uri))
 
         print "Reading key from " + playlist.segments[0].key.uri
-        request = urllib2.Request(playlist.segments[0].key.uri, None, {'User-Agent':IPHONE4_USER_AGENT})
+        request = urllib2.Request(playlist.segments[0].key.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT})
         key = urllib2.urlopen(request).read()
 
         # Output file handling
@@ -821,11 +280,11 @@ class ToutvConsoleApp():
 
         sys.stdout.write("Downloading " + str(len(playlist.segments)) + " segments...\n")
         sys.stdout.flush()
-        progressbar = ProgressBar(0, len(playlist.segments), mode='fixed')
+        progress_bar = progressbar.ProgressBar(0, len(playlist.segments), mode='fixed')
         output_file = open(os.path.join(os.path.expanduser(directory), emission.Title + "-" + episode.Title + ".ts"), "w")
         count = 1
         for segment in playlist.segments:
-            request = urllib2.Request(segment.uri, None, {'User-Agent' : IPHONE4_USER_AGENT})
+            request = urllib2.Request(segment.uri, None, {'User-Agent' : client.IPHONE4_USER_AGENT})
             ts_file = urllib2.urlopen(request).read()
 
             aes = AES.new(key, AES.MODE_CBC, struct.pack(">IIII", 0x0, 0x0, 0x0, count))
@@ -834,8 +293,8 @@ class ToutvConsoleApp():
 
             count += 1
 
-            progressbar.increment_amount()
-            print progressbar, '\r',
+            progress_bar.increment_amount()
+            print progress_bar, '\r',
             sys.stdout.flush()
 
         sys.stdout.write("\n")
