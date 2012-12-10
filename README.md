@@ -3,12 +3,12 @@ This is a [tou.tv](http://tou.tv) console application.
 You may list episodes, get information on shows or download shows.
 
 ## Usage
-    $ ./toutv.py --help
+    $ ./toutv-cli.py --help
 
 ## Example
 
 ### Searching
-    $ ./toutv.py search bourassa
+    $ ./toutv-cli.py search bourassa
     Query:
         bourassa
     Results:
@@ -17,7 +17,7 @@ You may list episodes, get information on shows or download shows.
     [...]
 
 ### Listing all shows
-    $ ./toutv.py list
+    $ ./toutv-cli.py list
     [...]
     1597224814 - Campus
     2157713779 - Physique ou chimie
@@ -25,7 +25,7 @@ You may list episodes, get information on shows or download shows.
     [...]
 
 ### Listing all episodes from 'Physique ou chimie'
-    $ ./toutv.py list 2157713779
+    $ ./toutv-cli.py list 2157713779
     Title:
         Physique ou chimie
     Episodes:
@@ -34,7 +34,7 @@ You may list episodes, get information on shows or download shows.
         [...]
 
 ### Getting more info about a show
-    $ ./toutv.py info 2157713779 2161200777
+    $ ./toutv-cli.py info 2157713779 2161200777
     Title:
         Égoïsme raisonnable     (S01E09)
     Date aired:
@@ -44,7 +44,7 @@ You may list episodes, get information on shows or download shows.
         Joy est victime de racket.
 
 ### Downloading an emission
-    $ ./toutv.py fetch --bitrate MAX 2157713779 2161200777
+    $ ./toutv-cli.py fetch -d ~/tou.tv --bitrate MAX 2157713779 2161200777
     Emission and episode:
             Physique ou chimie - Égoïsme raisonnable        (S01E09)
     Downloading 312 segments...
@@ -55,7 +55,9 @@ You may list episodes, get information on shows or download shows.
 
     $ mplayer ~/tou.tv/Physique\ ou\ chimie-Égoïsme\ raisonnable.ts
 
-Have fun!
+## In case of a problem
+Try to delete the cache by removing the file named ".toutv\_cache" in the same directory where you run toutv-cli.py.
+    $ rm .toutv_cache
 
 ## Dependencies:
 
@@ -69,3 +71,4 @@ Contact Benjamin Vanheuverzwijn <bvanheu@gmail.com>
 ## Thanks
 
 Thanks to Marc-Etienne M. Leveille
+Thanks to Simon Marchi <simark>
