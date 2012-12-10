@@ -57,6 +57,7 @@ You may list episodes, get information on shows or download shows.
 
 ## In case of a problem
 Try to delete the cache by removing the file named ".toutv\_cache" in the same directory where you run toutv-cli.py.
+
     $ rm .toutv_cache
 
 ## Dependencies:
@@ -70,5 +71,5 @@ Contact Benjamin Vanheuverzwijn <bvanheu@gmail.com>
 
 ## Thanks
 
-Thanks to Marc-Etienne M. Leveille
-Thanks to Simon Marchi <simark>
+- Thanks to Marc-Etienne M. Leveille
+- Thanks to Simon Marchi <simark>
