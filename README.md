@@ -42,11 +42,17 @@ You may list episodes, get information on shows or download shows.
     Description
         Ruth hérite d’une grosse somme d’argent provenant de l’assurance-vie de ses parents. On découvre que
         Joy est victime de racket.
+    Available bitrate:
+        390000 bit/s
+        490000 bit/s
+        790000 bit/s
+        1190000 bit/s
 
 ### Downloading an emission
-    $ ./toutv-cli.py fetch -d ~/tou.tv --bitrate MAX 2157713779 2161200777
+    $ ./toutv-cli.py fetch -d ~/tou.tv --quality MAX 2157713779 2161200777
     Emission and episode:
             Physique ou chimie - Égoïsme raisonnable        (S01E09)
+    Fetching video with bitrate 1190000 bit/s
     Downloading 312 segments...
     [ ##                                                                 ] 2%
 
@@ -54,6 +60,30 @@ You may list episodes, get information on shows or download shows.
     Physique ou chimie-Égoïsme raisonnable.ts
 
     $ mplayer ~/tou.tv/Physique\ ou\ chimie-Égoïsme\ raisonnable.ts
+
+#### Downloading for the Wii
+
+    You may want to download shows and watch them on the Wii using WiiMC for example. The best
+    bitrate is around 800000 bit/s else you may experience lagging when playing the show.
+    Note that default option `AVERAGE` quality should get you a show playable on the Wii without
+    problem.
+
+    To specify the bitrate, first get the available bitrate by running `info` on your show:
+    $ ./toutv-cli.py info 2157713779 2161200777
+    [...]
+    Available bitrate:
+        390000 bit/s
+        490000 bit/s
+        790000 bit/s
+        1190000 bit/s
+
+    You can then select the bitrate around 80000 bit/s, which is 79000 bit/s:
+    $ ./toutv-cli.py fetch --bitrate 790000 2157713779 2161200777
+    Emission and episode:
+        Physique ou chimie - Égoïsme raisonnable        (S01E09)
+    Fetching video with bitrate 790000 bit/s
+    Downloading 312 segments...
+    [                                                                    ] 0%
 
 ## In case of a problem
 Try to delete the cache by removing the file named ".toutv\_cache" in the same directory where you run toutv-cli.py.

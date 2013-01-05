@@ -54,28 +54,29 @@ class ToutvConsoleApp():
 
         # list command
         parser_list = subparsers.add_parser('list', help='List emissions or episodes of an emission')
-        parser_list.add_argument('emission', action="store", nargs="?", default=0, type=int, help='List all episodes of an emission')
+        parser_list.add_argument('emission', action="store", nargs="?", type=int, help='List all episodes of an emission')
         parser_list.add_argument('-a', '--all', action="store_true", help='List emissions without any episodes listed')
         parser_list.set_defaults(func=self.command_list)
 
         # info command
         parser_info = subparsers.add_parser('info', help='Get information about an emission or episode')
-        parser_info.add_argument('emission', action="store", nargs=1, type=int, help='Get information about an emission')
-        parser_info.add_argument('episode', action="store", nargs="?", default=0, type=int, help='Get information about an episode')
+        parser_info.add_argument('emission', action="store", type=int, help='Get information about an emission')
+        parser_info.add_argument('episode', action="store", nargs="?", type=int, help='Get information about an episode')
         parser_info.set_defaults(func=self.command_info)
 
         # fetch command
         parser_fetch = subparsers.add_parser('fetch', help='Fetch one or all episodes of an emission')
-        parser_fetch.add_argument('emission', action="store", nargs=1, type=int, help='Fetch all episodes of the provided emission')
+        parser_fetch.add_argument('emission', action="store", type=int, help='Fetch all episodes of the provided emission')
         parser_fetch.add_argument('episode', action="store", nargs="?", type=int, help='Fetch the episode')
-        parser_fetch.add_argument('-b', '--bitrate', action="store", nargs=1, default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the bitrate (default: AVERAGE)')
-        parser_fetch.add_argument('-d', '--directory', action="store", nargs=1, type=str, default=os.getcwd(), help='Output directory (default: ' + os.getcwd() + '/<file>)')
+        parser_fetch.add_argument('-q', '--quality', action="store", default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the video quality (default: AVERAGE)')
+        parser_fetch.add_argument('-b', '--bitrate', action="store", type=int, help='Specify the bitrate (default: fallback to AVERAGE quality)')
+        parser_fetch.add_argument('-d', '--directory', action="store", default=os.getcwd(), help='Output directory (default: ' + os.getcwd() + '/<file>)')
         parser_fetch.set_defaults(func=self.command_fetch)
 
         # search command
         parser_search = subparsers.add_parser('search', help='Search into toutv emission and episodes')
-        parser_search.add_argument('query', action="store", nargs=1, type=str, help='Search query')
-        parser_search.add_argument('-m', '--max', action="store", nargs=1, default=0, type=int, help='Maximum number of results (default: infinite)')
+        parser_search.add_argument('query', action="store", type=str, help='Search query')
+        parser_search.add_argument('-m', '--max', action="store", type=int, help='Maximum number of results (default: infinite)')
         parser_search.set_defaults(func=self.command_search)
 
         return parser
@@ -89,19 +90,19 @@ class ToutvConsoleApp():
         return toutvclient
 
     def command_list(self, args):
-        if args.emission > 0:
+        if args.emission:
             self.list_episodes(args.emission)
         else:
             self.list_emissions(args.all)
 
     def command_info(self, args):
-        if args.episode > 0:
-            self.info_episode(args.emission[0], args.episode)
+        if args.episode:
+            self.info_episode(args.emission, args.episode)
         else:
-            self.info_emission(args.emission[0])
+            self.info_emission(args.emission)
 
     def command_fetch(self, args):
-        self.fetch_episodes(args.emission[0], args.episode, args.directory[0], args.bitrate[0])
+        self.fetch_episodes(args.emission, args.episode, args.directory, quality=args.quality, bitrate=args.bitrate)
 
     def command_search(self, args):
         self.search(' '.join(args.query))
@@ -228,9 +229,24 @@ class ToutvConsoleApp():
         else:
             print("No description")
 
-        print("Available bandwidth:")
+        urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar())))
 
-    def fetch_episodes(self, emission_id, episode_id, directory, bitrate="AVERAGE"):
+        url = self.toutvclient.fetch_playlist_url(episode.PID)
+
+        request = urllib2.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
+        m3u8_file = urllib2.urlopen(request).read()
+
+        m3u8_parser = m3u8.M3u8_Parser()
+
+        playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
+
+        bitrates = self.get_video_bitrate(playlist)
+
+        print("Available bitrate:")
+        for bitrate in bitrates:
+            print("\t" + str(bitrate) + " bit/s")
+
+    def fetch_episodes(self, emission_id, episode_id, directory, quality="AVERAGE", bitrate=0):
         emissions = self.toutvclient.get_emissions()
 
         if emission_id not in emissions:
@@ -253,6 +269,7 @@ class ToutvConsoleApp():
         urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar())))
 
         url = self.toutvclient.fetch_playlist_url(episode.PID)
+
         request = urllib2.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
         m3u8_file = urllib2.urlopen(request).read()
 
@@ -260,14 +277,26 @@ class ToutvConsoleApp():
 
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
 
-        stream = self.get_video_stream_bandwidth(playlist, bitrate)
+        # Stream bandwidth selection
+        bitrates = self.get_video_bitrate(playlist)
+
+        stream = None
+        if bitrate:
+            if bitrate in bitrates:
+                stream = self.get_video_stream_for_bitrate(playlist, bitrate)
+            else:
+                print("warning: " + str(bitrate) + " not in " + str(bitrates) + ", fallback to AVERAGE quality")
+
+        if stream is None:
+            stream = self.get_video_stream_for_quality(playlist, quality)
+
+        print("Fetching video with bitrate " + str(stream.bandwidth) + " bit/s")
 
         request = urllib2.Request(stream.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT} )
         m3u8_file = urllib2.urlopen(request).read()
 
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(stream.uri))
 
-        print "Reading key from " + playlist.segments[0].key.uri
         request = urllib2.Request(playlist.segments[0].key.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT})
         key = urllib2.urlopen(request).read()
 
@@ -304,21 +333,34 @@ class ToutvConsoleApp():
 
         return None
 
-    """
-    They dont' use the "AUDIO" or "VIDEO" m3u8 tag so we must parse the URL
-    index_X_av.m3u8 -> audio-video (av)
-    index_X_a.m3u8 -> audio (a)
-    """
-    def get_video_stream_bandwidth(self, playlist, bitrate_type):
+    def get_video_bitrate(self, playlist):
         bitrates = []
         for stream in playlist.streams:
             index = os.path.basename(stream.uri)
+            # Toutv team doesnt use the "AUDIO" or "VIDEO" m3u8 tag so we must parse the URL to find out about video stream
+            # index_X_av.m3u8 -> audio-video (av)
+            # index_X_a.m3u8 -> audio (a)
             if index.split("_", 2)[2][0:2] == "av":
                 bitrates.append(stream.bandwidth)
 
-        if bitrate_type == "MIN":
+        return bitrates
+
+    def get_video_stream_for_bitrate(self, playlist, bitrate):
+        bitrates = self.get_video_bitrate(playlist)
+
+        if bitrate in bitrates:
+            for stream in playlist.streams:
+                if stream.bandwidth == bitrate:
+                    return stream
+
+        return 0
+
+    def get_video_stream_for_quality(self, playlist, quality):
+        bitrates = self.get_video_bitrate(playlist)
+
+        if quality == "MIN":
             bandwidth = min(bitrates, key=int)
-        elif bitrate_type == "MAX":
+        elif quality == "MAX":
             bandwidth = max(bitrates, key=int)
         else:
             # AVERAGE
