@@ -54,7 +54,9 @@ class MapperJson(Mapper):
         for key in bo_vars.keys():
             value = dto[key]
 
-            if isinstance(value, dict):
+            if isinstance(value, unicode):
+                value = value.encode("utf-8")
+            elif isinstance(value, dict):
                 if value["__type"] == "GenreDTO:#RC.Svc.Web.TouTV":
                     value = self.dto_to_bo(value, "Genre")
                 elif value["__type"] == "EmissionDTO:#RC.Svc.Web.TouTV":
