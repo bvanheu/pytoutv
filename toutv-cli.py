@@ -69,7 +69,7 @@ class ToutvConsoleApp():
         parser_fetch.add_argument('emission', action="store", nargs=1, type=int, help='Fetch all episodes of the provided emission')
         parser_fetch.add_argument('episode', action="store", nargs="?", type=int, help='Fetch the episode')
         parser_fetch.add_argument('-b', '--bitrate', action="store", nargs=1, default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the bitrate (default: AVERAGE)')
-        parser_fetch.add_argument('-d', '--directory', action="store", nargs=1, default=os.getcwd(), help='Output directory (default: ' + os.getcwd() + '/<file>)')
+        parser_fetch.add_argument('-d', '--directory', action="store", nargs=1, type=str, default=os.getcwd(), help='Output directory (default: ' + os.getcwd() + '/<file>)')
         parser_fetch.set_defaults(func=self.command_fetch)
 
         # search command
@@ -101,7 +101,7 @@ class ToutvConsoleApp():
             self.info_emission(args.emission[0])
 
     def command_fetch(self, args):
-        self.fetch_episodes(args.emission[0], args.episode, args.directory, args.bitrate[0])
+        self.fetch_episodes(args.emission[0], args.episode, args.directory[0], args.bitrate[0])
 
     def command_search(self, args):
         self.search(' '.join(args.query))
@@ -204,11 +204,11 @@ class ToutvConsoleApp():
         emission = emissions[emission_id]
 
         episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
-        
+
         if episode_id not in episodes:
             print("This episode does not exist.");
             return
-            
+
         episode = episodes[episode_id]
 
         print("Emission:")
@@ -232,15 +232,15 @@ class ToutvConsoleApp():
 
     def fetch_episodes(self, emission_id, episode_id, directory, bitrate="AVERAGE"):
         emissions = self.toutvclient.get_emissions()
-        
+
         if emission_id not in emissions:
             print("Show " + str(emission_id) + " does not exist.")
             return
-            
+
         emission = emissions[emission_id]
 
         episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
-        
+
         if episode_id not in episodes:
             print("This episode does not exist");
             return
