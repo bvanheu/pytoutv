@@ -56,7 +56,7 @@ class CacheShelve(Cache):
 
         return value
 
-    def set(self, key, value, expire=timedelta(minutes=1)):
+    def set(self, key, value, expire=timedelta(hours=2)):
         self.shelve[key] = (datetime.now() + expire, value)
 
     def _has_key(self, key):
