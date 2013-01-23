@@ -379,39 +379,30 @@ class TransportJson(Transport):
         return searchresults
 
 class ToutvClient():
-    def __init__(self, transport=None, cache=None):
+    def __init__(self, transport, cache):
         self.transport = transport
         self.cache = cache
 
-    def get_emissions(self, use_cache=True):
-        emissions = {}
+    def get_emissions(self):
+        emissions = self.cache.get("emissions")
 
-        if use_cache:
-            if not self.cache.has_key('emissions'):
-                # Init cache
-                self.cache.set('emissions', self.transport.get_emissions())
-            emissions = self.cache.get('emissions')
-        else:
+        if not emissions:
             emissions = self.transport.get_emissions()
-            # Refresh cache
-            self.cache.set('emissions', emissions)
+            self.cache.set("emissions", emissions)
 
         return emissions
 
-    """
-    TODO - Implement use_cache flag
-    """
-    def get_episodes_for_emission(self, emission_id, use_cache=True):
-        episodes_per_emission = {}
+    def get_episodes_for_emission(self, emission_id):
+        episodes_per_emission = self.cache.get("episodes")
 
-        if not self.cache.has_key('episodes'):
-            self.cache.set('episodes', episodes_per_emission)
-
-        episodes_per_emission = self.cache.get('episodes')
+        if not episodes_per_emission:
+            episodes_per_emission = {}
+            episodes_per_emission[emission_id] = self.transport.get_episodes_for_emission(emission_id)
+            self.cache.set("episodes", episodes_per_emission)
 
         if not (emission_id in episodes_per_emission):
             episodes_per_emission[emission_id] = self.transport.get_episodes_for_emission(emission_id)
-            self.cache.set('episodes', episodes_per_emission)
+            self.cache.set("episodes", episodes_per_emission)
 
         return episodes_per_emission[emission_id]
 
@@ -426,16 +417,11 @@ class ToutvClient():
     TODO - Implement use_cache flag
     """
     def get_page_repertoire(self, use_cache=True):
-        repertoire = {}
+        repertoire = self.cache.get("repertoire")
 
-        if not self.cache.has_key('repertoire'):
-            self.cache.set('repertoire', repertoire)
-
-        repertoire = self.cache.get('repertoire')
-
-        if not ("emissionrepertoire" in repertoire):
+        if not repertoire:
             repertoire = self.transport.get_page_repertoire()
-            self.cache.set('repertoire', repertoire)
+            self.cache.set("repertoire", repertoire)
 
         return repertoire
 

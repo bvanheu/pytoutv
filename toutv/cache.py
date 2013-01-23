@@ -26,6 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import shelve
+from datetime import timedelta, datetime
 
 class Cache():
     def __init__(self):
@@ -37,21 +38,31 @@ class Cache():
     def get(self, key):
         pass
 
-    def set(self, key, value):
+    def set(self, key, value, expire=timedelta(hours=2)):
         pass
 
 class CacheShelve(Cache):
     def __init__(self, shelve_filename):
         self.shelve = shelve.open(shelve_filename)
 
-    def has_key(self, key):
-        return self.shelve.has_key(key)
-
-    def get(self, key):
-        return self.shelve[key]
-
-    def set(self, key, value):
-        self.shelve[key] = value
-
     def __del__(self):
         self.shelve.close()
+
+    def get(self, key):
+        if not self._has_key(key):
+            return None
+
+        (expire, value) = self.shelve[key]
+
+        return value
+
+    def set(self, key, value, expire=timedelta(minutes=1)):
+        self.shelve[key] = (datetime.now() + expire, value)
+
+    def _has_key(self, key):
+        if self.shelve.has_key(key):
+            (expire, value) = self.shelve[key]
+            if datetime.now() < expire:
+                return True
+        return False
+
