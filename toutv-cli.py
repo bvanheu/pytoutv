@@ -310,7 +310,7 @@ class ToutvConsoleApp():
         sys.stdout.write("Downloading " + str(len(playlist.segments)) + " segments...\n")
         sys.stdout.flush()
         progress_bar = progressbar.ProgressBar(0, len(playlist.segments), mode='fixed')
-        output_file = open(os.path.join(os.path.expanduser(directory), emission.Title + "-" + episode.Title + ".ts"), "w")
+        output_file = open(os.path.join(os.path.expanduser(directory), emission.Title + "-" + episode.Title + ".ts"), "wb")
         count = 1
         for segment in playlist.segments:
             request = urllib2.Request(segment.uri, None, {'User-Agent' : client.IPHONE4_USER_AGENT})
