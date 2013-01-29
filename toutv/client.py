@@ -27,6 +27,7 @@
 
 import json
 import urllib2
+import urllib
 
 IPHONE4_USER_AGENT = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7"
 TOUTV_WSDL_URL = "http://api.tou.tv/v1/TouTVAPIService.svc?wsdl"
@@ -312,8 +313,8 @@ class TransportJson(Transport):
         self.mapper = MapperJson()
 
     def _do_query(self, method, parameters={}):
-        parameters_list = [key + '=' + parameters[key] for key in parameters]
-        url = TOUTV_JSON_URL + method + '?' + '&'.join(parameters_list)
+        parameters_str = urllib.urlencode(parameters)
+        url = TOUTV_JSON_URL + method + '?' + parameters_str
         request = urllib2.Request(url, None, {"User-Agent" : IPHONE4_USER_AGENT})
         json_decoded = self.json_decoder.decode(urllib2.urlopen(request).read())
         return json_decoded["d"]
@@ -371,7 +372,7 @@ class TransportJson(Transport):
         if len(searchresults_dto) > 0:
             searchresults = self.mapper.dto_to_bo(searchresults_dto, "SearchResults")
             if searchresults.Results is not None:
-                for searchresultdata_dto in searchresults.Results[0]:
+                for searchresultdata_dto in searchresults.Results:
                     searchresultdatas.append(self.mapper.dto_to_bo(searchresultdata_dto, "SearchResultData"))
 
             searchresults.Results = searchresultdatas

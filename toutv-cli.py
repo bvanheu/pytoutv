@@ -105,7 +105,7 @@ class ToutvConsoleApp():
         self.fetch_episodes(args.emission, args.episode, args.directory, quality=args.quality, bitrate=args.bitrate)
 
     def command_search(self, args):
-        self.search(' '.join(args.query))
+        self.search(args.query)
 
     def search(self, query):
         searchresult = self.toutvclient.search_terms(query)
