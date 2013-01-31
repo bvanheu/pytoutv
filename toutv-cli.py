@@ -122,23 +122,25 @@ class ToutvConsoleApp():
         else:
             for result in searchresult.Results:
                 if result.Emission is not None:
+
                     print("\tEmission:")
                     print("\t\t" + result.Emission.Title)
+
                     if result.Emission.Description:
                         description = textwrap.wrap(result.Emission.Description, 100)
                         for line in description:
                             print("\t\t\t" + line)
+
                 if result.Episode is not None:
                     print("\tEpisode:\n")
 
                     if result.Episode.CategoryId is not None:
-  		      print("\t\tEmission ID: " + str(result.Episode.CategoryId)) + "\n"
+  		        print("\t\tEmission ID: " + str(result.Episode.CategoryId))
 
                     if result.Episode.Id is not None:
-                      print("\t\tEpisode ID: " + str(result.Episode.Id)) + "\n"
+                        print("\t\tEpisode ID: " + str(result.Episode.Id))
                     
                     print("\t\t" + result.Episode.Title + ":")
-
                     if result.Episode.Description:
                         description = textwrap.wrap(result.Episode.Description, 100)
                         for line in description:
