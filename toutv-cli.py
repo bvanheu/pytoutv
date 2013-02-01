@@ -105,7 +105,7 @@ class ToutvConsoleApp():
         self.fetch_episodes(args.emission, args.episode, args.directory, quality=args.quality, bitrate=args.bitrate)
 
     def command_search(self, args):
-        self.search(' '.join(args.query))
+        self.search(args.query)
 
     def search(self, query):
         searchresult = self.toutvclient.search_terms(query)
@@ -122,15 +122,25 @@ class ToutvConsoleApp():
         else:
             for result in searchresult.Results:
                 if result.Emission is not None:
+
                     print("\tEmission:")
                     print("\t\t" + result.Emission.Title)
+
                     if result.Emission.Description:
                         description = textwrap.wrap(result.Emission.Description, 100)
                         for line in description:
                             print("\t\t\t" + line)
+
                 if result.Episode is not None:
-                    print("\tEpisode:")
-                    print("\t\t" + result.Episode.Title)
+                    print("\tEpisode:\n")
+
+                    if result.Episode.CategoryId is not None:
+  		        print("\t\tEmission ID: " + str(result.Episode.CategoryId))
+
+                    if result.Episode.Id is not None:
+                        print("\t\tEpisode ID: " + str(result.Episode.Id))
+                    
+                    print("\t\t" + result.Episode.Title + ":")
                     if result.Episode.Description:
                         description = textwrap.wrap(result.Episode.Description, 100)
                         for line in description:
