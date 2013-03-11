@@ -25,7 +25,7 @@ You may list episodes, get information on shows or download shows.
     [...]
 
 ### Listing all episodes from 'Physique ou chimie'
-    $ ./toutv-cli.py list 2157713779
+    $ ./toutv-cli.py list "Physique ou chimie"
     Title:
         Physique ou chimie
     Episodes:
@@ -33,8 +33,21 @@ You may list episodes, get information on shows or download shows.
         2172164238 - La vie en cadeau
         [...]
 
+    or you can alos provide the show id from 'Physique ou chimie':
+
+    $ ./toutv-cli.py list 2157713779
+    Title:
+	Physique ou chimie
+    Episodes:
+	2161200777 - Égoïsme raisonnable
+	2172164238 - La vie en cadeau
+	[...]
+
+    Remember to always put double-quotes if the show contains special characters
+    like '#' or spaces.
+
 ### Getting more info about a show
-    $ ./toutv-cli.py info 2157713779 2161200777
+    $ ./toutv-cli.py info "Physique ou chimie" "Égoïsme raisonnable"
     Title:
         Égoïsme raisonnable     (S01E09)
     Date aired:
@@ -49,7 +62,7 @@ You may list episodes, get information on shows or download shows.
         1190000 bit/s
 
 ### Downloading an emission
-    $ ./toutv-cli.py fetch -d ~/tou.tv --quality MAX 2157713779 2161200777
+    $ ./toutv-cli.py fetch -d ~/tou.tv --quality MAX "Physique ou chimie" "Égoïsme raisonnable"
     Emission and episode:
             Physique ou chimie - Égoïsme raisonnable        (S01E09)
     Fetching video with bitrate 1190000 bit/s
@@ -69,7 +82,7 @@ You may list episodes, get information on shows or download shows.
     problem.
 
     To specify the bitrate, first get the available bitrate by running `info` on your show:
-    $ ./toutv-cli.py info 2157713779 2161200777
+    $ ./toutv-cli.py info "Physique ou chimie" "Égoïsme raisonnable"
     [...]
     Available bitrate:
         390000 bit/s
@@ -78,7 +91,7 @@ You may list episodes, get information on shows or download shows.
         1190000 bit/s
 
     You can then select the bitrate around 80000 bit/s, which is 79000 bit/s:
-    $ ./toutv-cli.py fetch --bitrate 790000 2157713779 2161200777
+    $ ./toutv-cli.py fetch --bitrate 790000 "Physique ou chimie" "Égoïsme raisonnable"
     Emission and episode:
         Physique ou chimie - Égoïsme raisonnable        (S01E09)
     Fetching video with bitrate 790000 bit/s
@@ -97,7 +110,7 @@ Try to delete the cache by removing the file named ".toutv\_cache" in the same d
 
 ## Bugs
 
-Contact Benjamin Vanheuverzwijn <bvanheu@gmail.com>
+Contact Benjamin Vanheuverzwijn <bvanheu@gmail.com> (French or English)
 
 ## Thanks
 

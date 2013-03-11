@@ -32,11 +32,20 @@ import os
 import sys
 import cookielib
 import urllib2
+import difflib
 from Crypto.Cipher import AES
 import struct
 import textwrap
 
 from toutv import client, cache, m3u8, progressbar
+
+class TooManyMatchesException(Exception):
+    def __init__(self, possibilities):
+        self.possibilities = possibilities
+
+class NoMatchException(Exception):
+    def __init__(self, possibility):
+        self.possibility = possibility
 
 class ToutvConsoleApp():
     def __init__(self):
@@ -54,20 +63,20 @@ class ToutvConsoleApp():
 
         # list command
         parser_list = subparsers.add_parser('list', help='List emissions or episodes of an emission')
-        parser_list.add_argument('emission', action="store", nargs="?", type=int, help='List all episodes of an emission')
+        parser_list.add_argument('emission', action="store", nargs="?", type=str, help='List all episodes of an emission')
         parser_list.add_argument('-a', '--all', action="store_true", help='List emissions without any episodes listed')
         parser_list.set_defaults(func=self.command_list)
 
         # info command
         parser_info = subparsers.add_parser('info', help='Get information about an emission or episode')
-        parser_info.add_argument('emission', action="store", type=int, help='Get information about an emission')
-        parser_info.add_argument('episode', action="store", nargs="?", type=int, help='Get information about an episode')
+        parser_info.add_argument('emission', action="store", type=str, help='Get information about an emission')
+        parser_info.add_argument('episode', action="store", nargs="?", type=str, help='Get information about an episode')
         parser_info.set_defaults(func=self.command_info)
 
         # fetch command
         parser_fetch = subparsers.add_parser('fetch', help='Fetch one or all episodes of an emission')
-        parser_fetch.add_argument('emission', action="store", type=int, help='Fetch all episodes of the provided emission')
-        parser_fetch.add_argument('episode', action="store", nargs="?", type=int, help='Fetch the episode')
+        parser_fetch.add_argument('emission', action="store", type=str, help='Fetch all episodes of the provided emission')
+        parser_fetch.add_argument('episode', action="store", type=str, help='Fetch the episode')
         parser_fetch.add_argument('-q', '--quality', action="store", default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the video quality (default: AVERAGE)')
         parser_fetch.add_argument('-b', '--bitrate', action="store", type=int, help='Specify the bitrate (default: fallback to AVERAGE quality)')
         parser_fetch.add_argument('-d', '--directory', action="store", default=os.getcwd(), help='Output directory (default: ' + os.getcwd() + '/<file>)')
@@ -158,69 +167,100 @@ class ToutvConsoleApp():
             for k in sorted(emissionrepertoires, key=lambda er: emissionrepertoires[er].Titre):
                 print(emissionrepertoires[k].Titre + " - " + str(emissionrepertoires[k].Id))
 
-    def list_episodes(self, emission_id):
-        emissions = self.toutvclient.get_emissions()
-        emission = emissions[emission_id]
+    def list_episodes(self, emission_name):
+        try:
+            emission = self.get_emission_by_name(emission_name)
 
-        print("Title:")
-        print("\t" + emission.Title)
+            print("Title:")
+            print("\t" + emission.Title)
 
-        print("Episodes:")
-        episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
+            print("Episodes:")
+            episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
 
-        if len(episodes) == 0:
-            print("\tNo episodes for the provided emission ("+emission.Title+")")
-        else:
-            for k in sorted(episodes, key=lambda e: episodes[e].SeasonAndEpisode):
-                print("\t" + episodes[k].SeasonAndEpisode + " - " + episodes[k].Title + " - " + str(episodes[k].Id))
-
-    def info_emission(self, emission_id):
-        emissions = self.toutvclient.get_emissions()
-        emission = emissions[emission_id]
-
-        print("Title: ")
-        print("\t" + emission.Title + "\t(" + (emission.Country if emission.Country else "Pays inconnu") + (" - " + str(emission.Year) if emission.Year else "") + ")")
-
-        print("Description:")
-        if emission.Description:
-            description = textwrap.wrap(emission.Description, 100)
-            for line in description:
-                print("\t" + line)
-        else:
-            print("\tAucune description")
-
-        print("Network:")
-        if emission.Network:
-            print("\t" + emission.Network)
-        else:
-            print("\tunknown")
-
-        print("Will be removed:")
-        if emission.DateRetraitOuEmbargo:
-            if emission.DateRetraitOuEmbargo == "":
-                print("\t" + str(emission.DateRetraitOuEmbargo))
+            if len(episodes) == 0:
+                print("\tNo episodes for the provided emission ("+emission.Title+")")
             else:
-                print("\tnot available")
-        else:
-            print("\tunknown")
+                for k in sorted(episodes, key=lambda e: episodes[e].SeasonAndEpisode):
+                    print("\t" + episodes[k].SeasonAndEpisode + " - " + episodes[k].Title + " - " + str(episodes[k].Id))
+        except NoMatchException as ex:
+            print("Unable to find '" + emission_name + "'")
+            print("Did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
+        except TooManyMatchesException as ex:
+            print("Unable to find '" + emission_name + "'")
+            print("Did you mean one of the following?")
+            for possibility in ex.possibilities:
+                print("\t" + possibility)
 
-        print "Tags: ",
-        if emission.EstContenuJeunesse:
-            print "jeune ",
-        if emission.EstExclusiviteRogers:
-            print "rogers "
+    def info_emission(self, emission_name):
+        try:
+            emission = self.get_emission_by_name(emission_name)
 
-    def info_episode(self, emission_id, episode_id):
-        emissions = self.toutvclient.get_emissions()
-        emission = emissions[emission_id]
+            print("Title: ")
+            print("\t" + emission.Title + "\t(" + (emission.Country if emission.Country else "Pays inconnu") + (" - " + str(emission.Year) if emission.Year else "") + ")")
 
-        episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
+            print("Description:")
+            if emission.Description:
+                description = textwrap.wrap(emission.Description, 100)
+                for line in description:
+                    print("\t" + line)
+            else:
+                print("\tAucune description")
 
-        if episode_id not in episodes:
-            print("This episode does not exist.");
+            print("Network:")
+            if emission.Network:
+                print("\t" + emission.Network)
+            else:
+                print("\tunknown")
+
+            print("Will be removed:")
+            if emission.DateRetraitOuEmbargo:
+                if emission.DateRetraitOuEmbargo == "":
+                    print("\t" + str(emission.DateRetraitOuEmbargo))
+                else:
+                    print("\tnot available")
+            else:
+                print("\tunknown")
+
+            print "Tags: ",
+            if emission.EstContenuJeunesse:
+                print "jeune ",
+            if emission.EstExclusiviteRogers:
+                print "rogers "
+        except NoMatchException as ex:
+            print("Unable to find '" + emission_name + "'")
+            print("Did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
+        except TooManyMatchesException as ex:
+            print("Unable to find '" + emission_name + "'")
+            print("Did you mean one of the following?")
+            for possibility in ex.possibilities:
+                print("\t" + possibility)
+
+    def info_episode(self, emission_name, episode_name):
+        try:
+            emission = self.get_emission_by_name(emission_name)
+        except NoMatchException as ex:
+            print("unable to find '" + emission_name + "'")
+            print("did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
+            return
+        except TooManyMatchesException as ex:
+            print("unable to find '" + emission_name + "'")
+            print("did you mean one of the following?")
+            for possibility in ex.possibilities:
+                print("\t" + possibility)
             return
 
-        episode = episodes[episode_id]
+        try:
+            episode = self.get_episode_by_name(emission.Id, episode_name)
+        except NoMatchException as ex:
+            print("Unable to find '" + episode_name + "'")
+            print("Did you mean '" + ex.possibility + "' instead of '" + episode_name + "'?")
+            return
+        except TooManyMatchesException as ex:
+            print("Unable to find '" + episode_name + "'")
+            print("Did you mean one of the following?")
+            for possibility in ex.possibilities:
+                print("\t" + possibility)
+            return
 
         print("Emission:")
         print("\t" + emission.Title)
@@ -249,28 +289,38 @@ class ToutvConsoleApp():
 
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
 
-        bitrates = self.get_video_bitrate(playlist)
+        bitrates = self.get_video_bitrates(playlist)
 
         print("Available bitrate:")
         for bitrate in bitrates:
             print("\t" + str(bitrate) + " bit/s")
 
-    def fetch_episodes(self, emission_id, episode_id, directory, quality="AVERAGE", bitrate=0):
-        emissions = self.toutvclient.get_emissions()
-
-        if emission_id not in emissions:
-            print("Show " + str(emission_id) + " does not exist.")
+    def fetch_episodes(self, emission_name, episode_name, directory, quality="AVERAGE", bitrate=0):
+        try:
+            emission = self.get_emission_by_name(emission_name)
+        except NoMatchException as ex:
+            print("unable to find '" + emission_name + "'")
+            print("did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
+            return
+        except TooManyMatchesException as ex:
+            print("unable to find '" + emission_name + "'")
+            print("did you mean one of the following?")
+            for possibility in ex.possibilities:
+                print("\t" + possibility)
             return
 
-        emission = emissions[emission_id]
-
-        episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
-
-        if episode_id not in episodes:
-            print("This episode does not exist");
+        try:
+            episode = self.get_episode_by_name(emission.Id, episode_name)
+        except NoMatchException as ex:
+            print("Unable to find '" + episode_name + "'")
+            print("Did you mean '" + ex.possibility + "' instead of '" + episode_name + "'?")
             return
-
-        episode = episodes[episode_id]
+        except TooManyMatchesException as ex:
+            print("Unable to find '" + episode_name + "'")
+            print("Did you mean one of the following?")
+            for possibility in ex.possibilities:
+                print("\t" + possibility)
+            return
 
         print("Emission and episode:")
         print("\t" + emission.Title + " - " + episode.Title + "\t(" + episode.SeasonAndEpisode + ")")
@@ -285,7 +335,7 @@ class ToutvConsoleApp():
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
 
         # Stream bandwidth selection
-        bitrates = self.get_video_bitrate(playlist)
+        bitrates = self.get_video_bitrates(playlist)
 
         stream = None
         if bitrate:
@@ -340,7 +390,7 @@ class ToutvConsoleApp():
 
         return None
 
-    def get_video_bitrate(self, playlist):
+    def get_video_bitrates(self, playlist):
         bitrates = []
         for stream in playlist.streams:
             index = os.path.basename(stream.uri)
@@ -353,7 +403,7 @@ class ToutvConsoleApp():
         return bitrates
 
     def get_video_stream_for_bitrate(self, playlist, bitrate):
-        bitrates = self.get_video_bitrate(playlist)
+        bitrates = self.get_video_bitrates(playlist)
 
         if bitrate in bitrates:
             for stream in playlist.streams:
@@ -363,7 +413,7 @@ class ToutvConsoleApp():
         return 0
 
     def get_video_stream_for_quality(self, playlist, quality):
-        bitrates = self.get_video_bitrate(playlist)
+        bitrates = self.get_video_bitrates(playlist)
 
         if quality == "MIN":
             bandwidth = min(bitrates, key=int)
@@ -371,11 +421,65 @@ class ToutvConsoleApp():
             bandwidth = max(bitrates, key=int)
         else:
             # AVERAGE
-            bandwidth =  bitrates[((len(bitrates)+1)/2 if len(bitrates)%2 else len(bitrates)/2)]
+            bandwidth = bitrates[((len(bitrates)+1)/2 if len(bitrates)%2 else len(bitrates)/2)]
 
         for stream in playlist.streams:
             if stream.bandwidth == bandwidth:
                 return stream
+
+    def get_emission_by_name(self, emission_name):
+        emissions = self.toutvclient.get_emissions()
+
+        possibilities = []
+        for emission_id, emission in emissions.iteritems():
+            possibilities.append(str(emission.Id))
+            possibilities.append(str(emission.Title))
+
+        close_matches = difflib.get_close_matches(emission_name, possibilities)
+
+        # Not an exact match...
+        if close_matches[0] != emission_name:
+            # Unable to find 1 match... i dunno wat to do
+            if len(close_matches) > 1:
+                raise TooManyMatchesException(close_matches)
+
+            raise NoMatchException(close_matches[0])
+
+        # Got an exact match
+        for emission_id, emission in emissions.iteritems():
+            if emission_name in [str(emission.Id), emission.Title]:
+                return emission
+
+        raise Exception("unable to find " + emission_name)
+
+    def get_episode_by_name(self, emission_id, episode_name):
+        episodes = self.toutvclient.get_episodes_for_emission(emission_id)
+
+        possibilities = []
+        for episode_id, episode in episodes.iteritems():
+            possibilities.append(str(episode.Id))
+            possibilities.append(str(episode.Title))
+            possibilities.append(str(episode.SeasonAndEpisode))
+
+        close_matches = difflib.get_close_matches(episode_name, possibilities)
+
+        if len(close_matches) == 0:
+            raise NoMatchException("")
+
+        # Not an exact match...
+        if close_matches[0] != episode_name:
+            # Unable to find 1 match... i dunno wat to do
+            if len(close_matches) > 1:
+                raise TooManyMatchesException(close_matches)
+
+            raise NoMatchException(close_matches[0])
+
+        # Got an exact match
+        for episode_id, episode in episodes.iteritems():
+            if episode_name in [str(episode.Id), episode.Title, episode.SeasonAndEpisode]:
+                return episode
+
+        raise Exception("unable to find " + episode_name)
 
 #
 # _/~MAIN~\_
