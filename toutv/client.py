@@ -412,6 +412,9 @@ class ToutvClient():
 
         response = json.load(urllib2.urlopen(req))
 
+        if response['errorCode']:
+            raise Exception(response['message'])
+
         return response['url']
 
     """

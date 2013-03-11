@@ -135,11 +135,11 @@ class ToutvConsoleApp():
                     print("\tEpisode:\n")
 
                     if result.Episode.CategoryId is not None:
-  		        print("\t\tEmission ID: " + str(result.Episode.CategoryId))
+                        print("\t\tEmission ID: " + str(result.Episode.CategoryId))
 
                     if result.Episode.Id is not None:
                         print("\t\tEpisode ID: " + str(result.Episode.Id))
-                    
+
                     print("\t\t" + result.Episode.Title + ":")
                     if result.Episode.Description:
                         description = textwrap.wrap(result.Episode.Description, 100)
@@ -240,7 +240,6 @@ class ToutvConsoleApp():
             print("No description")
 
         urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar())))
-
         url = self.toutvclient.fetch_playlist_url(episode.PID)
 
         request = urllib2.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
@@ -277,9 +276,7 @@ class ToutvConsoleApp():
         print("\t" + emission.Title + " - " + episode.Title + "\t(" + episode.SeasonAndEpisode + ")")
 
         urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar())))
-
         url = self.toutvclient.fetch_playlist_url(episode.PID)
-
         request = urllib2.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
         m3u8_file = urllib2.urlopen(request).read()
 
