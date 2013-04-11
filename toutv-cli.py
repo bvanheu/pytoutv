@@ -36,7 +36,6 @@ import difflib
 from Crypto.Cipher import AES
 import struct
 import textwrap
-import urllib
 import re
 
 from toutv import client, cache, m3u8, progressbar
@@ -496,7 +495,6 @@ class ToutvConsoleApp():
         raise Exception("unable to find " + episode_name)
 
     def get_episode_from_url(self, url):
-        #HTTP request
         try:
             response = urllib2.urlopen(url)
 
