@@ -36,6 +36,8 @@ import difflib
 from Crypto.Cipher import AES
 import struct
 import textwrap
+import urllib
+import re
 
 from toutv import client, cache, m3u8, progressbar
 
@@ -69,17 +71,19 @@ class ToutvConsoleApp():
 
         # info command
         parser_info = subparsers.add_parser('info', help='Get information about an emission or episode')
-        parser_info.add_argument('emission', action="store", type=str, help='Get information about an emission')
+        parser_info.add_argument('emission', action="store", type=str, help='Get information about an emission. If used with -u, get information about the episode from the tou.tv URL')
         parser_info.add_argument('episode', action="store", nargs="?", type=str, help='Get information about an episode')
+        parser_info.add_argument('-u', '--url', action="store_true", help='Get information about an episode from a tout.tv URL')
         parser_info.set_defaults(func=self.command_info)
 
         # fetch command
         parser_fetch = subparsers.add_parser('fetch', help='Fetch one or all episodes of an emission')
-        parser_fetch.add_argument('emission', action="store", type=str, help='Fetch all episodes of the provided emission')
-        parser_fetch.add_argument('episode', action="store", type=str, help='Fetch the episode')
         parser_fetch.add_argument('-q', '--quality', action="store", default="AVERAGE", choices=["MIN", "AVERAGE", "MAX"], help='Specify the video quality (default: AVERAGE)')
         parser_fetch.add_argument('-b', '--bitrate', action="store", type=int, help='Specify the bitrate (default: fallback to AVERAGE quality)')
         parser_fetch.add_argument('-d', '--directory', action="store", default=os.getcwd(), help='Output directory (default: ' + os.getcwd() + '/<file>)')
+        parser_fetch.add_argument('-u', '--url', action="store_true", help='Fetch an episode from a tout.tv URL')
+        parser_fetch.add_argument('emission', action="store", type=str, help='Fetch all episodes of the provided emission. If used with -u, fetch the episode from the tou.tv URL')
+        parser_fetch.add_argument('episode', action="store", nargs="?", type=str, help='Fetch the episode')
         parser_fetch.set_defaults(func=self.command_fetch)
 
         # search command
@@ -105,12 +109,22 @@ class ToutvConsoleApp():
             self.list_emissions(args.all)
 
     def command_info(self, args):
+        if args.url:
+            url_result = self.get_episode_from_url(args.emission)
+            if url_result is None: return
+            (args.emission, args.episode) = url_result
+
         if args.episode:
             self.info_episode(args.emission, args.episode)
         else:
             self.info_emission(args.emission)
 
     def command_fetch(self, args):
+        if args.url:
+            url_result = self.get_episode_from_url(args.emission)
+            if url_result is None: return
+            (args.emission, args.episode) = url_result
+
         self.fetch_episodes(args.emission, args.episode, args.directory, quality=args.quality, bitrate=args.bitrate)
 
     def command_search(self, args):
@@ -480,6 +494,22 @@ class ToutvConsoleApp():
                 return episode
 
         raise Exception("unable to find " + episode_name)
+
+    def get_episode_from_url(self, url):
+        #HTTP request
+        try:
+            response = urllib2.urlopen(url)
+
+            #extract emission and episode id from meta tag
+            found = re.search('<meta +content="([^".]+)\\.([^"]+)" +name="ProfilingEmisodeToken" +/>', response.read())
+            if found is None:
+                print 'Cannot find episode information in %s' % response.url
+            else:
+                return found.groups()
+        except urllib2.HTTPError as ex:
+            print 'Cannot open %s: %d %s' % (ex.url, ex.code, ex.reason)
+        except IOError as ex:
+            print 'Cannot open %s: %s' % (url, ex.reason)
 
 #
 # _/~MAIN~\_

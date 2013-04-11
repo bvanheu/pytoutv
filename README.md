@@ -74,6 +74,28 @@ You may list episodes, get information on shows or download shows.
 
     $ mplayer ~/tou.tv/Physique\ ou\ chimie-Égoïsme\ raisonnable.ts
 
+### Get episode from its tou.tv URL
+    $ ./toutv-cli.py info -u http://www.tou.tv/physique-ou-chimie/S01E09
+    Title:
+        Égoïsme raisonnable     (S01E09)
+    Date aired:
+        20111028
+    Description
+        Ruth hérite d’une grosse somme d’argent provenant de l’assurance-vie de ses parents. On découvre que
+        Joy est victime de racket.
+    Available bitrate:
+        390000 bit/s
+        490000 bit/s
+        790000 bit/s
+        1190000 bit/s
+
+    $ ./toutv-cli.py fetch -d ~/tou.tv --quality MAX -u http://www.tou.tv/physique-ou-chimie/S01E09
+    Emission and episode:
+            Physique ou chimie - Égoïsme raisonnable        (S01E09)
+    Fetching video with bitrate 1190000 bit/s
+    Downloading 312 segments...
+    [ ##                                                                 ] 2%
+
 #### Downloading for the Wii
 
     You may want to download shows and watch them on the Wii using WiiMC for example. The best
