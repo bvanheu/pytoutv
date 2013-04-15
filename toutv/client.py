@@ -60,9 +60,9 @@ class MapperJson(Mapper):
             elif isinstance(value, dict):
                 if value["__type"] == "GenreDTO:#RC.Svc.Web.TouTV":
                     value = self.dto_to_bo(value, "Genre")
-                elif value["__type"] == "EmissionDTO:#RC.Svc.Web.TouTV":
+                elif value["__type"] in ["EmissionDTO:#RC.Svc.Web.TouTV", "EmissionDTO:RC.Svc.Web.TouTV"]:
                     value = self.dto_to_bo(value, "Emission")
-                elif value["__type"] == "EpisodeDTO:#RC.Svc.Web.TouTV" or value["__type"] == "EpisodeDTO:RC.Svc.Web.TouTV":
+                elif value["__type"] in ["EpisodeDTO:#RC.Svc.Web.TouTV", "EpisodeDTO:RC.Svc.Web.TouTV"]:
                     value = self.dto_to_bo(value, "Episode")
 
             setattr(bo, key, value)
