@@ -62,7 +62,7 @@ class MapperJson(Mapper):
                     value = self.dto_to_bo(value, "Genre")
                 elif value["__type"] == "EmissionDTO:#RC.Svc.Web.TouTV":
                     value = self.dto_to_bo(value, "Emission")
-                elif value["__type"] == "EpisodeDTO:#RC.Svc.Web.TouTV":
+                elif value["__type"] == "EpisodeDTO:#RC.Svc.Web.TouTV" or value["__type"] == "EpisodeDTO:RC.Svc.Web.TouTV":
                     value = self.dto_to_bo(value, "Episode")
 
             setattr(bo, key, value)
