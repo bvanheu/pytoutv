@@ -442,17 +442,19 @@ class ToutvConsoleApp():
 
     def get_emission_by_name(self, emission_name):
         emissions = self.toutvclient.get_emissions()
+        emission_name_upper = emission_name.upper()
 
         possibilities = []
         for emission_id, emission in emissions.iteritems():
             possibilities.append(str(emission.Id))
-            possibilities.append(str(emission.Title))
+            # Store titles in uppercase for case-insensitive comparisons.
+            possibilities.append(str(emission.Title.upper()))
 
-        close_matches = difflib.get_close_matches(emission_name, possibilities)
+        close_matches = difflib.get_close_matches(emission_name_upper, possibilities)
 
         # Not an exact match...
-        if close_matches[0] != emission_name:
-            # Unable to find 1 match... i dunno wat to do
+        if close_matches[0] != emission_name_upper:
+            # Unable to find exactly 1 match... i dunno wat to do
             if len(close_matches) > 1:
                 raise TooManyMatchesException(close_matches)
 
@@ -460,27 +462,28 @@ class ToutvConsoleApp():
 
         # Got an exact match
         for emission_id, emission in emissions.iteritems():
-            if emission_name in [str(emission.Id), emission.Title]:
+            if emission_name_upper in [str(emission.Id), emission.Title.upper()]:
                 return emission
 
         raise Exception("unable to find " + emission_name)
 
     def get_episode_by_name(self, emission_id, episode_name):
         episodes = self.toutvclient.get_episodes_for_emission(emission_id)
+        episode_name_upper = episode_name.upper()
 
         possibilities = []
         for episode_id, episode in episodes.iteritems():
             possibilities.append(str(episode.Id))
-            possibilities.append(str(episode.Title))
+            possibilities.append(str(episode.Title.upper()))
             possibilities.append(str(episode.SeasonAndEpisode))
 
-        close_matches = difflib.get_close_matches(episode_name, possibilities)
+        close_matches = difflib.get_close_matches(episode_name_upper, possibilities)
 
         if len(close_matches) == 0:
             raise NoMatchException("")
 
         # Not an exact match...
-        if close_matches[0] != episode_name:
+        if close_matches[0] != episode_name_upper:
             # Unable to find 1 match... i dunno wat to do
             if len(close_matches) > 1:
                 raise TooManyMatchesException(close_matches)
@@ -489,7 +492,7 @@ class ToutvConsoleApp():
 
         # Got an exact match
         for episode_id, episode in episodes.iteritems():
-            if episode_name in [str(episode.Id), episode.Title, episode.SeasonAndEpisode]:
+            if episode_name_upper in [str(episode.Id), episode.Title.upper(), episode.SeasonAndEpisode]:
                 return episode
 
         raise Exception("unable to find " + episode_name)
