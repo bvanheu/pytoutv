@@ -134,7 +134,10 @@ Try to delete the cache by removing the file named ".toutv\_cache" in the same d
 
 Contact Benjamin Vanheuverzwijn <bvanheu@gmail.com> (French or English)
 
-## Thanks
+## Thanks to
 
-- Thanks to Marc-Etienne M. Leveille
-- Thanks to Simon Marchi <simark>
+- Alexandre Vezina <avezina>
+- Alexis Dorais-Joncas <balexis>
+- Israel Halle <isra17>
+- Marc-Etienne M. Leveille
+- Simon Marchi <simark>
