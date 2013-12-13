@@ -37,6 +37,7 @@ from Crypto.Cipher import AES
 import struct
 import textwrap
 import re
+import string
 
 from toutv import client, cache, m3u8, progressbar
 
@@ -124,7 +125,11 @@ class ToutvConsoleApp():
             if url_result is None: return
             (args.emission, args.episode) = url_result
 
-        self.fetch_episodes(args.emission, args.episode, args.directory, quality=args.quality, bitrate=args.bitrate)
+        if args.emission and not args.episode:
+            self.fetch_episodes(args.emission, args.directory, quality=args.quality, bitrate=args.bitrate)
+
+        if args.emission and args.episode:
+            self.fetch_episode(args.emission, args.episode, args.directory, quality=args.quality, bitrate=args.bitrate)
 
     def command_search(self, args):
         self.search(args.query)
@@ -308,7 +313,30 @@ class ToutvConsoleApp():
         for bitrate in bitrates:
             print("\t" + str(bitrate) + " bit/s")
 
-    def fetch_episodes(self, emission_name, episode_name, directory, quality="AVERAGE", bitrate=0):
+    def fetch_episodes(self, emission_name, directory, quality="AVERAGE", bitrate=0):
+        try:
+            emission = self.get_emission_by_name(emission_name)
+        except NoMatchException as ex:
+            print("unable to find '" + emission_name + "'")
+            print("did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
+            return
+        except TooManyMatchesException as ex:
+            print("unable to find '" + emission_name + "'")
+            print("did you mean one of the following?")
+            for possibility in ex.possibilities:
+                print("\t" + possibility)
+            return
+
+        episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
+
+        if len(episodes):
+            print("Fetching " + str(len(episodes)) + " episodes from " +  emission_name)
+            for episode_id, episode in sorted(episodes.iteritems()):
+                self.fetch_episode(emission_name, episode.Title, directory, quality, bitrate)
+        else:
+            print("No episodes available for " + emission_name)
+
+    def fetch_episode(self, emission_name, episode_name, directory, quality="AVERAGE", bitrate=0):
         try:
             emission = self.get_emission_by_name(emission_name)
         except NoMatchException as ex:
@@ -377,10 +405,15 @@ class ToutvConsoleApp():
         if not os.path.exists(os.path.expanduser(directory)):
             os.mkdir(os.path.expanduser(directory))
 
+        # Remove illegal chars from filename
+        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        filename = emission.Title + "-" + episode.Title + ".ts"
+        filename = ''.join(c for c in filename if c in valid_chars)
+
         sys.stdout.write("Downloading " + str(len(playlist.segments)) + " segments...\n")
         sys.stdout.flush()
         progress_bar = progressbar.ProgressBar(0, len(playlist.segments), mode='fixed')
-        output_file = open(os.path.join(os.path.expanduser(directory), emission.Title + "-" + episode.Title + ".ts"), "wb")
+        output_file = open(os.path.join(os.path.expanduser(directory), filename), "wb")
         count = 1
         for segment in playlist.segments:
             request = urllib2.Request(segment.uri, None, {'User-Agent' : client.IPHONE4_USER_AGENT})
