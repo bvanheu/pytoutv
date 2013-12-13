@@ -136,8 +136,9 @@ Contact Benjamin Vanheuverzwijn <bvanheu@gmail.com> (French or English)
 
 ## Thanks to
 
-- Alexandre Vezina <avezina>
-- Alexis Dorais-Joncas <balexis>
-- Israel Halle <isra17>
+- Alexandre Vezina @avezina
+- Alexis Dorais-Joncas @balexis
+- Israel Halle @isra17
 - Marc-Etienne M. Leveille
-- Simon Marchi <simark>
+- Simon Marchi @simark
+- Simon Carpenter @scarpentier
