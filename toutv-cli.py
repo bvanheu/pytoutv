@@ -37,6 +37,7 @@ from Crypto.Cipher import AES
 import struct
 import textwrap
 import re
+import string
 
 from toutv import client, cache, m3u8, progressbar
 
@@ -404,10 +405,15 @@ class ToutvConsoleApp():
         if not os.path.exists(os.path.expanduser(directory)):
             os.mkdir(os.path.expanduser(directory))
 
+        # Remove illegal chars from filename
+        valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+        filename = emission.Title + "-" + episode.Title + ".ts"
+        filename = ''.join(c for c in filename if c in valid_chars)
+
         sys.stdout.write("Downloading " + str(len(playlist.segments)) + " segments...\n")
         sys.stdout.flush()
         progress_bar = progressbar.ProgressBar(0, len(playlist.segments), mode='fixed')
-        output_file = open(os.path.join(os.path.expanduser(directory), emission.Title + "-" + episode.Title + ".ts"), "wb")
+        output_file = open(os.path.join(os.path.expanduser(directory), filename), "wb")
         count = 1
         for segment in playlist.segments:
             request = urllib2.Request(segment.uri, None, {'User-Agent' : client.IPHONE4_USER_AGENT})
