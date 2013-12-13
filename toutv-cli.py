@@ -404,7 +404,7 @@ class ToutvConsoleApp():
 
         if not os.path.exists(os.path.expanduser(directory)):
             os.mkdir(os.path.expanduser(directory))
-			
+
         # Remove illegal chars from filename
         valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
         filename = emission.Title + "-" + episode.Title + ".ts"
