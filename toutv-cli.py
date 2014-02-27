@@ -38,6 +38,7 @@ import struct
 import textwrap
 import re
 import string
+import xdg.BaseDirectory
 
 from toutv import client, cache, m3u8, progressbar
 
@@ -96,7 +97,10 @@ class ToutvConsoleApp():
 
     def build_toutvclient(self):
         transport_impl = client.TransportJson()
-        cache_impl = cache.CacheShelve(".toutv_cache")
+        cache_impl = cache.CacheShelve(
+            os.path.join(
+                xdg.BaseDirectory.save_cache_path('toutv'),
+                '.toutv_cache.txt'))
 
         toutvclient = client.ToutvClient(transport_impl, cache_impl)
 
