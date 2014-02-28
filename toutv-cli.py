@@ -38,6 +38,7 @@ import struct
 import textwrap
 import re
 import string
+import platform
 
 from toutv import client, cache, m3u8, progressbar
 
@@ -96,7 +97,22 @@ class ToutvConsoleApp():
 
     def build_toutvclient(self):
         transport_impl = client.TransportJson()
-        cache_impl = cache.CacheShelve(".toutv_cache")
+
+        if platform.system() == 'Linux':
+            try:
+                if not os.path.exists(os.environ['XDG_CACHE_DIR'] + '/toutv'):
+                    os.makedirs(os.environ['XDG_CACHE_DIR'] + '/toutv')
+                cache_impl = cache.CacheShelve(
+                    os.environ['XDG_CACHE_DIR'] + '/toutv/.toutv_cache')
+            except KeyError:
+                if not os.path.exists(
+                    os.environ['HOME'] + '/.cache/toutv'):
+                    os.makedirs(
+                        os.environ['HOME'] + '/.cache/toutv')
+                cache_impl = cache.CacheShelve(
+                    os.environ['HOME'] + '/.cache/toutv/.toutv_cache')
+        else:
+            cache_impl = cache.CacheShelve(".toutv_cache")
 
         toutvclient = client.ToutvClient(transport_impl, cache_impl)
 
