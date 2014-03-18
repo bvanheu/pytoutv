@@ -26,8 +26,9 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
-import urllib2
-import urllib
+import urllib.request
+import urllib.parse
+import urllib.error
 
 IPHONE4_USER_AGENT = "Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7"
 TOUTV_WSDL_URL = "http://api.tou.tv/v1/TouTVAPIService.svc?wsdl"
@@ -55,9 +56,7 @@ class MapperJson(Mapper):
         for key in bo_vars.keys():
             value = dto[key]
 
-            if isinstance(value, unicode):
-                value = value.encode("utf-8")
-            elif isinstance(value, dict):
+            if isinstance(value, dict):
                 if value["__type"] == "GenreDTO:#RC.Svc.Web.TouTV":
                     value = self.dto_to_bo(value, "Genre")
                 elif value["__type"] in ["EmissionDTO:#RC.Svc.Web.TouTV", "EmissionDTO:RC.Svc.Web.TouTV"]:
@@ -313,10 +312,10 @@ class TransportJson(Transport):
         self.mapper = MapperJson()
 
     def _do_query(self, method, parameters={}):
-        parameters_str = urllib.urlencode(parameters)
+        parameters_str = urllib.parse.urlencode(parameters)
         url = TOUTV_JSON_URL + method + '?' + parameters_str
-        request = urllib2.Request(url, None, {"User-Agent" : IPHONE4_USER_AGENT})
-        json_decoded = self.json_decoder.decode(urllib2.urlopen(request).read())
+        request = urllib.request.Request(url, None, {"User-Agent" : IPHONE4_USER_AGENT})
+        json_decoded = self.json_decoder.decode(urllib.request.urlopen(request).read().decode('utf-8'))
         return json_decoded["d"]
 
     def get_emissions(self):
@@ -408,9 +407,9 @@ class ToutvClient():
         return episodes_per_emission[emission_id]
 
     def fetch_playlist_url(self, episode_pid):
-        req = urllib2.Request(TOUTV_PLAYLIST_URL % episode_pid, None, {"User-Agent" : IPHONE4_USER_AGENT})
-
-        response = json.load(urllib2.urlopen(req))
+        req = urllib.request.Request(TOUTV_PLAYLIST_URL % episode_pid, None, {"User-Agent" : IPHONE4_USER_AGENT})
+        file_contents = urllib.request.urlopen(req).read().decode('utf-8')
+        response = json.loads(file_contents)
 
         if response['errorCode']:
             raise Exception(response['message'])

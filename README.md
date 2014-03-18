@@ -127,8 +127,8 @@ Try to delete the cache by removing the file named ".toutv\_cache" in the same d
 
 ## Dependencies:
 
-- python 2.7
-- [pycrypto](https://www.dlitz.net/software/pycrypto/)
+- Python 3
+- [PyCrypto](https://www.dlitz.net/software/pycrypto/)
 
 ## Bugs
 

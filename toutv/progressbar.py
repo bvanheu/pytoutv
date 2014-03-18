@@ -87,4 +87,4 @@ class ProgressBar:
 
 
     def __str__(self):
-        return str(self.bar)
+        return self.bar

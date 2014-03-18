@@ -60,7 +60,7 @@ class CacheShelve(Cache):
         self.shelve[key] = (datetime.now() + expire, value)
 
     def _has_key(self, key):
-        if self.shelve.has_key(key):
+        if key in self.shelve:
             (expire, value) = self.shelve[key]
             if datetime.now() < expire:
                 return True

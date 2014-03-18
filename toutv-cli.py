@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 # Copyright (c) 2012, Benjamin Vanheuverzwijn <bvanheu@gmail.com>
 # All rights reserved.
@@ -30,8 +30,10 @@
 import argparse
 import os
 import sys
-import cookielib
-import urllib2
+import http.cookiejar
+import urllib.request
+import urllib.error
+import urllib.parse
 import difflib
 from Crypto.Cipher import AES
 import struct
@@ -255,11 +257,11 @@ class ToutvConsoleApp():
             else:
                 print("\tunknown")
 
-            print "Tags: ",
+            print("Tags: ")
             if emission.EstContenuJeunesse:
-                print "jeune ",
+                print("jeune ")
             if emission.EstExclusiviteRogers:
-                print "rogers "
+                print("rogers ")
         except NoMatchException as ex:
             print("Unable to find '" + emission_name + "'")
             print("Did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
@@ -313,11 +315,12 @@ class ToutvConsoleApp():
         else:
             print("No description")
 
-        urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar())))
+        urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.LWPCookieJar())))
+
         url = self.toutvclient.fetch_playlist_url(episode.PID)
 
-        request = urllib2.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
-        m3u8_file = urllib2.urlopen(request).read()
+        request = urllib.request.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
+        m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
         m3u8_parser = m3u8.M3u8_Parser()
 
@@ -347,7 +350,7 @@ class ToutvConsoleApp():
 
         if len(episodes):
             print("Fetching " + str(len(episodes)) + " episodes from " +  emission_name)
-            for episode_id, episode in sorted(episodes.iteritems()):
+            for episode_id, episode in sorted(episodes.items()):
                 self.fetch_episode(emission_name, episode.Title, directory, quality, bitrate)
         else:
             print("No episodes available for " + emission_name)
@@ -382,10 +385,12 @@ class ToutvConsoleApp():
         print("Emission and episode:")
         print("\t" + emission.Title + " - " + episode.Title + "\t(" + episode.SeasonAndEpisode + ")")
 
-        urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor(cookielib.LWPCookieJar())))
+        urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.LWPCookieJar())))
+
         url = self.toutvclient.fetch_playlist_url(episode.PID)
-        request = urllib2.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
-        m3u8_file = urllib2.urlopen(request).read()
+        request = urllib.request.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
+        m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
+
 
         m3u8_parser = m3u8.M3u8_Parser()
 
@@ -406,13 +411,15 @@ class ToutvConsoleApp():
 
         print("Fetching video with bitrate " + str(stream.bandwidth) + " bit/s")
 
-        request = urllib2.Request(stream.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT} )
-        m3u8_file = urllib2.urlopen(request).read()
+        request = urllib.request.Request(stream.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT} )
+        m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
+
 
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(stream.uri))
 
-        request = urllib2.Request(playlist.segments[0].key.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT})
-        key = urllib2.urlopen(request).read()
+        request = urllib.request.Request(playlist.segments[0].key.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT})
+        key = urllib.request.urlopen(request).read()
+
 
         # Output file handling
         if directory is None:
@@ -432,8 +439,8 @@ class ToutvConsoleApp():
         output_file = open(os.path.join(os.path.expanduser(directory), filename), "wb")
         count = 1
         for segment in playlist.segments:
-            request = urllib2.Request(segment.uri, None, {'User-Agent' : client.IPHONE4_USER_AGENT})
-            ts_file = urllib2.urlopen(request).read()
+            request = urllib.request.Request(segment.uri, None, {'User-Agent' : client.IPHONE4_USER_AGENT})
+            ts_file = urllib.request.urlopen(request).read()
 
             aes = AES.new(key, AES.MODE_CBC, struct.pack(">IIII", 0x0, 0x0, 0x0, count))
 
@@ -442,7 +449,7 @@ class ToutvConsoleApp():
             count += 1
 
             progress_bar.increment_amount()
-            print progress_bar, '\r',
+            sys.stdout.write(str(progress_bar) + '\r')
             sys.stdout.flush()
 
         sys.stdout.write("\n")
@@ -494,7 +501,7 @@ class ToutvConsoleApp():
         emission_name_upper = emission_name.upper()
 
         possibilities = []
-        for emission_id, emission in emissions.iteritems():
+        for emission_id, emission in emissions.items():
             possibilities.append(str(emission.Id))
             # Store titles in uppercase for case-insensitive comparisons.
             possibilities.append(str(emission.Title.upper()))
@@ -510,7 +517,7 @@ class ToutvConsoleApp():
             raise NoMatchException(close_matches[0])
 
         # Got an exact match
-        for emission_id, emission in emissions.iteritems():
+        for emission_id, emission in emissions.items():
             if emission_name_upper in [str(emission.Id), emission.Title.upper()]:
                 return emission
 
@@ -521,7 +528,7 @@ class ToutvConsoleApp():
         episode_name_upper = episode_name.upper()
 
         possibilities = []
-        for episode_id, episode in episodes.iteritems():
+        for episode_id, episode in episodes.items():
             possibilities.append(str(episode.Id))
             possibilities.append(str(episode.Title.upper()))
             possibilities.append(str(episode.SeasonAndEpisode))
@@ -540,7 +547,7 @@ class ToutvConsoleApp():
             raise NoMatchException(close_matches[0])
 
         # Got an exact match
-        for episode_id, episode in episodes.iteritems():
+        for episode_id, episode in episodes.items():
             if episode_name_upper in [str(episode.Id), episode.Title.upper(), episode.SeasonAndEpisode]:
                 return episode
 
@@ -548,18 +555,18 @@ class ToutvConsoleApp():
 
     def get_episode_from_url(self, url):
         try:
-            response = urllib2.urlopen(url)
+            response = urllib.request.urlopen(url)
 
             #extract emission and episode id from meta tag
-            found = re.search('<meta +content="([^".]+)\\.([^"]+)" +name="ProfilingEmisodeToken" +/>', response.read())
+            found = re.search('<meta +content="([^".]+)\\.([^"]+)" +name="ProfilingEmisodeToken" +/>', response.read().decode('utf-8'))
             if found is None:
-                print 'Cannot find episode information in %s' % response.url
+                print('Cannot find episode information in %s' % response.url)
             else:
                 return found.groups()
-        except urllib2.HTTPError as ex:
-            print 'Cannot open %s: %d %s' % (ex.url, ex.code, ex.reason)
+        except urllib.error.HTTPError as ex:
+            print('Cannot open %s: %d %s' % (ex.url, ex.code, ex.reason))
         except IOError as ex:
-            print 'Cannot open %s: %s' % (url, ex.reason)
+            print('Cannot open %s: %s' % (url, ex.reason))
 
 #
 # _/~MAIN~\_
