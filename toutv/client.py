@@ -340,7 +340,7 @@ class TransportJson(Transport):
                 for emissionrepertoire_dto in repertoire_dto['Emissions']:
                     er = self.mapper.dto_to_bo(emissionrepertoire_dto,
                                                'EmissionRepertoire')
-                    emissionrepertoires[emissionrepertoire.Id] = er
+                    emissionrepertoires[er.Id] = er
                 repertoire['emissionrepertoire'] = emissionrepertoires
             # Genre
             if repertoire_dto['Genres']:
