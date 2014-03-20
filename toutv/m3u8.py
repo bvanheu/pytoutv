@@ -28,6 +28,10 @@
 import re
 
 
+SIGNATURE = '#EXTM3U'
+EXT_PREFIX = '#EXT'
+
+
 class Tags:
     EXT_X_BYTERANGE = 'EXT-X-BYTERANGE'
     EXT_X_TARGETDURATION = 'EXT-X-TARGETDURATION'
@@ -123,97 +127,97 @@ class Playlist:
         self.segments = segments
 
 
-class Parser:
-    SIGNATURE = '#EXTM3U'
-    EXT_PREFIX = '#EXT'
+def _validate(lines):
+    return lines[0].strip() == SIGNATURE
 
-    def validate(self, lines):
-        return lines[0].strip() == Parser.SIGNATURE
 
-    def parse_line(self, line):
-        if ':' not in line:
-            return (line[1:], '')
-        tagname, attributes = line.split(':', 1)
+def _parse_line(line):
+    if ':' not in line:
+        return (line[1:], '')
+    tagname, attributes = line.split(':', 1)
 
-        # Remove the '#'
-        tagname = tagname[1:]
+    # Remove the '#'
+    tagname = tagname[1:]
 
-        return tagname, attributes
+    return tagname, attributes
 
-    def line_is_tag(self, line):
-        return line[0:4] == Parser.EXT_PREFIX
 
-    def line_is_relative_uri(self, line):
-        return line[0:4] != 'http'
+def _line_is_tag(line):
+    return line[0:4] == EXT_PREFIX
 
-    def parse(self, data, base_uri):
-        streams = []
-        segments = []
-        current_key = None
-        allow_cache = False
-        target_duration = 0
-        media_sequence = 0
-        version = 0
-        playlist_type = None
-        lines = data.split('\n')
 
-        if not self.validate(lines):
-            raise Exception('Invalid M3U8 file: "{}"'.format(lines[0]))
+def _line_is_relative_uri(line):
+    return line[0:4] != 'http'
 
-        for count in range(1, len(lines)):
-            if not self.line_is_tag(lines[count]):
-                continue
 
-            tagname, attributes = self.parse_line(lines[count])
+def parse(data, base_uri):
+    streams = []
+    segments = []
+    current_key = None
+    allow_cache = False
+    target_duration = 0
+    media_sequence = 0
+    version = 0
+    playlist_type = None
+    lines = data.split('\n')
 
-            if tagname == Tags.EXT_X_TARGETDURATION:
-                target_duration = int(attributes)
-            elif tagname == Tags.EXT_X_MEDIA_SEQUENCE:
-                media_sequence = int(attributes)
-            elif tagname == Tags.EXT_X_KEY:
-                current_key = Key()
+    if not _validate(lines):
+        raise Exception('Invalid M3U8 file: "{}"'.format(lines[0]))
 
-                # TODO: do not use split since a URL may contain ','
-                attributes = attributes.split(',', 1)
-                for attribute in attributes:
-                    name, value = attribute.split('=', 1)
-                    name = name.strip()
-                    value = value.strip('"').strip()
-                    current_key.set_attribute(name, value)
-            elif tagname == Tags.EXT_X_ALLOW_CACHE:
-                allow_cache = (attributes.strip() == 'YES')
-            elif tagname == Tags.EXT_X_PLAYLIST_TYPE:
-                playlist_type = attributes.strip()
-            elif tagname == Tags.EXT_X_STREAM_INF:
-                stream = Stream()
+    for count in range(1, len(lines)):
+        if not _line_is_tag(lines[count]):
+            continue
 
-                # Will match <PROGRAM-ID=1,BANDWIDTH=461000,RESOLUTION=480x270,CODECS="avc1.66.30, mp4a.40.5">
-                regex = r'([\w-]+=(?:[a-zA-Z0-9]|"[a-zA-Z0-9,. ]*")+),?'
-                attributes = re.findall(regex, attributes)
-                for attribute in attributes:
-                    name, value = attribute.split('=')
-                    name = name.strip()
-                    value = value.strip()
-                    stream.set_attribute(name, value)
-                stream.uri = lines[count + 1]
-                if self.line_is_relative_uri(stream.uri):
-                    stream.uri = '/'.join(base_uri, stream.uri)
-                streams.append(stream)
-            elif tagname == Tags.EXT_X_VERSION:
-                version = attributes
-            elif tagname == Tags.EXTINF:
-                duration, title = attributes.split(',')
-                segment = Segment()
-                segment.key = current_key
-                segment.duration = int(duration.strip())
-                segment.title = title.strip()
-                segment.uri = lines[count + 1]
-                if self.line_is_relative_uri(segment.uri):
-                    segment.uri = '/'.join(base_uri, segment.uri)
-                segments.append(segment)
-            else:
-                # Ignore as specified in the RFC
-                continue
+        tagname, attributes = _parse_line(lines[count])
 
-        return Playlist(target_duration, media_sequence, allow_cache,
-                        playlist_type, version, streams, segments)
+        if tagname == Tags.EXT_X_TARGETDURATION:
+            target_duration = int(attributes)
+        elif tagname == Tags.EXT_X_MEDIA_SEQUENCE:
+            media_sequence = int(attributes)
+        elif tagname == Tags.EXT_X_KEY:
+            current_key = Key()
+
+            # TODO: do not use split since a URL may contain ','
+            attributes = attributes.split(',', 1)
+            for attribute in attributes:
+                name, value = attribute.split('=', 1)
+                name = name.strip()
+                value = value.strip('"').strip()
+                current_key.set_attribute(name, value)
+        elif tagname == Tags.EXT_X_ALLOW_CACHE:
+            allow_cache = (attributes.strip() == 'YES')
+        elif tagname == Tags.EXT_X_PLAYLIST_TYPE:
+            playlist_type = attributes.strip()
+        elif tagname == Tags.EXT_X_STREAM_INF:
+            stream = Stream()
+
+            # Will match <PROGRAM-ID=1,BANDWIDTH=461000,RESOLUTION=480x270,CODECS="avc1.66.30, mp4a.40.5">
+            regex = r'([\w-]+=(?:[a-zA-Z0-9]|"[a-zA-Z0-9,. ]*")+),?'
+            attributes = re.findall(regex, attributes)
+            for attribute in attributes:
+                name, value = attribute.split('=')
+                name = name.strip()
+                value = value.strip()
+                stream.set_attribute(name, value)
+            stream.uri = lines[count + 1]
+            if _line_is_relative_uri(stream.uri):
+                stream.uri = '/'.join(base_uri, stream.uri)
+            streams.append(stream)
+        elif tagname == Tags.EXT_X_VERSION:
+            version = attributes
+        elif tagname == Tags.EXTINF:
+            duration, title = attributes.split(',')
+            segment = Segment()
+            segment.key = current_key
+            segment.duration = int(duration.strip())
+            segment.title = title.strip()
+            segment.uri = lines[count + 1]
+            if _line_is_relative_uri(segment.uri):
+                segment.uri = '/'.join(base_uri, segment.uri)
+            segments.append(segment)
+        else:
+            # Ignore as specified in the RFC
+            continue
+
+    return Playlist(target_duration, media_sequence, allow_cache,
+                    playlist_type, version, streams, segments)

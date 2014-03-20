@@ -322,9 +322,7 @@ class ToutvConsoleApp():
         request = urllib.request.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
-        m3u8_parser = m3u8.Parser()
-
-        playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
+        playlist = m3u8.parse(m3u8_file, os.path.dirname(url))
 
         bitrates = self.get_video_bitrates(playlist)
 
@@ -392,9 +390,7 @@ class ToutvConsoleApp():
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
 
-        m3u8_parser = m3u8.Parser()
-
-        playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
+        playlist = m3u8.parse(m3u8_file, os.path.dirname(url))
 
         # Stream bandwidth selection
         bitrates = self.get_video_bitrates(playlist)
@@ -415,7 +411,7 @@ class ToutvConsoleApp():
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
 
-        playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(stream.uri))
+        playlist = m3u8.parse(m3u8_file, os.path.dirname(stream.uri))
 
         request = urllib.request.Request(playlist.segments[0].key.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT})
         key = urllib.request.urlopen(request).read()
