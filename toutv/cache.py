@@ -30,7 +30,7 @@ from datetime import datetime
 from datetime import timedelta
 
 
-class Cache():
+class Cache:
     def __init__(self):
         pass
 
