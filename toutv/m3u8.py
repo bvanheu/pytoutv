@@ -112,7 +112,8 @@ class Segment:
 
 
 class Playlist:
-    def __init__(self, target_duration, media_sequence, allow_cache, playlist_type, version, streams, segments):
+    def __init__(self, target_duration, media_sequence, allow_cache,
+                 playlist_type, version, streams, segments):
         self.target_duration = target_duration
         self.media_sequence = media_sequence
         self.allow_cache = allow_cache
@@ -184,7 +185,8 @@ class Parser:
                 stream = Stream()
 
                 # Will match <PROGRAM-ID=1,BANDWIDTH=461000,RESOLUTION=480x270,CODECS="avc1.66.30, mp4a.40.5">
-                attributes = re.findall(r'([\w-]+=(?:[a-zA-Z0-9]|"[a-zA-Z0-9,. ]*")+),?', attributes)
+                regex = r'([\w-]+=(?:[a-zA-Z0-9]|"[a-zA-Z0-9,. ]*")+),?'
+                attributes = re.findall(regex, attributes)
                 for attribute in attributes:
                     name, value = attribute.split('=')
                     name = name.strip()
