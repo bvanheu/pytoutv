@@ -369,7 +369,7 @@ class TransportJson(Transport):
         return searchresults
 
 
-class ToutvClient():
+class Client:
     def __init__(self, transport, cache):
         self.transport = transport
         self.cache = cache

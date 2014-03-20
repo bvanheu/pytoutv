@@ -41,8 +41,10 @@ import textwrap
 import re
 import string
 import platform
-
-from toutv import client, cache, m3u8, progressbar
+import toutv.client
+import toutv.cache
+from toutv import m3u8
+from toutv import progressbar
 
 class TooManyMatchesException(Exception):
     def __init__(self, possibilities):
@@ -98,25 +100,25 @@ class ToutvConsoleApp():
         return parser
 
     def build_toutvclient(self):
-        transport_impl = client.TransportJson()
+        transport_impl = toutv.client.TransportJson()
 
         if platform.system() == 'Linux':
             try:
                 if not os.path.exists(os.environ['XDG_CACHE_DIR'] + '/toutv'):
                     os.makedirs(os.environ['XDG_CACHE_DIR'] + '/toutv')
-                cache_impl = cache.CacheShelve(
+                cache_impl = toutv.cache.CacheShelve(
                     os.environ['XDG_CACHE_DIR'] + '/toutv/.toutv_cache')
             except KeyError:
                 if not os.path.exists(
                     os.environ['HOME'] + '/.cache/toutv'):
                     os.makedirs(
                         os.environ['HOME'] + '/.cache/toutv')
-                cache_impl = cache.CacheShelve(
+                cache_impl = toutv.cache.CacheShelve(
                     os.environ['HOME'] + '/.cache/toutv/.toutv_cache')
         else:
-            cache_impl = cache.CacheShelve(".toutv_cache")
+            cache_impl = toutv.cache.CacheShelve(".toutv_cache")
 
-        toutvclient = client.ToutvClient(transport_impl, cache_impl)
+        toutvclient = toutv.client.Client(transport_impl, cache_impl)
 
         return toutvclient
 
@@ -319,7 +321,7 @@ class ToutvConsoleApp():
 
         url = self.toutvclient.fetch_playlist_url(episode.PID)
 
-        request = urllib.request.Request(url, None, {"User-Agent" : client.USER_AGENT})
+        request = urllib.request.Request(url, None, {"User-Agent" : toutv.client.USER_AGENT})
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
         playlist = m3u8.parse(m3u8_file, os.path.dirname(url))
