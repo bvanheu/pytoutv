@@ -322,7 +322,7 @@ class ToutvConsoleApp():
         request = urllib.request.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
-        m3u8_parser = m3u8.M3u8_Parser()
+        m3u8_parser = m3u8.Parser()
 
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
 
@@ -392,7 +392,7 @@ class ToutvConsoleApp():
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
 
-        m3u8_parser = m3u8.M3u8_Parser()
+        m3u8_parser = m3u8.Parser()
 
         playlist = m3u8_parser.parse(m3u8_file, os.path.dirname(url))
 

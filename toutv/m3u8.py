@@ -27,33 +27,32 @@
 
 import re
 
-class M3u8_Tag():
-    EXT_X_BYTERANGE = "EXT-X-BYTERANGE"
-    EXT_X_TARGETDURATION = "EXT-X-TARGETDURATION"
-    EXT_X_MEDIA_SEQUENCE = "EXT-X-MEDIA-SEQUENCE"
-    EXT_X_KEY = "EXT-X-KEY"
-    EXT_X_PROGRAM_DATE_TIME = "EXT-X-PROGRAM-DATE-TIME"
-    EXT_X_ALLOW_CACHE = "EXT-X-ALLOW-CACHE"
-    EXT_X_PLAYLIST_TYPE = "EXT-X-PLAYLIST-TYPE"
-    EXT_X_ENDLIST = "EXT-X-ENDLIST"
-    EXT_X_MEDIA = "EXT-X-MEDIA"
-    EXT_X_STREAM_INF = "EXT-X-STREAM-INF"
-    EXT_X_DISCONTINUITY = "EXT-X-DISCONTINUITY"
-    EXT_X_I_FRAMES_ONLY = "EXT-X-I-FRAMES-ONLY"
-    EXT_X_I_FRAME_STREAM_INF = "EXT-X-I-FRAME-STREAM-INF"
-    EXT_X_VERSION = "EXT-X-VERSION"
-    EXTINF = "EXTINF"
 
-    def set_attribute(name, value):
-        pass
+class Tags:
+    EXT_X_BYTERANGE = 'EXT-X-BYTERANGE'
+    EXT_X_TARGETDURATION = 'EXT-X-TARGETDURATION'
+    EXT_X_MEDIA_SEQUENCE = 'EXT-X-MEDIA-SEQUENCE'
+    EXT_X_KEY = 'EXT-X-KEY'
+    EXT_X_PROGRAM_DATE_TIME = 'EXT-X-PROGRAM-DATE-TIME'
+    EXT_X_ALLOW_CACHE = 'EXT-X-ALLOW-CACHE'
+    EXT_X_PLAYLIST_TYPE = 'EXT-X-PLAYLIST-TYPE'
+    EXT_X_ENDLIST = 'EXT-X-ENDLIST'
+    EXT_X_MEDIA = 'EXT-X-MEDIA'
+    EXT_X_STREAM_INF = 'EXT-X-STREAM-INF'
+    EXT_X_DISCONTINUITY = 'EXT-X-DISCONTINUITY'
+    EXT_X_I_FRAMES_ONLY = 'EXT-X-I-FRAMES-ONLY'
+    EXT_X_I_FRAME_STREAM_INF = 'EXT-X-I-FRAME-STREAM-INF'
+    EXT_X_VERSION = 'EXT-X-VERSION'
+    EXTINF = 'EXTINF'
 
-class M3u8_Stream():
-    BANDWIDTH = "BANDWIDTH"
-    PROGRAM_ID = "PROGRAM-ID"
-    CODECS = "CODECS"
-    RESOLUTION = "RESOLUTION"
-    AUDIO = "AUDIO"
-    VIDEO = "VIDEO"
+
+class Stream:
+    BANDWIDTH = 'BANDWIDTH'
+    PROGRAM_ID = 'PROGRAM-ID'
+    CODECS = 'CODECS'
+    RESOLUTION = 'RESOLUTION'
+    AUDIO = 'AUDIO'
+    VIDEO = 'VIDEO'
 
     def __init__(self):
         self.bandwidth = None
@@ -81,13 +80,11 @@ class M3u8_Stream():
     def set_uri(self, uri):
         self.uri = uri
 
-#
-# EXT-X-KEY tag
-#
-class M3u8_Key:
-    METHOD = "METHOD"
-    URI = "URI"
-    IV = "IV"
+
+class Key:
+    METHOD = 'METHOD'
+    URI = 'URI'
+    IV = 'IV'
 
     def __init__(self):
         self.method = None
@@ -102,10 +99,8 @@ class M3u8_Key:
         elif name == self.IV:
             self.iv = value
 
-#
-# EXTINF tag
-#
-class M3u8_Segment():
+
+class Segment:
     def __init__(self):
         self.key = None
         self.duration = None
@@ -113,12 +108,10 @@ class M3u8_Segment():
         self.uri = None
 
     def is_encrypted(self):
-        return self.key != None
+        return self.key is not None
 
-#
-# M3u8 playlist
-#
-class M3u8_Playlist():
+
+class Playlist:
     def __init__(self, target_duration, media_sequence, allow_cache, playlist_type, version, streams, segments):
         self.target_duration = target_duration
         self.media_sequence = media_sequence
@@ -128,134 +121,94 @@ class M3u8_Playlist():
         self.streams = streams
         self.segments = segments
 
-#
-# M3U8 parser
-# A better implementation:
-# http://gitorious.org/hls-player/hls-player/blobs/master/HLS/m3u8.py
-#
-class M3u8_Parser():
-    def __init__(self):
-        pass
 
+class Parser:
     def validate(self, lines):
-        return lines[0] == "#EXTM3U"
+        return lines[0].strip() == '#EXTM3U'
 
     def parse_line(self, line):
-        if ":" not in line:
-            return (line[1:], "")
-
-        (tagname, attributes) = line.split(':', 1)
+        if ':' not in line:
+            return (line[1:], '')
+        tagname, attributes = line.split(':', 1)
 
         # Remove the '#'
         tagname = tagname[1:]
 
-        return (tagname, attributes)
+        return tagname, attributes
 
     def line_is_tag(self, line):
-        return line[0:4] == "#EXT"
+        return line[0:4] == '#EXT'
 
     def line_is_relative_uri(self, line):
-        return line[0:4] != "http"
+        return line[0:4] != 'http'
 
     def parse(self, data, base_uri):
         streams = []
         segments = []
-
         current_key = None
-
         allow_cache = False
         target_duration = 0
         media_sequence = 0
         version = 0
         playlist_type = None
-
-        lines = data.split("\n")
+        lines = data.split('\n')
 
         if not self.validate(lines):
-            raise Exception("invalid m3u8 file <" + lines[0] + ">")
+            raise Exception('Invalid M3U8 file: "{}"'.format(lines[0]))
 
         for count in range(1, len(lines)):
-
-            if not (self.line_is_tag(lines[count])):
+            if not self.line_is_tag(lines[count]):
                 continue
 
-            (tagname, attributes) = self.parse_line(lines[count])
+            tagname, attributes = self.parse_line(lines[count])
 
-            if tagname == M3u8_Tag.EXT_X_BYTERANGE:
-                pass
-
-            if tagname == M3u8_Tag.EXT_X_TARGETDURATION:
+            if tagname == Tags.EXT_X_TARGETDURATION:
                 target_duration = int(attributes)
-
-            elif tagname == M3u8_Tag.EXT_X_MEDIA_SEQUENCE:
+            elif tagname == Tags.EXT_X_MEDIA_SEQUENCE:
                 media_sequence = int(attributes)
+            elif tagname == Tags.EXT_X_KEY:
+                current_key = Key()
 
-            elif tagname == M3u8_Tag.EXT_X_KEY:
-                current_key = M3u8_Key()
-
-                # TODO - we cannot use split since there could have some ',' in the url
-                attributes = attributes.split(",", 1)
+                # TODO: do not use split since a URL may contain ','
+                attributes = attributes.split(',', 1)
                 for attribute in attributes:
-                    (name, value) = attribute.split("=", 1)
-                    current_key.set_attribute(name.strip(), value.strip('"').strip())
-
-            elif tagname == M3u8_Tag.EXT_X_PROGRAM_DATE_TIME:
-                pass
-
-            elif tagname == M3u8_Tag.EXT_X_ALLOW_CACHE:
-                allow_cache = (attributes.strip() == "YES")
-
-            elif tagname == M3u8_Tag.EXT_X_PLAYLIST_TYPE:
+                    name, value = attribute.split('=', 1)
+                    name = name.strip()
+                    value = value.strip('"').strip()
+                    current_key.set_attribute(name, value)
+            elif tagname == Tags.EXT_X_ALLOW_CACHE:
+                allow_cache = (attributes.strip() == 'YES')
+            elif tagname == Tags.EXT_X_PLAYLIST_TYPE:
                 playlist_type = attributes.strip()
-
-            elif tagname == M3u8_Tag.EXT_X_ENDLIST:
-                pass
-
-            elif tagname == M3u8_Tag.EXT_X_MEDIA:
-                pass
-
-            elif tagname == M3u8_Tag.EXT_X_STREAM_INF:
-                stream = M3u8_Stream()
+            elif tagname == Tags.EXT_X_STREAM_INF:
+                stream = Stream()
 
                 # Will match <PROGRAM-ID=1,BANDWIDTH=461000,RESOLUTION=480x270,CODECS="avc1.66.30, mp4a.40.5">
-                attributes = re.findall(r"([\w-]+=(?:[a-zA-Z0-9]|\"[a-zA-Z0-9,. ]*\")+),?", attributes)
-
+                attributes = re.findall(r'([\w-]+=(?:[a-zA-Z0-9]|"[a-zA-Z0-9,. ]*")+),?', attributes)
                 for attribute in attributes:
-                    (name, value) = attribute.split("=")
-                    stream.set_attribute(name.strip(), value.strip())
-
-                stream.uri = lines[count+1]
+                    name, value = attribute.split('=')
+                    name = name.strip()
+                    value = value.strip()
+                    stream.set_attribute(name, value)
+                stream.uri = lines[count + 1]
                 if self.line_is_relative_uri(stream.uri):
-                    stream.uri = base_uri + "/" + stream.uri
-
+                    stream.uri = '/'.join(base_uri, stream.uri)
                 streams.append(stream)
-
-            elif tagname == M3u8_Tag.EXT_X_DISCONTINUITY:
-                pass
-
-            elif tagname == M3u8_Tag.EXT_X_I_FRAMES_ONLY:
-                pass
-
-            elif tagname == M3u8_Tag.EXT_X_I_FRAME_STREAM_INF:
-                pass
-
-            elif tagname == M3u8_Tag.EXT_X_VERSION:
+            elif tagname == Tags.EXT_X_VERSION:
                 version = attributes
-
-            elif tagname == M3u8_Tag.EXTINF:
-                segment = M3u8_Segment()
-                (duration, title) = attributes.split(",")
-
+            elif tagname == Tags.EXTINF:
+                duration, title = attributes.split(',')
+                segment = Segment()
                 segment.key = current_key
                 segment.duration = int(duration.strip())
                 segment.title = title.strip()
-                segment.uri = lines[count+1]
+                segment.uri = lines[count + 1]
                 if self.line_is_relative_uri(segment.uri):
-                    segment.uri = base_uri + "/" + segment.uri
-
+                    segment.uri = '/'.join(base_uri, segment.uri)
                 segments.append(segment)
             else:
                 # Ignore as specified in the RFC
                 continue
 
-        return M3u8_Playlist(target_duration, media_sequence, allow_cache, playlist_type, version, streams, segments)
+        return Playlist(target_duration, media_sequence, allow_cache,
+                        playlist_type, version, streams, segments)
