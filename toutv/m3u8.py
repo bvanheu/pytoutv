@@ -212,7 +212,7 @@ def parse(data, base_uri):
                 stream.set_attribute(name, value)
             stream.uri = lines[count + 1]
             if _line_is_relative_uri(stream.uri):
-                stream.uri = '/'.join(base_uri, stream.uri)
+                stream.uri = '/'.join([base_uri, stream.uri])
             streams.append(stream)
         elif tagname == Tags.EXT_X_VERSION:
             version = attributes
@@ -224,7 +224,7 @@ def parse(data, base_uri):
             segment.title = title.strip()
             segment.uri = lines[count + 1]
             if _line_is_relative_uri(segment.uri):
-                segment.uri = '/'.join(base_uri, segment.uri)
+                segment.uri = '/'.join([base_uri, segment.uri])
             segments.append(segment)
         else:
             # Ignore as specified in the RFC
