@@ -25,10 +25,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
 import json
+import platform
 import urllib.request
 import urllib.parse
 import urllib.error
+import toutv.cache
 
 
 USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7'
@@ -370,7 +373,23 @@ class TransportJson(Transport):
 
 
 class Client:
-    def __init__(self, transport, cache):
+    def __init__(self, transport=None, cache=None):
+        if transport is None:
+            transport = TransportJson()
+        if cache is None:
+            if platform.system() == 'Linux':
+                try:
+                    if not os.path.exists(os.environ['XDG_CACHE_DIR'] + '/toutv'):
+                        os.makedirs(os.environ['XDG_CACHE_DIR'] + '/toutv')
+                    cache = toutv.cache.CacheShelve(os.environ['XDG_CACHE_DIR'] +
+                                                    '/toutv/.toutv_cache')
+                except KeyError:
+                    if not os.path.exists(os.environ['HOME'] + '/.cache/toutv'):
+                        os.makedirs(os.environ['HOME'] + '/.cache/toutv')
+                    cache = toutv.cache.CacheShelve(os.environ['HOME'] +
+                                                    '/.cache/toutv/.toutv_cache')
+            else:
+                cache = toutv.cache.CacheShelve(".toutv_cache")
         self.transport = transport
         self.cache = cache
 
