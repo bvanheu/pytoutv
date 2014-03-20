@@ -319,7 +319,7 @@ class ToutvConsoleApp():
 
         url = self.toutvclient.fetch_playlist_url(episode.PID)
 
-        request = urllib.request.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
+        request = urllib.request.Request(url, None, {"User-Agent" : client.USER_AGENT})
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
         playlist = m3u8.parse(m3u8_file, os.path.dirname(url))
@@ -386,7 +386,7 @@ class ToutvConsoleApp():
         urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.LWPCookieJar())))
 
         url = self.toutvclient.fetch_playlist_url(episode.PID)
-        request = urllib.request.Request(url, None, {"User-Agent" : client.IPHONE4_USER_AGENT})
+        request = urllib.request.Request(url, None, {"User-Agent" : client.USER_AGENT})
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
 
@@ -407,13 +407,13 @@ class ToutvConsoleApp():
 
         print("Fetching video with bitrate " + str(stream.bandwidth) + " bit/s")
 
-        request = urllib.request.Request(stream.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT} )
+        request = urllib.request.Request(stream.uri, None, {'User-Agent': client.USER_AGENT} )
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
 
         playlist = m3u8.parse(m3u8_file, os.path.dirname(stream.uri))
 
-        request = urllib.request.Request(playlist.segments[0].key.uri, None, {'User-Agent': client.IPHONE4_USER_AGENT})
+        request = urllib.request.Request(playlist.segments[0].key.uri, None, {'User-Agent': client.USER_AGENT})
         key = urllib.request.urlopen(request).read()
 
 
@@ -435,7 +435,7 @@ class ToutvConsoleApp():
         output_file = open(os.path.join(os.path.expanduser(directory), filename), "wb")
         count = 1
         for segment in playlist.segments:
-            request = urllib.request.Request(segment.uri, None, {'User-Agent' : client.IPHONE4_USER_AGENT})
+            request = urllib.request.Request(segment.uri, None, {'User-Agent' : client.USER_AGENT})
             ts_file = urllib.request.urlopen(request).read()
 
             aes = AES.new(key, AES.MODE_CBC, struct.pack(">IIII", 0x0, 0x0, 0x0, count))

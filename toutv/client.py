@@ -31,7 +31,7 @@ import urllib.parse
 import urllib.error
 
 
-IPHONE4_USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7'
+USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7'
 TOUTV_WSDL_URL = 'http://api.tou.tv/v1/TouTVAPIService.svc?wsdl'
 TOUTV_PLAYLIST_URL_TMPL = 'http://api.radio-canada.ca/validationMedia/v1/Validation.html?appCode=thePlatform&deviceType=iphone4&connectionType=wifi&idMedia={}&output=json'
 TOUTV_JSON_URL = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'
@@ -301,7 +301,7 @@ class TransportJson(Transport):
     def _do_query(self, method, parameters={}):
         parameters_str = urllib.parse.urlencode(parameters)
         url = ''.join([TOUTV_JSON_URL, method, '?', parameters_str])
-        headers = {'User-Agent': IPHONE4_USER_AGENT}
+        headers = {'User-Agent': USER_AGENT}
         request = urllib.request.Request(url, None, headers)
         json_string = urllib.request.urlopen(request).read().decode('utf-8')
         json_decoded = self.json_decoder.decode(json_string)
@@ -401,7 +401,7 @@ class ToutvClient():
 
     def fetch_playlist_url(self, episode_pid):
         url = TOUTV_PLAYLIST_URL_TMPL.format(episode_pid)
-        headers = {'User-Agent': IPHONE4_USER_AGENT}
+        headers = {'User-Agent': USER_AGENT}
         req = urllib.request.Request(url, None, headers)
         json_string = urllib.request.urlopen(req).read().decode('utf-8')
         response = json.loads(json_string)
