@@ -124,8 +124,11 @@ class Playlist:
 
 
 class Parser:
+    SIGNATURE = '#EXTM3U'
+    EXT_PREFIX = '#EXT'
+
     def validate(self, lines):
-        return lines[0].strip() == '#EXTM3U'
+        return lines[0].strip() == Parser.SIGNATURE
 
     def parse_line(self, line):
         if ':' not in line:
@@ -138,7 +141,7 @@ class Parser:
         return tagname, attributes
 
     def line_is_tag(self, line):
-        return line[0:4] == '#EXT'
+        return line[0:4] == Parser.EXT_PREFIX
 
     def line_is_relative_uri(self, line):
         return line[0:4] != 'http'
