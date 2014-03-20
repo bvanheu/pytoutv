@@ -486,7 +486,7 @@ class ToutvConsoleApp():
             bandwidth = max(bitrates, key=int)
         else:
             # AVERAGE
-            bandwidth = bitrates[((len(bitrates)+1)/2 if len(bitrates)%2 else len(bitrates)/2)]
+            bandwidth = bitrates[(len(bitrates)+1)//2 if len(bitrates)%2 else len(bitrates)//2]
 
         for stream in playlist.streams:
             if stream.bandwidth == bandwidth:
