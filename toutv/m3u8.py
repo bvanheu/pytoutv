@@ -172,7 +172,7 @@ def parse(data, base_uri):
     lines = data.split('\n')
 
     if not _validate(lines):
-        raise Exception('Invalid M3U8 file: "{}"'.format(lines[0]))
+        raise RuntimeError('Invalid M3U8 file: "{}"'.format(lines[0]))
 
     for count in range(1, len(lines)):
         line = lines[count]
