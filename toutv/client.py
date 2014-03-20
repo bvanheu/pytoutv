@@ -407,7 +407,7 @@ class ToutvClient():
         response = json.loads(json_string)
 
         if response['errorCode']:
-            raise Exception(response['message'])
+            raise RuntimeError(response['message'])
 
         return response['url']
 
