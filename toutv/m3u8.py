@@ -165,10 +165,11 @@ def parse(data, base_uri):
         raise Exception('Invalid M3U8 file: "{}"'.format(lines[0]))
 
     for count in range(1, len(lines)):
-        if not _line_is_tag(lines[count]):
+        line = lines[count]
+        if not _line_is_tag(line):
             continue
 
-        tagname, attributes = _get_line_tagname_attributes(lines[count])
+        tagname, attributes = _get_line_tagname_attributes(line)
 
         if tagname == Tags.EXT_X_TARGETDURATION:
             target_duration = int(attributes)
@@ -189,11 +190,11 @@ def parse(data, base_uri):
         elif tagname == Tags.EXT_X_PLAYLIST_TYPE:
             playlist_type = attributes.strip()
         elif tagname == Tags.EXT_X_STREAM_INF:
-            stream = Stream()
-
             # Will match <PROGRAM-ID=1,BANDWIDTH=461000,RESOLUTION=480x270,CODECS="avc1.66.30, mp4a.40.5">
             regex = r'([\w-]+=(?:[a-zA-Z0-9]|"[a-zA-Z0-9,. ]*")+),?'
             attributes = re.findall(regex, attributes)
+
+            stream = Stream()
             for attribute in attributes:
                 name, value = attribute.split('=')
                 name = name.strip()
