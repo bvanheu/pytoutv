@@ -131,7 +131,7 @@ def _validate(lines):
     return lines[0].strip() == SIGNATURE
 
 
-def _parse_line(line):
+def _get_line_tagname_attributes(line):
     if ':' not in line:
         return (line[1:], '')
     tagname, attributes = line.split(':', 1)
@@ -168,7 +168,7 @@ def parse(data, base_uri):
         if not _line_is_tag(lines[count]):
             continue
 
-        tagname, attributes = _parse_line(lines[count])
+        tagname, attributes = _get_line_tagname_attributes(lines[count])
 
         if tagname == Tags.EXT_X_TARGETDURATION:
             target_duration = int(attributes)
