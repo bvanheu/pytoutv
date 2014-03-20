@@ -283,7 +283,7 @@ class Transport:
     def get_emissions(self):
         pass
 
-    def get_episodes_for_emission(self, emission_id):
+    def get_emission_episodes(self, emission_id):
         pass
 
     def get_page_repertoire(self):
@@ -317,7 +317,7 @@ class TransportJson(Transport):
 
         return emissions
 
-    def get_episodes_for_emission(self, emission_id):
+    def get_emission_episodes(self, emission_id):
         episodes = {}
         episodes_dto = self._do_query('GetEpisodesForEmission',
                                       {'emissionid': str(emission_id)})
@@ -383,17 +383,17 @@ class Client:
 
         return emissions
 
-    def get_episodes_for_emission(self, emission_id):
+    def get_emission_episodes(self, emission_id):
         episodes_per_emission = self.cache.get('episodes')
 
         if not episodes_per_emission:
             episodes_per_emission = {}
-            ep = self.transport.get_episodes_for_emission(emission_id)
+            ep = self.transport.get_emission_episodes(emission_id)
             episodes_per_emission[emission_id] = ep
             self.cache.set('episodes', episodes_per_emission)
 
         if not (emission_id in episodes_per_emission):
-            ep = self.transport.get_episodes_for_emission(emission_id)
+            ep = self.transport.get_emission_episodes(emission_id)
             episodes_per_emission[emission_id] = ep
             self.cache.set('episodes', episodes_per_emission)
 

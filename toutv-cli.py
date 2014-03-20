@@ -213,7 +213,7 @@ class ToutvConsoleApp():
             print("\t" + emission.Title)
 
             print("Episodes:")
-            episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
+            episodes = self.toutvclient.get_emission_episodes(emission.Id)
 
             if len(episodes) == 0:
                 print("\tNo episodes for the provided emission ("+emission.Title+")")
@@ -346,7 +346,7 @@ class ToutvConsoleApp():
                 print("\t" + possibility)
             return
 
-        episodes = self.toutvclient.get_episodes_for_emission(emission.Id)
+        episodes = self.toutvclient.get_emission_episodes(emission.Id)
 
         if len(episodes):
             print("Fetching " + str(len(episodes)) + " episodes from " +  emission_name)
@@ -522,7 +522,7 @@ class ToutvConsoleApp():
         raise Exception("unable to find " + emission_name)
 
     def get_episode_by_name(self, emission_id, episode_name):
-        episodes = self.toutvclient.get_episodes_for_emission(emission_id)
+        episodes = self.toutvclient.get_emission_episodes(emission_id)
         episode_name_upper = episode_name.upper()
 
         possibilities = []
