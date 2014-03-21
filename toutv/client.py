@@ -373,23 +373,8 @@ class TransportJson(Transport):
 
 
 class Client:
-    def __init__(self, transport=None, cache=None):
-        if transport is None:
-            transport = TransportJson()
-        if cache is None:
-            if platform.system() == 'Linux':
-                try:
-                    if not os.path.exists(os.environ['XDG_CACHE_DIR'] + '/toutv'):
-                        os.makedirs(os.environ['XDG_CACHE_DIR'] + '/toutv')
-                    cache = toutv.cache.CacheShelve(os.environ['XDG_CACHE_DIR'] +
-                                                    '/toutv/.toutv_cache')
-                except KeyError:
-                    if not os.path.exists(os.environ['HOME'] + '/.cache/toutv'):
-                        os.makedirs(os.environ['HOME'] + '/.cache/toutv')
-                    cache = toutv.cache.CacheShelve(os.environ['HOME'] +
-                                                    '/.cache/toutv/.toutv_cache')
-            else:
-                cache = toutv.cache.CacheShelve(".toutv_cache")
+    def __init__(self, transport=TransportJson(),
+                 cache=toutv.cache.EmptyCache()):
         self.transport = transport
         self.cache = cache
 

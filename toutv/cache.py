@@ -44,6 +44,14 @@ class Cache:
         pass
 
 
+class EmptyCache(Cache):
+    def has_key(self, key):
+        return False
+
+    def get(self, key):
+        return None
+
+
 class CacheShelve(Cache):
     def __init__(self, shelve_filename):
         self.shelve = shelve.open(shelve_filename)

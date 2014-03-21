@@ -100,7 +100,21 @@ class ToutvConsoleApp():
         return parser
 
     def build_toutvclient(self):
-        return toutv.client.Client()
+        if platform.system() == 'Linux':
+            try:
+                if not os.path.exists(os.environ['XDG_CACHE_DIR'] + '/toutv'):
+                    os.makedirs(os.environ['XDG_CACHE_DIR'] + '/toutv')
+                cache = toutv.cache.CacheShelve(os.environ['XDG_CACHE_DIR'] +
+                                                '/toutv/.toutv_cache')
+            except KeyError:
+                if not os.path.exists(os.environ['HOME'] + '/.cache/toutv'):
+                    os.makedirs(os.environ['HOME'] + '/.cache/toutv')
+                cache = toutv.cache.CacheShelve(os.environ['HOME'] +
+                                                '/.cache/toutv/.toutv_cache')
+        else:
+            cache = toutv.cache.CacheShelve(".toutv_cache")
+
+        return toutv.client.Client(cache=cache)
 
     def command_list(self, args):
         if args.emission:
