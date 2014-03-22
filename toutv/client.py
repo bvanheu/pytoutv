@@ -41,29 +41,28 @@ class Client:
         self.cache = cache
 
     def get_emissions(self):
-        emissions = self.cache.get('emissions')
-
+        emissions = self.cache.get_emissions()
         if emissions is None:
             emissions = self.transport.get_emissions()
-            self.cache.set('emissions', emissions)
+            self.cache.set_emissions(emissions)
 
         return emissions
 
     def get_emission_episodes(self, emission_id):
-        episodes_per_emission = self.cache.get('episodes')
+        episodes = self.cache.get_emission_episodes(emission_id)
+        if episodes is None:
+            episodes = self.transport.get_emission_episodes(emission_id)
+            self.cache.set_emission_episodes(emission_id, episodes)
 
-        if episodes_per_emission is None:
-            episodes_per_emission = {}
-            ep = self.transport.get_emission_episodes(emission_id)
-            episodes_per_emission[emission_id] = ep
-            self.cache.set('episodes', episodes_per_emission)
+        return episodes
 
-        if not emission_id in episodes_per_emission:
-            ep = self.transport.get_emission_episodes(emission_id)
-            episodes_per_emission[emission_id] = ep
-            self.cache.set('episodes', episodes_per_emission)
+    def get_page_repertoire(self):
+        page_repertoire = self.cache.get_page_repertoire()
+        if page_repertoire is None:
+            page_repertoire = self.transport.get_page_repertoire()
+            self.cache.set_page_repertoire(page_repertoire)
 
-        return episodes_per_emission[emission_id]
+        return page_repertoire
 
     def fetch_playlist_url(self, episode_pid):
         url = toutv.config.TOUTV_PLAYLIST_URL_TMPL.format(episode_pid)
@@ -76,15 +75,6 @@ class Client:
             raise RuntimeError(response['message'])
 
         return response['url']
-
-    def get_page_repertoire(self):
-        repertoire = self.cache.get('repertoire')
-
-        if repertoire is None:
-            repertoire = self.transport.get_page_repertoire()
-            self.cache.set('repertoire', repertoire)
-
-        return repertoire
 
     def search_terms(self, query):
         return self.transport.search_terms(query)

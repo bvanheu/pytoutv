@@ -34,21 +34,33 @@ class Cache:
     def __init__(self):
         pass
 
-    def has_key(self, key):
+    def get_emissions(self):
         pass
 
-    def get(self, key):
+    def get_emission_episodes(self, emission_id):
         pass
 
-    def set(self, key, value, expire=timedelta(hours=2)):
+    def get_page_repertoire(self):
+        pass
+
+    def set_emissions(self, emissions):
+        pass
+
+    def set_emission_episodes(self, emission_id, episodes):
+        pass
+
+    def set_page_repertoire(self, page_repertoire):
         pass
 
 
 class EmptyCache(Cache):
-    def has_key(self, key):
-        return False
+    def get_emissions(self):
+        return None
 
-    def get(self, key):
+    def get_emission_episodes(self, emission_id):
+        return None
+
+    def get_page_repertoire(self):
         return None
 
 
@@ -67,7 +79,7 @@ class CacheShelve(Cache):
 
         return False
 
-    def get(self, key):
+    def _get(self, key):
         if not self._has_key(key):
             return None
 
@@ -75,5 +87,33 @@ class CacheShelve(Cache):
 
         return value
 
-    def set(self, key, value, expire=timedelta(hours=2)):
+    def _set(self, key, value, expire=timedelta(hours=2)):
         self.shelve[key] = (datetime.now() + expire, value)
+
+    def get_emissions(self):
+        return self._get('emissions')
+
+    def get_emission_episodes(self, emission_id):
+        emission_episodes = self._get('emission_episodes')
+        if emission_episodes is None:
+            return None
+        if not emission_id in emission_episodes:
+            return None
+
+        return emission_episodes[emission_id]
+
+    def get_page_repertoire(self):
+        pass
+
+    def set_emissions(self, emissions):
+        self._set('emissions', emissions)
+
+    def set_emission_episodes(self, emission_id, episodes):
+        emission_episodes = self._get('emission_episodes')
+        if emission_episodes is None:
+            emission_episodes = {}
+        emission_episodes[emission_id] = episodes
+        self._set('emission_episodes', emission_episodes)
+
+    def set_page_repertoire(self, page_repertoire):
+        pass
