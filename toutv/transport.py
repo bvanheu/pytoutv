@@ -87,6 +87,7 @@ class JsonTransport(Transport):
         if episodes_dto is not None:
             for episode_dto in episodes_dto:
                 episode = self.mapper.dto_to_bo(episode_dto, bos.Episode)
+                episode.set_emission(emission)
                 episodes[episode.Id] = episode
 
         return episodes

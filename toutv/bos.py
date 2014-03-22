@@ -199,6 +199,12 @@ class Episode:
         self.Year = None
         self.iTunesLinkUrl = None
 
+    def set_emission(self, emission):
+        self._emission = emission
+
+    def get_emission(self):
+        return self._emission
+
     def __str__(self):
         return '{} ({})'.format(self.Title, self.Id)
 
