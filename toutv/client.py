@@ -32,6 +32,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import toutv.cache
+import toutv.bos as bos
 
 
 USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7'
@@ -56,219 +57,16 @@ class MapperJson(Mapper):
             if isinstance(value, dict):
                 if value['__type'] in ['GenreDTO:#RC.Svc.Web.TouTV',
                                        'GenreDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, Genre)
+                    value = self.dto_to_bo(value, bos.Genre)
                 elif value['__type'] in ['EmissionDTO:#RC.Svc.Web.TouTV',
                                          'EmissionDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, Emission)
+                    value = self.dto_to_bo(value, bos.Emission)
                 elif value['__type'] in ['EpisodeDTO:#RC.Svc.Web.TouTV',
                                          'EpisodeDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, Episode)
+                    value = self.dto_to_bo(value, bos.Episode)
             setattr(bo, key, value)
 
         return bo
-
-
-class Emission:
-    def __init__(self):
-        self.CategoryURL = None
-        self.ClassCategory = None
-        self.ContainsAds = None
-        self.Country = None
-        self.DateRetraitOuEmbargo = None
-        self.Description = None
-        self.DescriptionOffline = None
-        self.DescriptionUnavailable = None
-        self.DescriptionUnavailableText = None
-        self.DescriptionUpcoming = None
-        self.DescriptionUpcomingText = None
-        self.EstContenuJeunesse = None
-        self.EstExclusiviteRogers = None
-        self.GeoTargeting = None
-        self.Genre = None
-        self.Id = None
-        self.ImageBackground = None
-        self.ImagePromoLargeI = None
-        self.ImagePromoLargeJ = None
-        self.ImagePromoNormalK = None
-        self.Network = None
-        self.Network2 = None
-        self.Network3 = None
-        self.ParentId = None
-        self.Partner = None
-        self.PlaylistExist = None
-        self.PromoDescription = None
-        self.PromoTitle = None
-        self.RelatedURL1 = None
-        self.RelatedURL2 = None
-        self.RelatedURL3 = None
-        self.RelatedURL4 = None
-        self.RelatedURL5 = None
-        self.RelatedURLImage1 = None
-        self.RelatedURLImage2 = None
-        self.RelatedURLImage3 = None
-        self.RelatedURLImage4 = None
-        self.RelatedURLImage5 = None
-        self.RelatedURLText1 = None
-        self.RelatedURLText2 = None
-        self.RelatedURLText3 = None
-        self.RelatedURLText4 = None
-        self.RelatedURLText5 = None
-        self.SeasonNumber = None
-        self.Show = None
-        self.ShowSearch = None
-        self.SortField = None
-        self.SortOrder = None
-        self.SubCategoryType = None
-        self.Title = None
-        self.TitleIndex = None
-        self.Url = None
-        self.Year = None
-
-
-class Genre:
-    def __init__(self):
-        self.CategoryURL = None
-        self.ClassCategory = None
-        self.Description = None
-        self.Id = None
-        self.ImageBackground = None
-        self.ParentId = None
-        self.Title = None
-        self.Url = None
-
-
-class Episode:
-    def __init__(self):
-        self.AdPattern = None
-        self.AirDateFormated = None
-        self.AirDateLongString = None
-        self.Captions = None
-        self.CategoryId = None
-        self.ChapterStartTimes = None
-        self.ClipType = None
-        self.Copyright = None
-        self.Country = None
-        self.DateSeasonEpisode = None
-        self.Description = None
-        self.DescriptionShort = None
-        self.EpisodeNumber = None
-        self.EstContenuJeunesse = None
-        self.Event = None
-        self.EventDate = None
-        self.FullTitle = None
-        self.GenreTitle = None
-        self.Id = None
-        self.ImageBackground = None
-        self.ImagePlayerLargeA = None
-        self.ImagePlayerNormalC = None
-        self.ImagePromoLargeI = None
-        self.ImagePromoLargeJ = None
-        self.ImagePromoNormalK = None
-        self.ImageThumbMicroG = None
-        self.ImageThumbMoyenL = None
-        self.ImageThumbNormalF = None
-        self.IsMostRecent = None
-        self.IsUniqueEpisode = None
-        self.Keywords = None
-        self.LanguageCloseCaption = None
-        self.Length = None
-        self.LengthSpan = None
-        self.LengthStats = None
-        self.LengthString = None
-        self.LiveOnDemand = None
-        self.MigrationDate = None
-        self.Musique = None
-        self.Network = None
-        self.Network2 = None
-        self.Network3 = None
-        self.NextEpisodeDate = None
-        self.OriginalAirDate = None
-        self.PID = None
-        self.Partner = None
-        self.PeopleAuthor = None
-        self.PeopleCharacters = None
-        self.PeopleCollaborator = None
-        self.PeopleColumnist = None
-        self.PeopleComedian = None
-        self.PeopleDesigner = None
-        self.PeopleDirector = None
-        self.PeopleGuest = None
-        self.PeopleHost = None
-        self.PeopleJournalist = None
-        self.PeoplePerformer = None
-        self.PeoplePersonCited = None
-        self.PeopleSpeaker = None
-        self.PeopleWriter = None
-        self.PromoDescription = None
-        self.PromoTitle = None
-        self.Rating = None
-        self.RelatedURL1 = None
-        self.RelatedURL2 = None
-        self.RelatedURL3 = None
-        self.RelatedURL4 = None
-        self.RelatedURL5 = None
-        self.RelatedURLText1 = None
-        self.RelatedURLText2 = None
-        self.RelatedURLText3 = None
-        self.RelatedURLText4 = None
-        self.RelatedURLText5 = None
-        self.RelatedURLimage1 = None
-        self.RelatedURLimage2 = None
-        self.RelatedURLimage3 = None
-        self.RelatedURLimage4 = None
-        self.RelatedURLimage5 = None
-        self.SeasonAndEpisode = None
-        self.SeasonAndEpisodeLong = None
-        self.SeasonNumber = None
-        self.Show = None
-        self.ShowSearch = None
-        self.ShowSeasonSearch = None
-        self.StatusMedia = None
-        self.Subtitle = None
-        self.Team1CountryCode = None
-        self.Team2CountryCode = None
-        self.Title = None
-        self.TitleID = None
-        self.TitleSearch = None
-        self.Url = None
-        self.UrlEmission = None
-        self.Year = None
-        self.iTunesLinkUrl = None
-
-
-class EmissionRepertoire:
-    def __init__(self):
-        self.AnneeProduction = None
-        self.CategorieDuree = None
-        self.DateArrivee = None
-        self.DateDepart = None
-        self.DateRetraitOuEmbargo = None
-        self.DescriptionUnavailableText = None
-        self.DescriptionUpcomingText = None
-        self.Genre = None
-        self.Id = None
-        self.ImagePromoNormalK = None
-        self.IsGeolocalise = None
-        self.NombreEpisodes = None
-        self.NombreSaisons = None
-        self.ParentId = None
-        self.Pays = None
-        self.SaisonsDisponibles = None
-        self.Titre = None
-        self.TitreIndex = None
-        self.Url = None
-
-
-class SearchResults:
-    def __init__(self):
-        self.ModifiedQuery = None
-        self.Results = None
-
-
-class SearchResultData:
-    def __init__(self):
-        self.Emission = None
-        self.Episode = None
 
 
 class Transport:
@@ -307,7 +105,7 @@ class TransportJson(Transport):
         emissions_dto = self._do_query('GetEmissions')
 
         for emission_dto in emissions_dto:
-            emission = self.mapper.dto_to_bo(emission_dto, Emission)
+            emission = self.mapper.dto_to_bo(emission_dto, bos.Emission)
             emissions[emission.Id] = emission
 
         return emissions
@@ -319,7 +117,7 @@ class TransportJson(Transport):
 
         if episodes_dto:
             for episode_dto in episodes_dto:
-                episode = self.mapper.dto_to_bo(episode_dto, Episode)
+                episode = self.mapper.dto_to_bo(episode_dto, bos.Episode)
                 episodes[episode.Id] = episode
 
         return episodes
@@ -334,7 +132,7 @@ class TransportJson(Transport):
                 emissionrepertoires = {}
                 for emissionrepertoire_dto in repertoire_dto['Emissions']:
                     er = self.mapper.dto_to_bo(emissionrepertoire_dto,
-                                               EmissionRepertoire)
+                                               bos.EmissionRepertoire)
                     emissionrepertoires[er.Id] = er
                 repertoire['emissionrepertoire'] = emissionrepertoires
             # Genre
@@ -353,11 +151,11 @@ class TransportJson(Transport):
 
         if searchresults_dto:
             searchresults = self.mapper.dto_to_bo(searchresults_dto,
-                                                  SearchResults)
+                                                  bos.SearchResults)
             if searchresults.Results is not None:
                 for searchresultdata_dto in searchresults.Results:
                     sr_bo = self.mapper.dto_to_bo(searchresultdata_dto,
-                                                  SearchResultData)
+                                                  bos.SearchResultData)
                     searchresultdatas.append(sr_bo)
             searchresults.Results = searchresultdatas
 
