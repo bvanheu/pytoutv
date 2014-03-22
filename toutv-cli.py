@@ -211,7 +211,7 @@ class ToutvConsoleApp():
             print("\t" + emission.Title)
 
             print("Episodes:")
-            episodes = self.toutvclient.get_emission_episodes(emission.Id)
+            episodes = self.toutvclient.get_emission_episodes(emission)
 
             if len(episodes) == 0:
                 print("\tNo episodes for the provided emission ("+emission.Title+")")
@@ -267,7 +267,7 @@ class ToutvConsoleApp():
             return
 
         try:
-            episode = self.toutvclient.get_episode_by_name(emission.Id, episode_name)
+            episode = self.toutvclient.get_episode_by_name(emission, episode_name)
         except toutv.client.NoMatchException as e:
             self.handle_no_match_exception(e)
             return
@@ -311,7 +311,7 @@ class ToutvConsoleApp():
             self.handle_no_match_exception(e)
             return
 
-        episodes = self.toutvclient.get_emission_episodes(emission.Id)
+        episodes = self.toutvclient.get_emission_episodes(emission)
 
         if len(episodes):
             print("Fetching " + str(len(episodes)) + " episodes from " +  emission_name)
@@ -328,7 +328,7 @@ class ToutvConsoleApp():
             return
 
         try:
-            episode = self.toutvclient.get_episode_by_name(emission.Id, episode_name)
+            episode = self.toutvclient.get_episode_by_name(emission, episode_name)
         except toutv.client.NoMatchException as e:
             self.handle_no_match_exception(e)
             return

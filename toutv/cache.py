@@ -100,14 +100,15 @@ class ShelveCache(Cache):
     def get_emissions(self):
         return self._get('emissions')
 
-    def get_emission_episodes(self, emission_id):
+    def get_emission_episodes(self, emission):
+        emid = emission.Id
         emission_episodes = self._get('emission_episodes')
         if emission_episodes is None:
             return None
-        if not emission_id in emission_episodes:
+        if not emid in emission_episodes:
             return None
 
-        return emission_episodes[emission_id]
+        return emission_episodes[emid]
 
     def get_page_repertoire(self):
         return self._get('page_repertoire')
@@ -115,11 +116,12 @@ class ShelveCache(Cache):
     def set_emissions(self, emissions):
         self._set('emissions', emissions)
 
-    def set_emission_episodes(self, emission_id, episodes):
+    def set_emission_episodes(self, emission, episodes):
+        emid = emission.Id
         emission_episodes = self._get('emission_episodes')
         if emission_episodes is None:
             emission_episodes = {}
-        emission_episodes[emission_id] = episodes
+        emission_episodes[emid] = episodes
         self._set('emission_episodes', emission_episodes)
 
     def set_page_repertoire(self, page_repertoire):

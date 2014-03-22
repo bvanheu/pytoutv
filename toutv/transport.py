@@ -76,10 +76,11 @@ class JsonTransport(Transport):
 
         return emissions
 
-    def get_emission_episodes(self, emission_id):
+    def get_emission_episodes(self, emission):
+        emid = emission.Id
         episodes = {}
         params = {
-            'emissionid': str(emission_id)
+            'emissionid': str(emid)
         }
 
         episodes_dto = self._do_query('GetEpisodesForEmission', params)

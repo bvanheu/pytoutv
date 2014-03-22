@@ -63,11 +63,11 @@ class Client:
 
         return emissions
 
-    def get_emission_episodes(self, emission_id):
-        episodes = self.cache.get_emission_episodes(emission_id)
+    def get_emission_episodes(self, emission):
+        episodes = self.cache.get_emission_episodes(emission)
         if episodes is None:
-            episodes = self.transport.get_emission_episodes(emission_id)
-            self.cache.set_emission_episodes(emission_id, episodes)
+            episodes = self.transport.get_emission_episodes(emission)
+            self.cache.set_emission_episodes(emission, episodes)
 
         return episodes
 
@@ -125,8 +125,8 @@ class Client:
             if emission_name_upper in [str(emid), emission.Title.upper()]:
                 return emission
 
-    def get_episode_by_name(self, emission_id, episode_name):
-        episodes = self.get_emission_episodes(emission_id)
+    def get_episode_by_name(self, emission, episode_name):
+        episodes = self.get_emission_episodes(emission)
         episode_name_upper = episode_name.upper()
         candidates = []
 
@@ -180,7 +180,7 @@ class Client:
 
         try:
             emission = self.get_emission_by_name(emid)
-            episode = self.get_episode_by_name(emission.Id, ep_name)
+            episode = self.get_episode_by_name(emission, ep_name)
         except NoMatchException as e:
             raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
 
