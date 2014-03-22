@@ -25,12 +25,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import difflib
 import requests
 import toutv.cache
 import toutv.mapper
 import toutv.transport
 import toutv.config
 import toutv.bos as bos
+
+
+class NoMatchException(Exception):
+    def __init__(self, query, candidates=[]):
+        self.query = query
+        self.candidates = candidates
 
 
 class Client:
@@ -63,6 +70,9 @@ class Client:
 
         return page_repertoire
 
+    def search(self, query):
+        return self.transport.search(query)
+
     def get_episode_playlist_url(self, episode):
         url = toutv.config.TOUTV_PLAYLIST_URL
         headers = {
@@ -79,5 +89,61 @@ class Client:
 
         return response_obj['url']
 
-    def search(self, query):
-        return self.transport.search(query)
+    def get_emission_by_name(self, emission_name):
+        emissions = self.get_emissions()
+        emission_name_upper = emission_name.upper()
+        candidates = []
+
+        # Fill candidates
+        for emid, emission in emissions.items():
+            candidates.append(str(emid))
+            candidates.append(emission.Title.upper())
+
+        # Get close matches
+        close_matches = difflib.get_close_matches(emission_name_upper,
+                                                  candidates)
+
+        # No match at all
+        if not close_matches:
+            raise NoMatchException(emission_name)
+
+        # No exact match
+        if close_matches[0] != emission_name_upper:
+            raise NoMatchException(emission_name, close_matches)
+
+        # Exact match
+        for emid, emission in emissions.items():
+            if emission_name_upper in [str(emid), emission.Title.upper()]:
+                return emission
+
+    def get_episode_by_name(self, emission_id, episode_name):
+        episodes = self.get_emission_episodes(emission_id)
+        episode_name_upper = episode_name.upper()
+        candidates = []
+
+        for epid, episode in episodes.items():
+            candidates.append(str(epid))
+            candidates.append(episode.Title.upper())
+            candidates.append(episode.SeasonAndEpisode)
+
+        # Get close matches
+        close_matches = difflib.get_close_matches(episode_name_upper,
+                                                  candidates)
+
+        # No match at all
+        if not close_matches:
+            raise NoMatchException(episode_name)
+
+        # No exact match
+        if close_matches[0] != episode_name_upper:
+            raise NoMatchException(episode_name, close_matches)
+
+        # Got an exact match
+        for epid, episode in episodes.items():
+            search_items = [
+                str(epid),
+                episode.Title.upper(),
+                episode.SeasonAndEpisode
+            ]
+            if episode_name_upper in search_items:
+                return episode

@@ -34,7 +34,6 @@ import http.cookiejar
 import urllib.request
 import urllib.error
 import urllib.parse
-import difflib
 from Crypto.Cipher import AES
 import struct
 import textwrap
@@ -47,13 +46,6 @@ import toutv.config
 from toutv import m3u8
 from toutv import progressbar
 
-class TooManyMatchesException(Exception):
-    def __init__(self, possibilities):
-        self.possibilities = possibilities
-
-class NoMatchException(Exception):
-    def __init__(self, possibility):
-        self.possibility = possibility
 
 class ToutvConsoleApp():
     def __init__(self):
@@ -63,6 +55,17 @@ class ToutvConsoleApp():
     def run(self):
         args = self.argparse.parse_args()
         args.func(args)
+
+    def handle_no_match_exception(self, e):
+        print('Cannot find "{}"'.format(e.query))
+        if not e.candidates:
+            return
+        if len(e.candidates) == 1:
+            print('Did you mean "{}"?'.format(e.candidates[0]))
+        else:
+            print('Did you mean one of the following?')
+            for candidate in e.candidates:
+                print('\t{}'.format(candidate))
 
     def build_argparser(self):
         parser = argparse.ArgumentParser(description='Tou.tv console script')
@@ -202,7 +205,7 @@ class ToutvConsoleApp():
 
     def list_episodes(self, emission_name):
         try:
-            emission = self.get_emission_by_name(emission_name)
+            emission = self.toutvclient.get_emission_by_name(emission_name)
 
             print("Title:")
             print("\t" + emission.Title)
@@ -215,18 +218,12 @@ class ToutvConsoleApp():
             else:
                 for k in sorted(episodes, key=lambda e: episodes[e].SeasonAndEpisode):
                     print("\t" + episodes[k].SeasonAndEpisode + " - " + episodes[k].Title + " - " + str(episodes[k].Id))
-        except NoMatchException as ex:
-            print("Unable to find '" + emission_name + "'")
-            print("Did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
-        except TooManyMatchesException as ex:
-            print("Unable to find '" + emission_name + "'")
-            print("Did you mean one of the following?")
-            for possibility in ex.possibilities:
-                print("\t" + possibility)
+        except toutv.client.NoMatchException as e:
+            self.handle_no_match_exception(e)
 
     def info_emission(self, emission_name):
         try:
-            emission = self.get_emission_by_name(emission_name)
+            emission = self.toutvclient.get_emission_by_name(emission_name)
 
             print("Title: ")
             print("\t" + emission.Title + "\t(" + (emission.Country if emission.Country else "Pays inconnu") + (" - " + str(emission.Year) if emission.Year else "") + ")")
@@ -259,40 +256,20 @@ class ToutvConsoleApp():
                 print("jeune ")
             if emission.EstExclusiviteRogers:
                 print("rogers ")
-        except NoMatchException as ex:
-            print("Unable to find '" + emission_name + "'")
-            print("Did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
-        except TooManyMatchesException as ex:
-            print("Unable to find '" + emission_name + "'")
-            print("Did you mean one of the following?")
-            for possibility in ex.possibilities:
-                print("\t" + possibility)
+        except toutv.client.NoMatchException as e:
+            self.handle_no_match_exception(e)
 
     def info_episode(self, emission_name, episode_name):
         try:
-            emission = self.get_emission_by_name(emission_name)
-        except NoMatchException as ex:
-            print("unable to find '" + emission_name + "'")
-            print("did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
-            return
-        except TooManyMatchesException as ex:
-            print("unable to find '" + emission_name + "'")
-            print("did you mean one of the following?")
-            for possibility in ex.possibilities:
-                print("\t" + possibility)
+            emission = self.toutvclient.get_emission_by_name(emission_name)
+        except toutv.client.NoMatchException as e:
+            self.handle_no_match_exception(e)
             return
 
         try:
-            episode = self.get_episode_by_name(emission.Id, episode_name)
-        except NoMatchException as ex:
-            print("Unable to find '" + episode_name + "'")
-            print("Did you mean '" + ex.possibility + "' instead of '" + episode_name + "'?")
-            return
-        except TooManyMatchesException as ex:
-            print("Unable to find '" + episode_name + "'")
-            print("Did you mean one of the following?")
-            for possibility in ex.possibilities:
-                print("\t" + possibility)
+            episode = self.toutvclient.get_episode_by_name(emission.Id, episode_name)
+        except toutv.client.NoMatchException as e:
+            self.handle_no_match_exception(e)
             return
 
         print("Emission:")
@@ -329,16 +306,9 @@ class ToutvConsoleApp():
 
     def fetch_episodes(self, emission_name, directory, quality="AVERAGE", bitrate=0):
         try:
-            emission = self.get_emission_by_name(emission_name)
-        except NoMatchException as ex:
-            print("unable to find '" + emission_name + "'")
-            print("did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
-            return
-        except TooManyMatchesException as ex:
-            print("unable to find '" + emission_name + "'")
-            print("did you mean one of the following?")
-            for possibility in ex.possibilities:
-                print("\t" + possibility)
+            emission = self.toutvclient.get_emission_by_name(emission_name)
+        except toutv.client.NoMatchException as e:
+            self.handle_no_match_exception(e)
             return
 
         episodes = self.toutvclient.get_emission_episodes(emission.Id)
@@ -352,29 +322,15 @@ class ToutvConsoleApp():
 
     def fetch_episode(self, emission_name, episode_name, directory, quality="AVERAGE", bitrate=0):
         try:
-            emission = self.get_emission_by_name(emission_name)
-        except NoMatchException as ex:
-            print("unable to find '" + emission_name + "'")
-            print("did you mean '" + ex.possibility + "' instead of '" + emission_name + "'?")
-            return
-        except TooManyMatchesException as ex:
-            print("unable to find '" + emission_name + "'")
-            print("did you mean one of the following?")
-            for possibility in ex.possibilities:
-                print("\t" + possibility)
+            emission = self.toutvclient.get_emission_by_name(emission_name)
+        except toutv.client.NoMatchException as e:
+            self.handle_no_match_exception(e)
             return
 
         try:
-            episode = self.get_episode_by_name(emission.Id, episode_name)
-        except NoMatchException as ex:
-            print("Unable to find '" + episode_name + "'")
-            print("Did you mean '" + ex.possibility + "' instead of '" + episode_name + "'?")
-            return
-        except TooManyMatchesException as ex:
-            print("Unable to find '" + episode_name + "'")
-            print("Did you mean one of the following?")
-            for possibility in ex.possibilities:
-                print("\t" + possibility)
+            episode = self.toutvclient.get_episode_by_name(emission.Id, episode_name)
+        except toutv.client.NoMatchException as e:
+            self.handle_no_match_exception(e)
             return
 
         print("Emission and episode:")
@@ -488,63 +444,6 @@ class ToutvConsoleApp():
         for stream in playlist.streams:
             if stream.bandwidth == bandwidth:
                 return stream
-
-    def get_emission_by_name(self, emission_name):
-        emissions = self.toutvclient.get_emissions()
-        emission_name_upper = emission_name.upper()
-
-        possibilities = []
-        for emission_id, emission in emissions.items():
-            possibilities.append(str(emission.Id))
-            # Store titles in uppercase for case-insensitive comparisons.
-            possibilities.append(str(emission.Title.upper()))
-
-        close_matches = difflib.get_close_matches(emission_name_upper, possibilities)
-
-        # Not an exact match...
-        if close_matches[0] != emission_name_upper:
-            # Unable to find exactly 1 match... i dunno wat to do
-            if len(close_matches) > 1:
-                raise TooManyMatchesException(close_matches)
-
-            raise NoMatchException(close_matches[0])
-
-        # Got an exact match
-        for emission_id, emission in emissions.items():
-            if emission_name_upper in [str(emission.Id), emission.Title.upper()]:
-                return emission
-
-        raise Exception("unable to find " + emission_name)
-
-    def get_episode_by_name(self, emission_id, episode_name):
-        episodes = self.toutvclient.get_emission_episodes(emission_id)
-        episode_name_upper = episode_name.upper()
-
-        possibilities = []
-        for episode_id, episode in episodes.items():
-            possibilities.append(str(episode.Id))
-            possibilities.append(str(episode.Title.upper()))
-            possibilities.append(str(episode.SeasonAndEpisode))
-
-        close_matches = difflib.get_close_matches(episode_name_upper, possibilities)
-
-        if len(close_matches) == 0:
-            raise NoMatchException("")
-
-        # Not an exact match...
-        if close_matches[0] != episode_name_upper:
-            # Unable to find 1 match... i dunno wat to do
-            if len(close_matches) > 1:
-                raise TooManyMatchesException(close_matches)
-
-            raise NoMatchException(close_matches[0])
-
-        # Got an exact match
-        for episode_id, episode in episodes.items():
-            if episode_name_upper in [str(episode.Id), episode.Title.upper(), episode.SeasonAndEpisode]:
-                return episode
-
-        raise Exception("unable to find " + episode_name)
 
     def get_episode_from_url(self, url):
         try:
