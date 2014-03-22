@@ -52,6 +52,9 @@ class Cache:
     def set_page_repertoire(self, page_repertoire):
         pass
 
+    def invalidate(self):
+        pass
+
 
 class EmptyCache(Cache):
     def get_emissions(self):
@@ -90,6 +93,10 @@ class ShelveCache(Cache):
     def _set(self, key, value, expire=timedelta(hours=2)):
         self.shelve[key] = (datetime.now() + expire, value)
 
+    def _del(self, key):
+        if key in self.shelve:
+            del shelve[key]
+
     def get_emissions(self):
         return self._get('emissions')
 
@@ -117,3 +124,8 @@ class ShelveCache(Cache):
 
     def set_page_repertoire(self, page_repertoire):
         self._set('page_repertoire', page_repertoire)
+
+    def invalidate(self):
+        self._del('emissions')
+        self._del('emission_episodes')
+        self._del('page_repertoire')
