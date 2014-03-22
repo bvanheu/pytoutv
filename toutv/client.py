@@ -43,7 +43,7 @@ class Client:
     def get_emissions(self):
         emissions = self.cache.get('emissions')
 
-        if not emissions:
+        if emissions is None:
             emissions = self.transport.get_emissions()
             self.cache.set('emissions', emissions)
 
@@ -52,13 +52,13 @@ class Client:
     def get_emission_episodes(self, emission_id):
         episodes_per_emission = self.cache.get('episodes')
 
-        if not episodes_per_emission:
+        if episodes_per_emission is None:
             episodes_per_emission = {}
             ep = self.transport.get_emission_episodes(emission_id)
             episodes_per_emission[emission_id] = ep
             self.cache.set('episodes', episodes_per_emission)
 
-        if not (emission_id in episodes_per_emission):
+        if not emission_id in episodes_per_emission:
             ep = self.transport.get_emission_episodes(emission_id)
             episodes_per_emission[emission_id] = ep
             self.cache.set('episodes', episodes_per_emission)
@@ -81,7 +81,7 @@ class Client:
     def get_page_repertoire(self, use_cache=True):
         repertoire = self.cache.get('repertoire')
 
-        if not repertoire:
+        if repertoire is None:
             repertoire = self.transport.get_page_repertoire()
             self.cache.set('repertoire', repertoire)
 
