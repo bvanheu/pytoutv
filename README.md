@@ -129,9 +129,9 @@ Try to delete the cache by removing the file named ".toutv\_cache" in the same d
 
 - Python 3
   - [PyCrypto](https://www.dlitz.net/software/pycrypto/)
-    ([available on [PyPI](https://pypi.python.org/pypi/pycrypto))
+    ([available on PyPI](https://pypi.python.org/pypi/pycrypto))
   - [Requests](http://python-requests.org/)
-    ([available on [PyPI](https://pypi.python.org/pypi/requests))
+    ([available on PyPI](https://pypi.python.org/pypi/requests))
 
 ## Bugs
 
