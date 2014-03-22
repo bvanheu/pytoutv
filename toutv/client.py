@@ -35,7 +35,7 @@ import toutv.bos as bos
 
 
 class Client:
-    def __init__(self, transport=toutv.transport.TransportJson(),
+    def __init__(self, transport=toutv.transport.JsonTransport(),
                  cache=toutv.cache.EmptyCache()):
         self.transport = transport
         self.cache = cache

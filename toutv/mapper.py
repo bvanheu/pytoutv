@@ -33,7 +33,7 @@ class Mapper:
         return klass()
 
 
-class MapperJson(Mapper):
+class JsonMapper(Mapper):
     def dto_to_bo(self, dto, klass):
         bo = self.create(klass)
         bo_vars = vars(bo)

@@ -64,7 +64,7 @@ class EmptyCache(Cache):
         return None
 
 
-class CacheShelve(Cache):
+class ShelveCache(Cache):
     def __init__(self, shelve_filename):
         self.shelve = shelve.open(shelve_filename)
 
