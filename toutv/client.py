@@ -41,22 +41,13 @@ TOUTV_JSON_URL = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'
 
 
 class Mapper:
-    def __init__(self):
-        self.classes = {}
-        self.classes['Emission'] = Emission
-        self.classes['Genre'] = Genre
-        self.classes['Episode'] = Episode
-        self.classes['EmissionRepertoire'] = EmissionRepertoire
-        self.classes['SearchResults'] = SearchResults
-        self.classes['SearchResultData'] = SearchResultData
-
-    def factory(self, class_type):
-        return self.classes[class_type]()
+    def create(self, klass):
+        return klass()
 
 
 class MapperJson(Mapper):
-    def dto_to_bo(self, dto, class_type):
-        bo = self.factory(class_type)
+    def dto_to_bo(self, dto, klass):
+        bo = self.create(klass)
         bo_vars = vars(bo)
 
         for key in bo_vars.keys():
@@ -65,13 +56,13 @@ class MapperJson(Mapper):
             if isinstance(value, dict):
                 if value['__type'] in ['GenreDTO:#RC.Svc.Web.TouTV',
                                        'GenreDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, 'Genre')
+                    value = self.dto_to_bo(value, Genre)
                 elif value['__type'] in ['EmissionDTO:#RC.Svc.Web.TouTV',
                                          'EmissionDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, 'Emission')
+                    value = self.dto_to_bo(value, Emission)
                 elif value['__type'] in ['EpisodeDTO:#RC.Svc.Web.TouTV',
                                          'EpisodeDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, 'Episode')
+                    value = self.dto_to_bo(value, Episode)
             setattr(bo, key, value)
 
         return bo
@@ -316,7 +307,7 @@ class TransportJson(Transport):
         emissions_dto = self._do_query('GetEmissions')
 
         for emission_dto in emissions_dto:
-            emission = self.mapper.dto_to_bo(emission_dto, 'Emission')
+            emission = self.mapper.dto_to_bo(emission_dto, Emission)
             emissions[emission.Id] = emission
 
         return emissions
@@ -328,7 +319,7 @@ class TransportJson(Transport):
 
         if episodes_dto:
             for episode_dto in episodes_dto:
-                episode = self.mapper.dto_to_bo(episode_dto, 'Episode')
+                episode = self.mapper.dto_to_bo(episode_dto, Episode)
                 episodes[episode.Id] = episode
 
         return episodes
@@ -343,7 +334,7 @@ class TransportJson(Transport):
                 emissionrepertoires = {}
                 for emissionrepertoire_dto in repertoire_dto['Emissions']:
                     er = self.mapper.dto_to_bo(emissionrepertoire_dto,
-                                               'EmissionRepertoire')
+                                               EmissionRepertoire)
                     emissionrepertoires[er.Id] = er
                 repertoire['emissionrepertoire'] = emissionrepertoires
             # Genre
@@ -362,11 +353,11 @@ class TransportJson(Transport):
 
         if searchresults_dto:
             searchresults = self.mapper.dto_to_bo(searchresults_dto,
-                                                  'SearchResults')
+                                                  SearchResults)
             if searchresults.Results is not None:
                 for searchresultdata_dto in searchresults.Results:
                     sr_bo = self.mapper.dto_to_bo(searchresultdata_dto,
-                                                  'SearchResultData')
+                                                  SearchResultData)
                     searchresultdatas.append(sr_bo)
             searchresults.Results = searchresultdatas
 
