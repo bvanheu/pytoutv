@@ -5,6 +5,8 @@ import sys
 from PyQt4 import uic
 from PyQt4 import Qt
 
+from shows_treemodel import ShowsTreeModel, FakeDataSource
+
 TOUTV_UI_FILE = "toutv.ui"
 
 class TouTvQt(Qt.QApplication):
@@ -16,6 +18,10 @@ class TouTvQt(Qt.QApplication):
 		self.mainwindow = mainwindow
 
 		self.mainwindow.action_quit.triggered.connect(self.closeAllWindows)
+
+		data = FakeDataSource("fakedata.xml")
+		model = ShowsTreeModel(data)
+		self.mainwindow.shows_treeview.setModel(model)
 
 if __name__ == '__main__':
 	app = TouTvQt(sys.argv)
