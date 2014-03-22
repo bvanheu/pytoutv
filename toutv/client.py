@@ -32,6 +32,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import toutv.cache
+import toutv.mapper
 import toutv.bos as bos
 
 
@@ -39,34 +40,6 @@ USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) Ap
 TOUTV_WSDL_URL = 'http://api.tou.tv/v1/TouTVAPIService.svc?wsdl'
 TOUTV_PLAYLIST_URL_TMPL = 'http://api.radio-canada.ca/validationMedia/v1/Validation.html?appCode=thePlatform&deviceType=iphone4&connectionType=wifi&idMedia={}&output=json'
 TOUTV_JSON_URL = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'
-
-
-class Mapper:
-    def create(self, klass):
-        return klass()
-
-
-class MapperJson(Mapper):
-    def dto_to_bo(self, dto, klass):
-        bo = self.create(klass)
-        bo_vars = vars(bo)
-
-        for key in bo_vars.keys():
-            value = dto[key]
-
-            if isinstance(value, dict):
-                if value['__type'] in ['GenreDTO:#RC.Svc.Web.TouTV',
-                                       'GenreDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, bos.Genre)
-                elif value['__type'] in ['EmissionDTO:#RC.Svc.Web.TouTV',
-                                         'EmissionDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, bos.Emission)
-                elif value['__type'] in ['EpisodeDTO:#RC.Svc.Web.TouTV',
-                                         'EpisodeDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, bos.Episode)
-            setattr(bo, key, value)
-
-        return bo
 
 
 class Transport:
@@ -89,7 +62,7 @@ class Transport:
 class TransportJson(Transport):
     def __init__(self):
         self.json_decoder = json.JSONDecoder()
-        self.mapper = MapperJson()
+        self.mapper = toutv.mapper.MapperJson()
 
     def _do_query(self, method, parameters={}):
         parameters_str = urllib.parse.urlencode(parameters)
