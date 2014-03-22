@@ -63,7 +63,8 @@ class MapperJson(Mapper):
             value = dto[key]
 
             if isinstance(value, dict):
-                if value['__type'] == 'GenreDTO:#RC.Svc.Web.TouTV':
+                if value['__type'] in ['GenreDTO:#RC.Svc.Web.TouTV',
+                                       'GenreDTO:RC.Svc.Web.TouTV']:
                     value = self.dto_to_bo(value, 'Genre')
                 elif value['__type'] in ['EmissionDTO:#RC.Svc.Web.TouTV',
                                          'EmissionDTO:RC.Svc.Web.TouTV']:
