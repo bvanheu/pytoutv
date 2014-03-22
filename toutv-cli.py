@@ -195,7 +195,7 @@ class ToutvConsoleApp():
                 print(emissions[k].Title + " - " + str(emissions[k].Id))
         else:
             repertoire = self.toutvclient.get_page_repertoire()
-            emissionrepertoires = repertoire["emissionrepertoire"]
+            emissionrepertoires = repertoire.Emissions
 
             for k in sorted(emissionrepertoires, key=lambda er: emissionrepertoires[er].Titre):
                 print(emissionrepertoires[k].Titre + " - " + str(emissionrepertoires[k].Id))

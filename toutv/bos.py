@@ -227,3 +227,10 @@ class SearchResultData:
     def __init__(self):
         self.Emission = None
         self.Episode = None
+
+
+class Repertoire:
+    def __init__(self):
+        self.Emissions = None
+        self.Genres = None
+        self.Pays = None

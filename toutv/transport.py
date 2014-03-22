@@ -60,15 +60,18 @@ class JsonTransport(Transport):
             'User-Agent': toutv.config.USER_AGENT
         }
 
-        r = requests.get(url, params=params, headers=headers)
-        response_obj = r.json()
+        try:
+            r = requests.get(url, params=params, headers=headers)
+            response_obj = r.json()
 
-        return response_obj['d']
+            return response_obj['d']
+        except Exception as e:
+            return None
 
     def get_emissions(self):
         emissions = {}
-        emissions_dto = self._do_query('GetEmissions')
 
+        emissions_dto = self._do_query('GetEmissions')
         for emission_dto in emissions_dto:
             emission = self.mapper.dto_to_bo(emission_dto, bos.Emission)
             emissions[emission.Id] = emission
@@ -77,10 +80,12 @@ class JsonTransport(Transport):
 
     def get_emission_episodes(self, emission_id):
         episodes = {}
-        episodes_dto = self._do_query('GetEpisodesForEmission',
-                                      {'emissionid': str(emission_id)})
+        params = {
+            'emissionid': str(emission_id)
+        }
 
-        if episodes_dto:
+        episodes_dto = self._do_query('GetEpisodesForEmission', params)
+        if episodes_dto is not None:
             for episode_dto in episodes_dto:
                 episode = self.mapper.dto_to_bo(episode_dto, bos.Episode)
                 episodes[episode.Id] = episode
@@ -88,33 +93,42 @@ class JsonTransport(Transport):
         return episodes
 
     def get_page_repertoire(self):
-        repertoire = {}
         repertoire_dto = self._do_query('GetPageRepertoire')
+        if repertoire_dto is not None:
+            repertoire = bos.Repertoire()
 
-        if repertoire_dto:
-            # EmissionRepertoire
-            if repertoire_dto:
-                emissionrepertoires = {}
-                for emissionrepertoire_dto in repertoire_dto['Emissions']:
+            # Emissions
+            if 'Emissions' in repertoire_dto:
+                repertoire.Emissions = {}
+                emissionrepertoires_dto = repertoire_dto['Emissions']
+                for emissionrepertoire_dto in emissionrepertoires_dto:
                     er = self.mapper.dto_to_bo(emissionrepertoire_dto,
                                                bos.EmissionRepertoire)
-                    emissionrepertoires[er.Id] = er
-                repertoire['emissionrepertoire'] = emissionrepertoires
+                    repertoire.Emissions[er.Id] = er
+
             # Genre
-            if repertoire_dto['Genres']:
-                pass
-            # Country
-            if repertoire_dto['Pays']:
+            if 'Genres' in repertoire_dto:
+                # TODO: implement
                 pass
 
-        return repertoire
+            # Country
+            if 'Pays' in repertoire_dto:
+                # TODO: implement
+                pass
+
+            return repertoire
+
+        return None
 
     def search(self, query):
-        searchresults_dto = self._do_query('SearchTerms', {'query': query})
         searchresults = None
         searchresultdatas = []
+        params = {
+            'query': query
+        }
 
-        if searchresults_dto:
+        searchresults_dto = self._do_query('SearchTerms', params)
+        if searchresults_dto is not None:
             searchresults = self.mapper.dto_to_bo(searchresults_dto,
                                                   bos.SearchResults)
             if searchresults.Results is not None:
