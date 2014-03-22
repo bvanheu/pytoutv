@@ -82,6 +82,9 @@ class Emission:
         self.Url = None
         self.Year = None
 
+    def __str__(self):
+        return '{} ({})'.format(self.Title, self.Id)
+
 
 class Genre:
     def __init__(self):
@@ -93,6 +96,9 @@ class Genre:
         self.ParentId = None
         self.Title = None
         self.Url = None
+
+    def __str__(self):
+        return '{} ({})'.format(self.Title, self.Id)
 
 
 class Episode:
@@ -193,6 +199,9 @@ class Episode:
         self.Year = None
         self.iTunesLinkUrl = None
 
+    def __str__(self):
+        return '{} ({})'.format(self.Title, self.Id)
+
 
 class EmissionRepertoire:
     def __init__(self):
@@ -215,6 +224,9 @@ class EmissionRepertoire:
         self.Titre = None
         self.TitreIndex = None
         self.Url = None
+
+    def __str__(self):
+        return '{} ({})'.format(self.Titre, self.Id)
 
 
 class SearchResults:
