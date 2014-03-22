@@ -78,6 +78,3 @@ class Client:
 
     def search_terms(self, query):
         return self.transport.search_terms(query)
-
-    def search_terms_max(self, query, max_results):
-        pass
