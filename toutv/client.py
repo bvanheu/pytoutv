@@ -26,7 +26,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import requests
-import json
 import toutv.cache
 import toutv.mapper
 import toutv.transport
