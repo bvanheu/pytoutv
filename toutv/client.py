@@ -77,8 +77,7 @@ class Client:
 
         return response['url']
 
-    # TODO: implement `use_cache` flag
-    def get_page_repertoire(self, use_cache=True):
+    def get_page_repertoire(self):
         repertoire = self.cache.get('repertoire')
 
         if repertoire is None:
