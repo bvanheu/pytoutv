@@ -42,14 +42,18 @@ class JsonMapper(Mapper):
             value = dto[key]
 
             if isinstance(value, dict):
-                if value['__type'] in ['GenreDTO:#RC.Svc.Web.TouTV',
-                                       'GenreDTO:RC.Svc.Web.TouTV']:
+                if '__type' not in value:
+                    raise RuntimeError('Cannot find "__type" in value')
+                typ = value['__type']
+
+                if typ in ['GenreDTO:#RC.Svc.Web.TouTV',
+                           'GenreDTO:RC.Svc.Web.TouTV']:
                     value = self.dto_to_bo(value, bos.Genre)
-                elif value['__type'] in ['EmissionDTO:#RC.Svc.Web.TouTV',
-                                         'EmissionDTO:RC.Svc.Web.TouTV']:
+                elif typ in ['EmissionDTO:#RC.Svc.Web.TouTV',
+                             'EmissionDTO:RC.Svc.Web.TouTV']:
                     value = self.dto_to_bo(value, bos.Emission)
-                elif value['__type'] in ['EpisodeDTO:#RC.Svc.Web.TouTV',
-                                         'EpisodeDTO:RC.Svc.Web.TouTV']:
+                elif typ in ['EpisodeDTO:#RC.Svc.Web.TouTV',
+                             'EpisodeDTO:RC.Svc.Web.TouTV']:
                     value = self.dto_to_bo(value, bos.Episode)
             setattr(bo, key, value)
 
