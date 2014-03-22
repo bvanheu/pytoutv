@@ -25,7 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
 import requests
 import toutv.mapper
 import toutv.config
@@ -51,7 +50,6 @@ class Transport:
 
 class JsonTransport(Transport):
     def __init__(self):
-        self.json_decoder = json.JSONDecoder()
         self.mapper = toutv.mapper.JsonMapper()
 
     def _do_query(self, endpoint, params={}):
