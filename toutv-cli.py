@@ -118,7 +118,7 @@ class ToutvConsoleApp():
         else:
             cache = toutv.cache.ShelveCache(".toutv_cache")
 
-        return toutv.client.Client()
+        return toutv.client.Client(cache=cache)
 
     def command_list(self, args):
         if args.emission:
