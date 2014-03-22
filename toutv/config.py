@@ -34,4 +34,4 @@ TOUTV_PLAYLIST_PARAMS = {
     'connectionType': 'wifi',
     'output': 'json'
 }
-TOUTV_JSON_URL = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'
+TOUTV_JSON_URL_PREFIX = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'

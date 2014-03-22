@@ -55,7 +55,7 @@ class JsonTransport(Transport):
         self.mapper = toutv.mapper.JsonMapper()
 
     def _do_query(self, endpoint, params={}):
-        url = '{}{}'.format(toutv.config.TOUTV_JSON_URL, endpoint)
+        url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
         headers = {
             'User-Agent': toutv.config.USER_AGENT
         }
