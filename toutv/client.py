@@ -64,8 +64,8 @@ class Client:
 
         return page_repertoire
 
-    def fetch_playlist_url(self, episode_pid):
-        url = toutv.config.TOUTV_PLAYLIST_URL_TMPL.format(episode_pid)
+    def get_episode_playlist_url(self, episode):
+        url = toutv.config.TOUTV_PLAYLIST_URL_TMPL.format(episode.PID)
         headers = {'User-Agent': toutv.config.USER_AGENT}
         req = urllib.request.Request(url, None, headers)
         json_string = urllib.request.urlopen(req).read().decode('utf-8')

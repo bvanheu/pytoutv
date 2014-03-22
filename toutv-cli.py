@@ -314,7 +314,7 @@ class ToutvConsoleApp():
 
         urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.LWPCookieJar())))
 
-        url = self.toutvclient.fetch_playlist_url(episode.PID)
+        url = self.toutvclient.get_episode_playlist_url(episode)
 
         request = urllib.request.Request(url, None, {"User-Agent" : toutv.config.USER_AGENT})
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
@@ -382,7 +382,7 @@ class ToutvConsoleApp():
 
         urllib.request.install_opener(urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.LWPCookieJar())))
 
-        url = self.toutvclient.fetch_playlist_url(episode.PID)
+        url = self.toutvclient.get_episode_playlist_url(episode)
         request = urllib.request.Request(url, None, {"User-Agent" : toutv.config.USER_AGENT})
         m3u8_file = urllib.request.urlopen(request).read().decode('utf-8')
 
