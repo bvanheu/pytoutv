@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import urllib.request
+import requests
 import json
 import toutv.cache
 import toutv.mapper
@@ -65,16 +65,20 @@ class Client:
         return page_repertoire
 
     def get_episode_playlist_url(self, episode):
-        url = toutv.config.TOUTV_PLAYLIST_URL_TMPL.format(episode.PID)
-        headers = {'User-Agent': toutv.config.USER_AGENT}
-        req = urllib.request.Request(url, None, headers)
-        json_string = urllib.request.urlopen(req).read().decode('utf-8')
-        response = json.loads(json_string)
+        url = toutv.config.TOUTV_PLAYLIST_URL
+        headers = {
+            'User-Agent': toutv.config.USER_AGENT
+        }
+        params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
+        params['idMedia'] = episode.PID
 
-        if response['errorCode']:
-            raise RuntimeError(response['message'])
+        r = requests.get(url, params=params, headers=headers)
+        response_obj = r.json()
 
-        return response['url']
+        if response_obj['errorCode']:
+            raise RuntimeError(response_obj['message'])
+
+        return response_obj['url']
 
     def search(self, query):
         return self.transport.search(query)

@@ -26,9 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
-import urllib.request
-import urllib.parse
-import urllib.error
+import requests
 import toutv.mapper
 import toutv.config
 import toutv.bos as bos
@@ -56,18 +54,16 @@ class JsonTransport(Transport):
         self.json_decoder = json.JSONDecoder()
         self.mapper = toutv.mapper.JsonMapper()
 
-    def _do_query(self, method, parameters={}):
-        parameters_str = urllib.parse.urlencode(parameters)
-        url = ''.join([
-            toutv.config.TOUTV_JSON_URL,
-            method,
-            '?',
-        parameters_str])
-        headers = {'User-Agent': toutv.config.USER_AGENT}
-        request = urllib.request.Request(url, None, headers)
-        json_string = urllib.request.urlopen(request).read().decode('utf-8')
-        json_decoded = self.json_decoder.decode(json_string)
-        return json_decoded['d']
+    def _do_query(self, endpoint, params={}):
+        url = '{}{}'.format(toutv.config.TOUTV_JSON_URL, endpoint)
+        headers = {
+            'User-Agent': toutv.config.USER_AGENT
+        }
+
+        r = requests.get(url, params=params, headers=headers)
+        response_obj = r.json()
+
+        return response_obj['d']
 
     def get_emissions(self):
         emissions = {}
