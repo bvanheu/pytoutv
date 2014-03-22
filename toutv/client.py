@@ -25,6 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import re
 import difflib
 import requests
 import toutv.cache
@@ -38,6 +39,14 @@ class NoMatchException(Exception):
     def __init__(self, query, candidates=[]):
         self.query = query
         self.candidates = candidates
+
+
+class ClientError(RuntimeError):
+    def __init__(self, msg):
+        self._msg = msg
+
+    def __str__(self):
+        return self._msg
 
 
 class Client:
@@ -147,3 +156,33 @@ class Client:
             ]
             if episode_name_upper in search_items:
                 return episode
+
+    def get_emission_episode_from_url(self, url):
+        try:
+            # Send request
+            r = requests.get(url)
+            if r.status_code != 200:
+                msg = 'Opening URL "{}" returned HTTP status {}'.format(url, r.status_code)
+                raise ClientError(msg)
+
+            # Extract emission and episode id from meta tag
+            regex = r'<meta\s+content="([^".]+)\.([^"]+)"\s+name="ProfilingEmisodeToken"\s*/>'
+            m = re.search(regex, r.text)
+            if m is None:
+                raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
+
+            # Find emission and episode
+            emid = m.group(1)
+            ep_name = m.group(2)
+
+            try:
+                emission = self.get_emission_by_name(emid)
+                episode = self.get_episode_by_name(emission.Id, ep_name)
+            except NoMatchException as e:
+                raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
+
+            return emission, episode
+        except ClientError as e:
+            raise e
+        except Exception as e:
+            raise ClientError('Cannot open URL "{}"'.format(url))
