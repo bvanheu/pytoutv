@@ -158,31 +158,30 @@ class Client:
                 return episode
 
     def get_emission_episode_from_url(self, url):
+        # Try sending the request
         try:
-            # Send request
             r = requests.get(url)
-            if r.status_code != 200:
-                msg = 'Opening URL "{}" returned HTTP status {}'.format(url, r.status_code)
-                raise ClientError(msg)
-
-            # Extract emission and episode id from meta tag
-            regex = r'<meta\s+content="([^".]+)\.([^"]+)"\s+name="ProfilingEmisodeToken"\s*/>'
-            m = re.search(regex, r.text)
-            if m is None:
-                raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
-
-            # Find emission and episode
-            emid = m.group(1)
-            ep_name = m.group(2)
-
-            try:
-                emission = self.get_emission_by_name(emid)
-                episode = self.get_episode_by_name(emission.Id, ep_name)
-            except NoMatchException as e:
-                raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
-
-            return emission, episode
-        except ClientError as e:
-            raise e
         except Exception as e:
             raise ClientError('Cannot open URL "{}"'.format(url))
+
+        if r.status_code != 200:
+            msg = 'Opening URL "{}" returned HTTP status {}'.format(url, r.status_code)
+            raise ClientError(msg)
+
+        # Extract emission and episode ID from meta tag
+        regex = r'<meta\s+content="([^".]+)\.([^"]+)"\s+name="ProfilingEmisodeToken"\s*/>'
+        m = re.search(regex, r.text)
+        if m is None:
+            raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
+
+        # Find emission and episode
+        emid = m.group(1)
+        ep_name = m.group(2)
+
+        try:
+            emission = self.get_emission_by_name(emid)
+            episode = self.get_episode_by_name(emission.Id, ep_name)
+        except NoMatchException as e:
+            raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
+
+        return emission, episode
