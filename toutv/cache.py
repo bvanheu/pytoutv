@@ -103,7 +103,7 @@ class ShelveCache(Cache):
         return emission_episodes[emission_id]
 
     def get_page_repertoire(self):
-        pass
+        return self._get('page_repertoire')
 
     def set_emissions(self, emissions):
         self._set('emissions', emissions)
@@ -116,4 +116,4 @@ class ShelveCache(Cache):
         self._set('emission_episodes', emission_episodes)
 
     def set_page_repertoire(self, page_repertoire):
-        pass
+        self._set('page_repertoire', page_repertoire)
