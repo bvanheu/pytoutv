@@ -84,13 +84,10 @@ class Client:
 
     def get_episode_playlist_url(self, episode):
         url = toutv.config.TOUTV_PLAYLIST_URL
-        headers = {
-            'User-Agent': toutv.config.USER_AGENT
-        }
         params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
         params['idMedia'] = episode.PID
 
-        r = requests.get(url, params=params, headers=headers)
+        r = requests.get(url, params=params, headers=toutv.config.headers)
         response_obj = r.json()
 
         if response_obj['errorCode']:
