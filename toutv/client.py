@@ -77,4 +77,4 @@ class Client:
         return response['url']
 
     def search(self, query):
-        return self.transport.search_terms(query)
+        return self.transport.search(query)
