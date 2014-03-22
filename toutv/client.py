@@ -25,118 +25,17 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
-import json
-import platform
 import urllib.request
-import urllib.parse
-import urllib.error
+import json
 import toutv.cache
 import toutv.mapper
+import toutv.transport
+import toutv.config
 import toutv.bos as bos
 
 
-USER_AGENT = 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7'
-TOUTV_WSDL_URL = 'http://api.tou.tv/v1/TouTVAPIService.svc?wsdl'
-TOUTV_PLAYLIST_URL_TMPL = 'http://api.radio-canada.ca/validationMedia/v1/Validation.html?appCode=thePlatform&deviceType=iphone4&connectionType=wifi&idMedia={}&output=json'
-TOUTV_JSON_URL = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'
-
-
-class Transport:
-    def __init__(self):
-        pass
-
-    def get_emissions(self):
-        pass
-
-    def get_emission_episodes(self, emission_id):
-        pass
-
-    def get_page_repertoire(self):
-        pass
-
-    def search_terms(self, query):
-        pass
-
-
-class TransportJson(Transport):
-    def __init__(self):
-        self.json_decoder = json.JSONDecoder()
-        self.mapper = toutv.mapper.MapperJson()
-
-    def _do_query(self, method, parameters={}):
-        parameters_str = urllib.parse.urlencode(parameters)
-        url = ''.join([TOUTV_JSON_URL, method, '?', parameters_str])
-        headers = {'User-Agent': USER_AGENT}
-        request = urllib.request.Request(url, None, headers)
-        json_string = urllib.request.urlopen(request).read().decode('utf-8')
-        json_decoded = self.json_decoder.decode(json_string)
-        return json_decoded['d']
-
-    def get_emissions(self):
-        emissions = {}
-        emissions_dto = self._do_query('GetEmissions')
-
-        for emission_dto in emissions_dto:
-            emission = self.mapper.dto_to_bo(emission_dto, bos.Emission)
-            emissions[emission.Id] = emission
-
-        return emissions
-
-    def get_emission_episodes(self, emission_id):
-        episodes = {}
-        episodes_dto = self._do_query('GetEpisodesForEmission',
-                                      {'emissionid': str(emission_id)})
-
-        if episodes_dto:
-            for episode_dto in episodes_dto:
-                episode = self.mapper.dto_to_bo(episode_dto, bos.Episode)
-                episodes[episode.Id] = episode
-
-        return episodes
-
-    def get_page_repertoire(self):
-        repertoire = {}
-        repertoire_dto = self._do_query('GetPageRepertoire')
-
-        if repertoire_dto:
-            # EmissionRepertoire
-            if repertoire_dto:
-                emissionrepertoires = {}
-                for emissionrepertoire_dto in repertoire_dto['Emissions']:
-                    er = self.mapper.dto_to_bo(emissionrepertoire_dto,
-                                               bos.EmissionRepertoire)
-                    emissionrepertoires[er.Id] = er
-                repertoire['emissionrepertoire'] = emissionrepertoires
-            # Genre
-            if repertoire_dto['Genres']:
-                pass
-            # Country
-            if repertoire_dto['Pays']:
-                pass
-
-        return repertoire
-
-    def search_terms(self, query):
-        searchresults_dto = self._do_query('SearchTerms', {'query': query})
-        searchresults = None
-        searchresultdatas = []
-
-        if searchresults_dto:
-            searchresults = self.mapper.dto_to_bo(searchresults_dto,
-                                                  bos.SearchResults)
-            if searchresults.Results is not None:
-                for searchresultdata_dto in searchresults.Results:
-                    sr_bo = self.mapper.dto_to_bo(searchresultdata_dto,
-                                                  bos.SearchResultData)
-                    searchresultdatas.append(sr_bo)
-            searchresults.Results = searchresultdatas
-
-        return searchresults
-
-
 class Client:
-    def __init__(self, transport=TransportJson(),
+    def __init__(self, transport=toutv.transport.TransportJson(),
                  cache=toutv.cache.EmptyCache()):
         self.transport = transport
         self.cache = cache
@@ -167,8 +66,8 @@ class Client:
         return episodes_per_emission[emission_id]
 
     def fetch_playlist_url(self, episode_pid):
-        url = TOUTV_PLAYLIST_URL_TMPL.format(episode_pid)
-        headers = {'User-Agent': USER_AGENT}
+        url = toutv.config.TOUTV_PLAYLIST_URL_TMPL.format(episode_pid)
+        headers = {'User-Agent': toutv.config.USER_AGENT}
         req = urllib.request.Request(url, None, headers)
         json_string = urllib.request.urlopen(req).read().decode('utf-8')
         response = json.loads(json_string)
