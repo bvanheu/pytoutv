@@ -150,7 +150,7 @@ class ToutvConsoleApp():
         self.search(args.query)
 
     def search(self, query):
-        searchresult = self.toutvclient.search_terms(query)
+        searchresult = self.toutvclient.search(query)
 
         print("Query:")
         if searchresult.ModifiedQuery != query:
