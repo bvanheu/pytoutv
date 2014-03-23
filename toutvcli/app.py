@@ -293,7 +293,7 @@ class App:
 
         if emission.Description is not None:
             print('')
-            description = textwrap.wrap(emission.Description, 80)
+            description = textwrap.wrap(emission.Description, 78)
             for line in description:
                 print(line)
 
@@ -331,29 +331,31 @@ class App:
 
     def _print_info_episode(self, episode):
         emission = episode.get_emission()
-
-        print("Emission:")
-        print("\t" + emission.Title)
-
-        print("Title:")
-        print("\t" + episode.Title + "\t(" + episode.SeasonAndEpisode + ")")
-
-        print("Date aired:")
-        print("\t" + episode.AirDateFormated)
-
-        print("Description")
-        if episode.Description:
-            description = textwrap.wrap(episode.Description, 100)
-            for line in description:
-                print("\t" + line)
-        else:
-            print("No description")
-
         bitrates = episode.get_available_bitrates()
 
-        print("Available bitrate:")
+        print(emission.Title)
+        print('{}  [{}]'.format(episode.Title, episode.SeasonAndEpisode))
+
+        if episode.Description is not None:
+            print('')
+            description = textwrap.wrap(episode.Description, 78)
+            for line in description:
+                print(line)
+
+        infos_lines = []
+        air_date = episode.get_air_date()
+        if air_date is not None:
+            line = '  * Air date: {}'.format(air_date)
+            infos_lines.append(line)
+        infos_lines.append('  * Available bitrates:')
         for bitrate in bitrates:
-            print("\t" + str(bitrate) + " bit/s")
+            bitrate = bitrate // 1000
+            line = '    * {} kbps'.format(bitrate)
+            infos_lines.append(line)
+
+        print('\n\nInfos:\n')
+        for line in infos_lines:
+            print(line)
 
     def _print_info_episode_name(self, emission_name, episode_name):
         try:

@@ -220,6 +220,14 @@ class Episode:
         self.Year = None
         self.iTunesLinkUrl = None
 
+    def get_air_date(self):
+        if self.AirDateFormated is None:
+            return None
+
+        dt = datetime.datetime.strptime(self.AirDateFormated, '%Y%m%d')
+
+        return dt.date()
+
     def set_emission(self, emission):
         self._emission = emission
 
