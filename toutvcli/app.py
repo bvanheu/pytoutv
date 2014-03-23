@@ -137,20 +137,21 @@ class App:
         return p
 
     def _build_toutv_client(self):
-        cache_path = '.toutv_cache'
+        cache_name = '.toutv_cache'
+        cache_path = cache_name
         if platform.system() == 'Linux':
             try:
                 xdg_cache_path = os.path.join(os.environ['XDG_CACHE_DIR'],
                                               'toutv')
                 if not os.path.exists(xdg_cache_path):
                     os.makedirs(xdg_cache_path)
-                cache_path = os.path.join(xdg_cache_path, '.toutv_cache')
+                cache_path = os.path.join(xdg_cache_path, cache_name)
             except KeyError:
                 home_cache_path = os.path.join(os.environ['HOME'], '.cache',
                                                'toutv')
                 if not os.path.exists(home_cache_path):
                     os.makedirs(home_cache_path)
-                cache_path = os.path.join(home_cache_path, '.toutv_cache')
+                cache_path = os.path.join(home_cache_path, cache_name)
         cache = toutv.cache.ShelveCache(cache_path)
 
         return toutv.client.Client(cache=cache)
