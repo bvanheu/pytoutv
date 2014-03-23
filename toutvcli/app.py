@@ -262,23 +262,28 @@ class App:
             App._print_emission_list_item(eid, title)
 
     def _print_list_episodes(self, emission):
-        print("Title:")
-        print("\t" + emission.Title)
-
-        print("Episodes:")
         episodes = self._toutvclient.get_emission_episodes(emission)
 
+        print('{}:\n'.format(emission.Title))
         if len(episodes) == 0:
-            print("\tNo episodes for the provided emission ("+emission.Title+")")
-        else:
-            for k in sorted(episodes, key=lambda e: episodes[e].SeasonAndEpisode):
-                print("\t" + episodes[k].SeasonAndEpisode + " - " + episodes[k].Title + " - " + str(episodes[k].Id))
+            print('No available episodes')
+            return
+
+        key_func = lambda key: episodes[key].SeasonAndEpisode
+        episodes_keys = list(episodes.keys())
+        episodes_keys.sort(key=key_func)
+        for ekey in episodes_keys:
+            episode = episodes[ekey]
+            sae = episode.SeasonAndEpisode
+            title = episode.Title
+            print('  * {}: {} {}'.format(ekey, sae, title))
 
     def _print_list_episodes_name(self, emission_name):
         try:
             emission = self._toutvclient.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
+            return
 
         self._print_list_episodes(emission)
 
