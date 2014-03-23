@@ -375,7 +375,8 @@ class App:
             return
 
         try:
-            episode = self._toutvclient.get_episode_by_name(emission, episode_name)
+            epname = episode_name
+            episode = self._toutvclient.get_episode_by_name(emission, epname)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
@@ -440,7 +441,8 @@ class App:
             return
 
         try:
-            episode = self._toutvclient.get_episode_by_name(emission, episode_name)
+            epname = episode_name
+            episode = self._toutvclient.get_episode_by_name(emission, epname)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
@@ -452,7 +454,8 @@ class App:
         episodes = self._toutvclient.get_emission_episodes(emission)
 
         if not episodes:
-            print('No episodes available for emission "{}"'.format(emission.Title))
+            title = emission.Title
+            print('No episodes available for emission "{}"'.format(title))
             return
 
         for episode in episodes.values():
