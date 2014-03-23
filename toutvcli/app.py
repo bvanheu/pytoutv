@@ -238,10 +238,6 @@ class App:
                         for line in description:
                             print("\t\t\t" + line)
 
-    @staticmethod
-    def _print_emission_list_item(emid, title):
-        print('{}: {}'.format(emid, title))
-
     def _print_list_emissions(self, all=False):
         if all:
             emissions = self._toutvclient.get_emissions()
@@ -256,10 +252,10 @@ class App:
             id_func = lambda ekey: ekey
 
         emissions_keys.sort(key=title_func)
-        for em in emissions_keys:
-            eid = id_func(em)
-            title = title_func(em)
-            App._print_emission_list_item(eid, title)
+        for ekey in emissions_keys:
+            emid = id_func(ekey)
+            title = title_func(ekey)
+            print('{}: {}'.format(emid, title))
 
     def _print_list_episodes(self, emission):
         episodes = self._toutvclient.get_emission_episodes(emission)
@@ -288,37 +284,41 @@ class App:
         self._print_list_episodes(emission)
 
     def _print_info_emission(self, emission):
-        print("Title: ")
-        print("\t" + emission.Title + "\t(" + (emission.Country if emission.Country else "Pays inconnu") + (" - " + str(emission.Year) if emission.Year else "") + ")")
+        inner = emission.Country
+        if inner is None:
+            inner = 'Unknown country'
+        if emission.Year is not None:
+            inner = '{}, {}'.format(inner, emission.Year)
+        print('{}  [{}]'.format(emission.Title, inner))
 
-        print("Description:")
-        if emission.Description:
-            description = textwrap.wrap(emission.Description, 100)
+        if emission.Description is not None:
+            print('')
+            description = textwrap.wrap(emission.Description, 80)
             for line in description:
-                print("\t" + line)
-        else:
-            print("\tAucune description")
+                print(line)
 
-        print("Network:")
-        if emission.Network:
-            print("\t" + emission.Network)
-        else:
-            print("\tunknown")
+        infos_lines = []
+        if emission.Network is not None:
+            line = '  * Network: {}'.format(emission.Network)
+            infos_lines.append(line)
+        removal_date = emission.get_removal_date()
+        if removal_date is not None:
+            line = '  * Removal date: {}'.format(removal_date)
+            infos_lines.append(line)
+        tags = []
+        if emission.EstContenuJeunesse is not None:
+            tags.append('jeunesse')
+        if emission.EstExclusiviteRogers is not None:
+            tags.append('rogers')
+        if tags:
+            tags_list = ', '.join(tags)
+            line = '  * Tags: {}'.format(tags_list)
+            infos_lines.append(line)
 
-        print("Will be removed:")
-        if emission.DateRetraitOuEmbargo:
-            if emission.DateRetraitOuEmbargo == "":
-                print("\t" + str(emission.DateRetraitOuEmbargo))
-            else:
-                print("\tnot available")
-        else:
-            print("\tunknown")
-
-        print("Tags: ")
-        if emission.EstContenuJeunesse:
-            print("jeune ")
-        if emission.EstExclusiviteRogers:
-            print("rogers ")
+        if infos_lines:
+            print('\n\nInfos:\n')
+            for line in infos_lines:
+                print(line)
 
     def _print_info_emission_name(self, emission_name):
         try:

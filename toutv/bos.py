@@ -25,11 +25,29 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import re
 import os
+import datetime
 import toutv.dl
 
 
-class Emission:
+class AbstractEmission:
+    def get_removal_date(self):
+        if self.DateRetraitOuEmbargo is None:
+            return None
+
+        # Format looks like: /Date(1395547200000-0400)/
+        d = self.DateRetraitOuEmbargo
+        m = re.match(r'/Date\((\d+)-\d+\)/', d)
+        if m is not None:
+            ts = int(m.group(1)) // 1000
+
+            return datetime.datetime.fromtimestamp(ts)
+
+        return None
+
+
+class Emission(AbstractEmission):
     def __init__(self):
         self.CategoryURL = None
         self.ClassCategory = None
@@ -237,7 +255,7 @@ class Episode:
         return '{} ({})'.format(self.Title, self.Id)
 
 
-class EmissionRepertoire:
+class EmissionRepertoire(AbstractEmission):
     def __init__(self):
         self.AnneeProduction = None
         self.CategorieDuree = None
