@@ -203,41 +203,50 @@ class App:
     def _print_search_results(self, query):
         searchresult = self._toutvclient.search(query)
 
-        print("Query:")
-        if searchresult.ModifiedQuery != query:
-            print("\t" + searchresult.ModifiedQuery + " (" + query + ")")
-        else:
-            print("\t" + searchresult.ModifiedQuery)
+        print('Effective query: {}\n'.format(searchresult.ModifiedQuery))
 
-        print("Results:")
-        if len(searchresult.Results) == 0:
-                print("\tNo result found for " + query)
-        else:
-            for result in searchresult.Results:
-                if result.Emission is not None:
+        if not searchresult.Results:
+            print('No results')
+            return
 
-                    print("\tEmission:")
-                    print("\t\t" + result.Emission.Title)
+        for result in searchresult.Results:
+            if result.Emission is not None:
+                emission = result.Emission
+                print('Emission: {}  [{}]'.format(emission.Title, emission.Id))
 
-                    if result.Emission.Description:
-                        description = textwrap.wrap(result.Emission.Description, 100)
-                        for line in description:
-                            print("\t\t\t" + line)
+                if emission.Description:
+                    print('')
+                    description = textwrap.wrap(emission.Description, 78)
+                    for line in description:
+                        print('  {}'.format(line))
 
-                if result.Episode is not None:
-                    print("\tEpisode:\n")
+            if result.Episode is not None:
+                episode = result.Episode
+                print('Episode: {}  [{}]'.format(episode.Title, episode.Id))
 
-                    if result.Episode.CategoryId is not None:
-                        print("\t\tEmission ID: " + str(result.Episode.CategoryId))
+                infos_lines = []
 
-                    if result.Episode.Id is not None:
-                        print("\t\tEpisode ID: " + str(result.Episode.Id))
+                air_date = episode.get_air_date()
+                if air_date is not None:
+                    line = '  * Air date: {}'.format(air_date)
+                    infos_lines.append(line)
 
-                    print("\t\t" + result.Episode.Title + ":")
-                    if result.Episode.Description:
-                        description = textwrap.wrap(result.Episode.Description, 100)
-                        for line in description:
-                            print("\t\t\t" + line)
+                if episode.CategoryId is not None:
+                    line = '  * Emission ID: {}'.format(episode.CategoryId)
+                    infos_lines.append(line)
+
+                if infos_lines:
+                    print('')
+                    for line in infos_lines:
+                        print(line)
+
+                if episode.Description:
+                    print('')
+                    description = textwrap.wrap(episode.Description, 78)
+                    for line in description:
+                        print('  {}'.format(line))
+
+            print('\n')
 
     def _print_list_emissions(self, all=False):
         if all:
@@ -294,7 +303,7 @@ class App:
 
         if emission.Description is not None:
             print('')
-            description = textwrap.wrap(emission.Description, 78)
+            description = textwrap.wrap(emission.Description, 80)
             for line in description:
                 print(line)
 
@@ -339,7 +348,7 @@ class App:
 
         if episode.Description is not None:
             print('')
-            description = textwrap.wrap(episode.Description, 78)
+            description = textwrap.wrap(episode.Description, 80)
             for line in description:
                 print(line)
 
