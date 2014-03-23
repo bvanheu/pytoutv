@@ -1,4 +1,5 @@
 # Copyright (c) 2012, Benjamin Vanheuverzwijn <bvanheu@gmail.com>
+# Copyright (c) 2014, Philippe Proulx <eepp.ca>
 # All rights reserved.
 #
 # Thanks to Marc-Etienne M. Leveille

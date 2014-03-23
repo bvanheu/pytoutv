@@ -25,6 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
+import toutv.dl
+
 
 class Emission:
     def __init__(self):
@@ -204,6 +207,31 @@ class Episode:
 
     def get_emission(self):
         return self._emission
+
+    @staticmethod
+    def _get_video_bitrates(playlist):
+        bitrates = []
+
+        for stream in playlist.streams:
+            index = os.path.basename(stream.uri)
+
+            # TOU.TV team doesnt use the "AUDIO" or "VIDEO" M3U8 tag so we must
+            # parse the URL to find out about video stream:
+            #   index_X_av.m3u8 -> audio-video (av)
+            #   index_X_a.m3u8 -> audio (a)
+            if index.split('_', 2)[2][0:2] == 'av':
+                bitrates.append(stream.bandwidth)
+
+        return bitrates
+
+    def get_available_bitrates(self):
+        # Get playlist
+        playlist = toutv.dl.Downloader.get_episode_playlist(self)
+
+        # Get video bitrates
+        bitrates = Episode._get_video_bitrates(playlist)
+
+        return sorted(bitrates)
 
     def __str__(self):
         return '{} ({})'.format(self.Title, self.Id)

@@ -34,6 +34,7 @@ import toutv.mapper
 import toutv.transport
 import toutv.config
 import toutv.bos as bos
+import toutv.dl
 from toutv import m3u8
 
 
@@ -83,19 +84,6 @@ class Client:
 
     def search(self, query):
         return self.transport.search(query)
-
-    def get_episode_playlist_url(self, episode):
-        url = toutv.config.TOUTV_PLAYLIST_URL
-        params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
-        params['idMedia'] = episode.PID
-
-        r = requests.get(url, params=params, headers=toutv.config.HEADERS)
-        response_obj = r.json()
-
-        if response_obj['errorCode']:
-            raise RuntimeError(response_obj['message'])
-
-        return response_obj['url']
 
     def get_emission_by_name(self, emission_name):
         emissions = self.get_emissions()
@@ -156,7 +144,7 @@ class Client:
             if episode_name_upper in search_items:
                 return episode
 
-    def get_emission_episode_from_url(self, url):
+    def get_episode_from_url(self, url):
         # Try sending the request
         try:
             r = requests.get(url)
@@ -183,40 +171,4 @@ class Client:
         except NoMatchException as e:
             raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
 
-        return emission, episode
-
-    def _get_video_bitrates(self, playlist):
-        bitrates = []
-
-        for stream in playlist.streams:
-            index = os.path.basename(stream.uri)
-
-            # TOU.TV team doesnt use the "AUDIO" or "VIDEO" M3U8 tag so we must
-            # parse the URL to find out about video stream:
-            #   index_X_av.m3u8 -> audio-video (av)
-            #   index_X_a.m3u8 -> audio (a)
-            if index.split('_', 2)[2][0:2] == 'av':
-                bitrates.append(stream.bandwidth)
-
-        return bitrates
-
-    def get_episode_playlist(self, episode):
-        url = self.get_episode_playlist_url(episode)
-
-        # Do requests
-        r = requests.get(url, headers=toutv.config.HEADERS)
-
-        # Parse M3U8 file
-        m3u8_file = r.text
-        playlist = m3u8.parse(m3u8_file, os.path.dirname(url))
-
-        return playlist
-
-    def get_episode_available_bitrates(self, episode):
-        # Get playlist
-        playlist = self.get_episode_playlist(episode)
-
-        # Get video bitrates
-        bitrates = self._get_video_bitrates(playlist)
-
-        return bitrates
+        return episode
