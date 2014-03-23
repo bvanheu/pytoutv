@@ -238,17 +238,28 @@ class App:
                         for line in description:
                             print("\t\t\t" + line)
 
+    @staticmethod
+    def _print_emission_list_item(emid, title):
+        print('{}: {}'.format(emid, title))
+
     def _print_list_emissions(self, all=False):
         if all:
             emissions = self._toutvclient.get_emissions()
-            for k in emissions:
-                print(emissions[k].Title + " - " + str(emissions[k].Id))
+            emissions_keys = list(emissions.keys())
+            title_func = lambda ekey: emissions[ekey].Title
+            id_func = lambda ekey: ekey
         else:
             repertoire = self._toutvclient.get_page_repertoire()
-            emissionrepertoires = repertoire.Emissions
+            repertoire_emissions = repertoire.Emissions
+            emissions_keys = list(repertoire_emissions.keys())
+            title_func = lambda ekey: repertoire_emissions[ekey].Titre
+            id_func = lambda ekey: ekey
 
-            for k in sorted(emissionrepertoires, key=lambda er: emissionrepertoires[er].Titre):
-                print(emissionrepertoires[k].Titre + " - " + str(emissionrepertoires[k].Id))
+        emissions_keys.sort(key=title_func)
+        for em in emissions_keys:
+            eid = id_func(em)
+            title = title_func(em)
+            App._print_emission_list_item(eid, title)
 
     def _print_list_episodes(self, emission):
         print("Title:")
