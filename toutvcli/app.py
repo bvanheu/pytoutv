@@ -141,14 +141,14 @@ class App:
         cache_path = cache_name
         if platform.system() == 'Linux':
             try:
-                xdg_cache_path = os.path.join(os.environ['XDG_CACHE_DIR'],
-                                              'toutv')
+                cache_dir = os.environ['XDG_CACHE_DIR']
+                xdg_cache_path = os.path.join(cache_dir, 'toutv')
                 if not os.path.exists(xdg_cache_path):
                     os.makedirs(xdg_cache_path)
                 cache_path = os.path.join(xdg_cache_path, cache_name)
             except KeyError:
-                home_cache_path = os.path.join(os.environ['HOME'], '.cache',
-                                               'toutv')
+                home_dir = os.environ['HOME']
+                home_cache_path = os.path.join(home_dir, '.cache', 'toutv')
                 if not os.path.exists(home_cache_path):
                     os.makedirs(home_cache_path)
                 cache_path = os.path.join(home_cache_path, cache_name)
