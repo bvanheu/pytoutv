@@ -23,6 +23,7 @@ class TouTvQt(Qt.QApplication):
 		data = FakeDataSource("fakedata.xml")
 		model = ShowsTreeModel(data)
 		self.mainwindow.shows_treeview.setModel(model)
+		self.mainwindow.shows_treeview.expanded.connect(model.itemExpanded)
 
 if __name__ == '__main__':
 	signal.signal(signal.SIGINT, signal.SIG_DFL)

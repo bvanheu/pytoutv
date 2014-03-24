@@ -4,6 +4,8 @@ from PyQt4 import QtCore
 import datetime
 import sys
 import traceback
+import time
+import queue
 
 import xml.etree.ElementTree as ET
 
@@ -32,8 +34,8 @@ class FakeShow:
 	def get_seasons(self):
 		return sorted(self.seasons.values(), key = return_number)
 
-	def get_season(self, number):
-		return self.seasons[number]
+#	def get_season(self, number):
+#		return self.seasons[number]
 
 class FakeSeason:
 	def __init__(self, number):
@@ -47,10 +49,11 @@ class FakeSeason:
 		episode.season = self
 
 	def get_episodes(self):
+		time.sleep(2)
 		return sorted(self.episodes.values(), key = return_number)
 
-	def get_episode(self, number):
-		return self.episodes[number]
+#	def get_episode(self, number):
+#		return self.episodes[number]
 
 class FakeEpisode:
 	def __init__(self, name, number):
@@ -88,130 +91,302 @@ class FakeDataSource:
 				self.shows[series_id] = FakeShow(series_name)
 	# Returns a list of FakeShow in alphabetical order
 	def get_shows(self):
+		time.sleep(2)
 		return sorted(self.shows.values(), key = return_name)
+
+	def get_season_for(self, show_name):
+		time.sleep(2)
+		for show in self.shows.values():
+			if show.name != show_name:
+				continue
+
+			return show.seasons.values()
+		print("Not found %s", show_name)
+		assert(False)
+
+class FetchState:
+	Nope = 0
+	Started = 1
+	Done = 2
+
+class LoadingItem:
+	def __init__(self, parent):
+		self.parent = parent
+
+	def data(self, index, role):
+		column = index.column()
+		if role == QtCore.Qt.DisplayRole:
+			if column == 0:
+				return "Loading..."
+			else:
+				return ""
+
+class ShowsTreeModelShow:
+	def __init__(self, name):
+		self.name = name
+		self.seasons = []
+		self.loading_item = LoadingItem(self)
+
+		# Have we fetched this show's seasons?
+		self.fetched = FetchState.Nope
+
+	def data(self, index, role):
+		column = index.column()
+		if role == QtCore.Qt.DisplayRole:
+			if column == 0:
+				return self.name
+			elif column == 1:
+				return ""
+			elif column == 2:
+				return ""
+
+			return "?"
+
+
+class ShowsTreeModelSeason:
+	def __init__(self, number):
+		self.number = number
+		self.episodes = []
+		self.loading_item = LoadingItem(self)
+
+		# Have we fetched this season's episodes?
+		self.fetched = FetchState.Nope
+
+	def data(self, index, role):
+		column = index.column()
+		if role == QtCore.Qt.DisplayRole:
+			if column == 0:
+				return "Saison %d" % (self.number)
+			elif column == 1:
+				return ""
+			elif column == 2:
+				return ""
+
+			return "?"
+
+class ShowsTreeModelEpisode:
+	def __init__(self, name, number):
+		self.name = name
+		self.number = number
+		self.loading_item = LoadingItem(self)
+
+	def data(self, index, role):
+		column = index.column()
+		if role == QtCore.Qt.DisplayRole:
+			if column == 0:
+				return "Episode %d" % (self.number)
+			elif column == 1:
+				return "%s" % (self.name)
+			elif column == 2:
+				return ""
+
+			return "?"
+
 
 
 class ShowsTreeModel(Qt.QAbstractItemModel):
 	def __init__(self, datasource):
 		super(ShowsTreeModel, self).__init__()
+		self.shows = []
 		self.datasource = datasource
+		self.loading_item = LoadingItem(None)
+		self.fetch_thread = ShowsTreeModelFetchThread(self.datasource)
+
+		# Have we fetched the shows ?
+		self.fetched = FetchState.Nope
+
+		# Connect signals between us and the thread
+		self.new_data_required.connect(self.fetch_thread.new_work_piece)
+		self.fetch_thread.work_done.connect(self.fetchDone)
+
+		self.fetch_thread.start()
+
+		# Fetch the root elements
+		self.fetchInit(Qt.QModelIndex())
+
+	new_data_required = QtCore.pyqtSignal(object)
 
 	def index(self, row, column, parent = Qt.QModelIndex()):
-		#print("Index for row %d of parent %s" % (row, str(parent.internalPointer())))
+		"""Returns a QModelIndex to represent a cell of a child of parent."""
+		#print("Index of %s %s r=%d c=%d" % (parent.internalPointer(), parent.isValid(), row, column))
 		if not parent.isValid():
 			# Create an index for a show
-			shows = self.datasource.get_shows()
-			show = shows[row]
+			if self.fetched == FetchState.Done:
+				show = self.shows[row]
+				return self.createIndex(row, column, show)
+			else:
+				return self.createIndex(row, column, self.loading_item)
 
-			assert(show is not None)
-			return self.createIndex(row, column, show)
-
-		elif type(parent.internalPointer()) == FakeShow:
+		elif type(parent.internalPointer()) == ShowsTreeModelShow:
 			# Create an index for a season
 			show = parent.internalPointer()
-			seasons = show.get_seasons()
-			season = seasons[row]
+			if show.fetched == FetchState.Done:
+				season = show.seasons[row]
+				return self.createIndex(row, column, season)
+			else:
+				return self.createIndex(row, column, show.loading_item)
 
-			return self.createIndex(row, column, season)
-
-		elif type(parent.internalPointer()) == FakeSeason:
+		elif type(parent.internalPointer()) == ShowsTreeModelSeason:
 			# Create an index for an episode
 			season = parent.internalPointer()
-			episodes = season.get_episodes()
-			episode = episodes[row]
-
-			return self.createIndex(row, column, episode)
+			if season.fetched == FetchState.Done:
+				episode = season.episodes[row]
+				return self.createIndex(row, column, episode)
+			else:
+				return self.createIndex(row, column, season.loading_item)
 
 		return Qt.QModelIndex()
 
 	def parent(self, child):
-		#print("Ask for parent of %s" % str(child.internalPointer()))
-
-		if type(child.internalPointer()) == FakeShow:
+		if type(child.internalPointer()) == ShowsTreeModelShow:
 			# Show has no parent
 			return Qt.QModelIndex()
 
-		elif type(child.internalPointer()) == FakeSeason:
+		elif type(child.internalPointer()) == ShowsTreeModelSeason:
 			season = child.internalPointer()
-			seasons = season.show.get_seasons()
-			row = seasons.index(season)
+			row = season.show.seasons.index(season)
 
 			return self.createIndex(row, 0, season.show)
 
-		elif type(child.internalPointer()) == FakeEpisode:
+		elif type(child.internalPointer()) == ShowsTreeModelEpisode:
 			episode = child.internalPointer()
-			episodes = episode.season.get_episodes()
-			row = episodes.index(episode)
+			row = episode.season.episodes.index(episode)
 
 			return self.createIndex(row, 0, episode.season)
+		elif type(child.internalPointer()) == LoadingItem:
+			loading_item = child.internalPointer()
+			if loading_item.parent is not None:
+				return self.createIndex(0, 0, loading_item.parent)
+			else:
+				return Qt.QModelIndex()
 
 		return Qt.QModelIndex()
 
 	def rowCount(self, parent = Qt.QModelIndex()):
+		#print("RowCount of %s %s" % (str(parent.internalPointer()), parent.isValid()))
+		# TODO: Maybe add a rowCount method in the ShowsTreeModel* classes and just call it.
 		if not parent.isValid():
 			# Nombre de shows
-			#print(len(self.datasource.get_shows()))
-			return len(self.datasource.get_shows())
-		elif type(parent.internalPointer()) == FakeShow:
+			if self.fetched == FetchState.Done:
+				return len(self.shows)
+			else:
+				# The "Loading" item
+				return 1
+
+		elif type(parent.internalPointer()) == ShowsTreeModelShow:
 			# Nombre de saisons pour un show
 			show = parent.internalPointer()
-			return len(show.get_seasons())
-		elif type(parent.internalPointer()) == FakeSeason:
+			if show.fetched == FetchState.Done:
+				return len(show.seasons)
+			else:
+				# The "Loading" item
+				return 1
+
+		elif type(parent.internalPointer()) == ShowsTreeModelSeason:
 			# Nombre d'episodes pour une saison
 			season = parent.internalPointer()
-			return len(season.get_episodes())
+			if season.fetched == FetchState.Done:
+				return len(season.episodes)
+			else:
+				# The "Loading" item
+				return 1
 
-		return 0
+		elif type(parent.internalPointer()) == ShowsTreeModelEpisode:
+			return 0
+
+		elif type(parent.internalPointer()) == LoadingItem:
+			return 0
+
+
+		print("Damn")
+		# All possible types should be covered in the if/elif
+		assert(False)
 
 	def columnCount(self, parent = Qt.QModelIndex()):
 		return 3
 
-	def data_show(self, column, show):
-		if column == 0:
-			return show.name
-		elif column == 1:
-			return ""
-		elif column == 2:
-			return ""
+	def fetchDone(self, parent, children_list):
+		"""A fetch work is complete."""
+		print("fetchDone for %s" % (parent.internalPointer()))
+		self.beginInsertRows(parent, 0, len(children_list) - 1)
 
-		return "?"
+		if parent.isValid():
+			parent.internalPointer().set_children(children_list)
+			parent.internalPointer().fetched = FetchState.Done
+		else:
+			self.shows = children_list
+			self.fetched = FetchState.Done
+		self.endInsertRows()
+		pass
+
+	def fetchInit(self, parent):
+		if parent.isValid():
+			parent.internalPointer().fetched = FetchState.Started
+			self.new_data_required.emit(parent)
+		else:
+			self.fetched = FetchState.Started
+			self.new_data_required.emit(parent)
 
 
-	def data_season(self, column, season):
-		if column == 0:
-			return "Saison %d" % (season.number)
-		elif column == 1:
-			return ""
-		elif column == 2:
-			return ""
 
-		return "?"
-
-
-	def data_episode(self, column, episode):
-		if column == 0:
-			return "Episode %d" % (episode.number)
-		elif column == 1:
-			return "%s" % (episode.name)
-		elif column == 2:
-			return ""
-
-		return "?"
+	def itemExpanded(self, parent):
+		if parent.internalPointer().fetched == FetchState.Nope:
+			self.fetchInit(parent)
 
 	def data(self, index, role = QtCore.Qt.DisplayRole):
 		if not index.isValid():
 			return None
 
-		if role == QtCore.Qt.DisplayRole:
-			data_types = {
-				FakeShow: self.data_show,
-				FakeSeason: self.data_season,
-				FakeEpisode: self.data_episode,
-			}
+		return index.internalPointer().data(index, role)
 
-			return data_types[type(index.internalPointer())](index.column(), index.internalPointer())
+class ShowsTreeModelFetchThread(Qt.QThread):
+	def __init__(self, datasource):
+		super(ShowsTreeModelFetchThread, self).__init__()
+		self.queue = queue.Queue()
+		self.datasource = datasource
 
-		return None
+	work_done = QtCore.pyqtSignal(object, list)
+
+	def new_work_piece(self, parent):
+		print("New work piece for %s" % parent.internalPointer())
+		self.queue.put(parent)
+
+	def fetch_shows(self, parent):
+		shows = self.datasource.get_shows()
+		shows_ret = []
+		for show in shows:
+			shows_ret.append(ShowsTreeModelShow(show.name))
+		self.work_done.emit(parent, shows_ret)
+
+	def fetch_seasons(self, parent):
+		show = parent.internalPointer()
+		seasons = self.datasource.get_season_for(show.name)
+		seasons_ret = []
+		print("A")
+		for s in seasons:
+			seasons_ret.append(ShowsTreeModelSeason(s.number))
+		print("B")
+		self.work_done.emit(parent, seasons_ret)
+
+	def fetch_episodes(self, parent):
+		print("Ohlala")
+		assert(False)
+
+	def run(self):
+		while True:
+			parent = self.queue.get()
+			print("Processing work piece for %s" % parent.internalPointer())
+			if not parent.isValid():
+				self.fetch_shows(parent)
+			elif type(parent.internalPointer()) == ShowsTreeModelShow:
+				print("C")
+				self.fetch_seasons(parent)
+				print("D")
+			elif type(parent.internalPointer()) == ShowsTreeModelSeason:
+				self.fetch_episodes(parent)
+
+
+
 if __name__ == "__main__":
 	data = FakeDataSource("fakedata.xml")
 	model = ShowsTreeModel(data)
