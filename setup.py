@@ -40,6 +40,7 @@ setup(name='pytoutv',
     author='Benjamin Vanheuverzwijn',
     author_email='bvanheu@gmail.com',
     url='https://github.com/bvanheu/Tou.tv-console-application',
+    keywords='TOUTV',
     packages=[
         'toutv',
         'toutvcli'
