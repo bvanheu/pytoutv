@@ -43,13 +43,13 @@ from toutvcli.progressbar import ProgressBar
 class App:
     def __init__(self, args):
         self._argparser = self._build_argparser()
-        self._toutvclient = self._build_toutv_client()
         self._args = args
         self._dl = None
         self._stop = False
 
     def run(self):
         args = self._argparser.parse_args(self._args)
+        self._toutvclient = self._build_toutv_client(args.no_cache)
 
         try:
             args.func(args)
@@ -95,6 +95,8 @@ class App:
                         help='List all episodes of an emission')
         pl.add_argument('-a', '--all', action='store_true',
                         help='List emissions without episodes')
+        pl.add_argument('-n', '--no-cache', action='store_true',
+                        help='Disable cache')
         pl.set_defaults(func=self._command_list)
 
         # info command
@@ -106,6 +108,8 @@ class App:
                         help='Episode name for which to get information')
         pi.add_argument('-u', '--url', action='store_true',
                         help='Get episode information using a TOU.TV URL')
+        pi.add_argument('-n', '--no-cache', action='store_true',
+                        help='Disable cache')
         pi.set_defaults(func=self._command_info)
 
         # fetch command
@@ -125,6 +129,8 @@ class App:
                         help='Emission name to fetch')
         pf.add_argument('episode', action='store', nargs='?', type=str,
                         help='Episode name to fetch')
+        pf.add_argument('-n', '--no-cache', action='store_true',
+                        help='Disable cache')
         pf.set_defaults(func=self._command_fetch)
 
         # search command
@@ -136,23 +142,26 @@ class App:
 
         return p
 
-    def _build_toutv_client(self):
-        cache_name = '.toutv_cache'
-        cache_path = cache_name
-        if platform.system() == 'Linux':
-            try:
-                cache_dir = os.environ['XDG_CACHE_DIR']
-                xdg_cache_path = os.path.join(cache_dir, 'toutv')
-                if not os.path.exists(xdg_cache_path):
-                    os.makedirs(xdg_cache_path)
-                cache_path = os.path.join(xdg_cache_path, cache_name)
-            except KeyError:
-                home_dir = os.environ['HOME']
-                home_cache_path = os.path.join(home_dir, '.cache', 'toutv')
-                if not os.path.exists(home_cache_path):
-                    os.makedirs(home_cache_path)
-                cache_path = os.path.join(home_cache_path, cache_name)
-        cache = toutv.cache.ShelveCache(cache_path)
+    def _build_toutv_client(self, no_cache):
+        if no_cache:
+            cache = toutv.cache.EmptyCache()
+        else:
+            cache_name = '.toutv_cache'
+            cache_path = cache_name
+            if platform.system() == 'Linux':
+                try:
+                    cache_dir = os.environ['XDG_CACHE_DIR']
+                    xdg_cache_path = os.path.join(cache_dir, 'toutv')
+                    if not os.path.exists(xdg_cache_path):
+                        os.makedirs(xdg_cache_path)
+                    cache_path = os.path.join(xdg_cache_path, cache_name)
+                except KeyError:
+                    home_dir = os.environ['HOME']
+                    home_cache_path = os.path.join(home_dir, '.cache', 'toutv')
+                    if not os.path.exists(home_cache_path):
+                        os.makedirs(home_cache_path)
+                    cache_path = os.path.join(home_cache_path, cache_name)
+            cache = toutv.cache.ShelveCache(cache_path)
 
         return toutv.client.Client(cache=cache)
 
