@@ -1,4 +1,5 @@
 # stdlib imports
+import signal
 import sys
 
 # PyQt4 imports
@@ -24,6 +25,8 @@ class TouTvQt(Qt.QApplication):
 		self.mainwindow.shows_treeview.setModel(model)
 
 if __name__ == '__main__':
+	signal.signal(signal.SIGINT, signal.SIG_DFL)
+
 	app = TouTvQt(sys.argv)
 	mainwindow = uic.loadUi(TOUTV_UI_FILE)
 	app.setup_ui(mainwindow)
