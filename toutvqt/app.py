@@ -1,17 +1,13 @@
-# stdlib imports
 import signal
 import sys
-
-# egg
 from pkg_resources import resource_filename
-
-# PyQt4 imports
 from PyQt4 import uic
 from PyQt4 import Qt
-
 from toutvqt.shows_treemodel import ShowsTreeModel, FakeDataSource
 
+
 TOUTV_UI_FILE = resource_filename(__name__, 'dat/toutv.ui')
+
 
 class TouTvQt(Qt.QApplication):
     def __init__(self, args):

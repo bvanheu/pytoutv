@@ -1,19 +1,20 @@
 from PyQt4 import Qt
 from PyQt4 import QtCore
-
 import datetime
 import sys
 import traceback
 import time
 import queue
-
 import xml.etree.ElementTree as ET
+
 
 def return_name(x):
     return x.name
 
+
 def return_number(x):
     return x.number
+
 
 class FakeShow:
     def __init__(self, name):
@@ -34,9 +35,9 @@ class FakeShow:
     def get_seasons(self):
         return sorted(self.seasons.values(), key = return_number)
 
+
 #    def get_season(self, number):
 #        return self.seasons[number]
-
 class FakeSeason:
     def __init__(self, number):
         self.number = number
@@ -52,9 +53,9 @@ class FakeSeason:
         time.sleep(2)
         return sorted(self.episodes.values(), key = return_number)
 
+
 #    def get_episode(self, number):
 #        return self.episodes[number]
-
 class FakeEpisode:
     def __init__(self, name, number):
         self.name = name
@@ -65,14 +66,12 @@ class FakeEpisode:
         return "Episode S%02dE%02d %s" % (self.season.number, self.number, self.name)
 
 
-
 class FakeDataSource:
     def __init__(self, xmlFile):
         tree = ET.parse(xmlFile)
         root = tree.getroot()
 
         self.shows = {}
-
 
         for node in root:
             if node.tag == "Episode":
@@ -104,10 +103,12 @@ class FakeDataSource:
         print("Not found %s", show_name)
         assert(False)
 
+
 class FetchState:
     Nope = 0
     Started = 1
     Done = 2
+
 
 class LoadingItem:
     def __init__(self, parent):
@@ -120,6 +121,7 @@ class LoadingItem:
                 return "Loading..."
             else:
                 return ""
+
 
 class ShowsTreeModelShow:
     def __init__(self, name):
@@ -164,6 +166,7 @@ class ShowsTreeModelSeason:
 
             return "?"
 
+
 class ShowsTreeModelEpisode:
     def __init__(self, name, number):
         self.name = name
@@ -181,7 +184,6 @@ class ShowsTreeModelEpisode:
                 return ""
 
             return "?"
-
 
 
 class ShowsTreeModel(Qt.QAbstractItemModel):
@@ -339,6 +341,7 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
 
         return index.internalPointer().data(index, role)
 
+
 class ShowsTreeModelFetchThread(Qt.QThread):
     def __init__(self, datasource):
         super(ShowsTreeModelFetchThread, self).__init__()
@@ -386,7 +389,6 @@ class ShowsTreeModelFetchThread(Qt.QThread):
                 self.fetch_episodes(parent)
 
 
-
 if __name__ == "__main__":
     data = FakeDataSource("fakedata.xml")
     model = ShowsTreeModel(data)
@@ -396,4 +398,3 @@ if __name__ == "__main__":
         for season in a_show.get_seasons():
             for episode in a_show.get_episodes(season):
                 print(episode)
-
