@@ -52,6 +52,10 @@ class App:
         self._stop = False
 
     def run(self):
+        if not self._args:
+            self._argparser.print_help()
+            return 10
+
         args = self._argparser.parse_args(self._args)
         self._toutvclient = self._build_toutv_client(args.no_cache)
 
