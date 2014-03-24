@@ -25,8 +25,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import sys
 from setuptools import setup
 
+
+# Make sure we run Python 3.3+ here
+v = sys.version_info
+if v.major < 3 or v.minor < 3:
+    sys.stderr.write('Sorry, pytoutv needs Python 3.3+\n')
+    sys.exit(1)
 
 entry_points = {
     'console_scripts': [
