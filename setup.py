@@ -41,6 +41,7 @@ setup(name='pytoutv',
     author_email='bvanheu@gmail.com',
     url='https://github.com/bvanheu/Tou.tv-console-application',
     keywords='TOUTV',
+    license="GPLv3",
     packages=[
         'toutv',
         'toutvcli'
