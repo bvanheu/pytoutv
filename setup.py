@@ -46,5 +46,9 @@ setup(name='pytoutv',
         'toutv',
         'toutvcli'
     ],
+    install_requires=[
+        'pycrypto>=2.6.1',
+        'requests>=2.2.1'
+    ],
     entry_points=entry_points
 )
