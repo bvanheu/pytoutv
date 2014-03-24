@@ -38,12 +38,22 @@ if v.major < 3 or v.minor < 3:
 entry_points = {
     'console_scripts': [
         'toutv = toutvcli.app:run'
+    ],
+    'gui_scripts': [
+        'qtoutv = toutvqt.app:run'
     ]
 }
 packages = [
     'toutv',
-    'toutvcli'
+    'toutvcli',
+    'toutvqt'
 ]
+package_data = {
+    'toutvqt': [
+        'dat/fakedata.xml',
+        'dat/toutv.ui',
+    ]
+}
 install_requires = [
     'pycrypto>=2.6.0',
     'requests>=2.2.0'
@@ -58,5 +68,6 @@ setup(name='pytoutv',
       keywords='TOUTV',
       license="GPLv3",
       packages=packages,
+      package_data=package_data,
       install_requires=install_requires,
       entry_points=entry_points)

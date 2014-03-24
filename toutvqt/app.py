@@ -2,13 +2,16 @@
 import signal
 import sys
 
+# egg
+from pkg_resources import resource_filename
+
 # PyQt4 imports
 from PyQt4 import uic
 from PyQt4 import Qt
 
-from shows_treemodel import ShowsTreeModel, FakeDataSource
+from toutvqt.shows_treemodel import ShowsTreeModel, FakeDataSource
 
-TOUTV_UI_FILE = "toutv.ui"
+TOUTV_UI_FILE = resource_filename(__name__, 'dat/toutv.ui')
 
 class TouTvQt(Qt.QApplication):
 	def __init__(self, args):
@@ -20,12 +23,14 @@ class TouTvQt(Qt.QApplication):
 
 		self.mainwindow.action_quit.triggered.connect(self.closeAllWindows)
 
-		data = FakeDataSource("fakedata.xml")
+		xml_path = resource_filename(__name__, 'dat/fakedata.xml')
+		data = FakeDataSource(xml_path)
 		model = ShowsTreeModel(data)
 		self.mainwindow.shows_treeview.setModel(model)
 		self.mainwindow.shows_treeview.expanded.connect(model.itemExpanded)
 
-if __name__ == '__main__':
+
+def run():
 	signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 	app = TouTvQt(sys.argv)
