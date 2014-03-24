@@ -442,7 +442,7 @@ class App:
         self._dl = None
 
     def _fetch_episode_name(self, emission_name, episode_name, output_dir,
-                            quality='AVERAGE', bitrate=0):
+                            quality, bitrate=0):
         try:
             emission = self._toutvclient.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
@@ -481,7 +481,7 @@ class App:
                 sys.stderr.write('Error: cannot fetch "{}"\n'.format(title))
 
     def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
-                                      quality='AVERAGE'):
+                                      quality):
         try:
             emission = self._toutvclient.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
