@@ -145,6 +145,9 @@ class ShowsTreeModelShow:
 
             return "?"
 
+    def set_children(self, c):
+        self.seasons = c
+
 
 class ShowsTreeModelSeason:
     def __init__(self, number, row_in_parent):
@@ -167,6 +170,8 @@ class ShowsTreeModelSeason:
                 return ""
 
             return "?"
+    def set_children(self, c):
+        self.episodes = c
 
 
 class ShowsTreeModelEpisode:
