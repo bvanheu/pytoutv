@@ -40,22 +40,23 @@ entry_points = {
         'toutv = toutvcli.app:run'
     ]
 }
+packages = [
+    'toutv',
+    'toutvcli'
+]
+install_requires = [
+    'pycrypto>=2.6.1',
+    'requests>=2.2.1'
+]
 
 setup(name='pytoutv',
-    version='2.0.0',
-    description='TOU.TV client library and user interfaces',
-    author='Benjamin Vanheuverzwijn',
-    author_email='bvanheu@gmail.com',
-    url='https://github.com/bvanheu/Tou.tv-console-application',
-    keywords='TOUTV',
-    license="GPLv3",
-    packages=[
-        'toutv',
-        'toutvcli'
-    ],
-    install_requires=[
-        'pycrypto>=2.6.1',
-        'requests>=2.2.1'
-    ],
-    entry_points=entry_points
-)
+      version='2.0.0',
+      description='TOU.TV client library and user interfaces',
+      author='Benjamin Vanheuverzwijn',
+      author_email='bvanheu@gmail.com',
+      url='https://github.com/bvanheu/Tou.tv-console-application',
+      keywords='TOUTV',
+      license="GPLv3",
+      packages=packages,
+      install_requires=install_requires,
+      entry_points=entry_points)
