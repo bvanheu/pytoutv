@@ -124,10 +124,11 @@ class LoadingItem:
 
 
 class ShowsTreeModelShow:
-    def __init__(self, name):
+    def __init__(self, name, row_in_parent):
         self.name = name
         self.seasons = []
         self.loading_item = LoadingItem(self)
+        self.row_in_parent = row_in_parent
 
         # Have we fetched this show's seasons?
         self.fetched = FetchState.Nope
@@ -146,10 +147,11 @@ class ShowsTreeModelShow:
 
 
 class ShowsTreeModelSeason:
-    def __init__(self, number):
+    def __init__(self, number, row_in_parent):
         self.number = number
         self.episodes = []
         self.loading_item = LoadingItem(self)
+        self.row_in_parent = row_in_parent
 
         # Have we fetched this season's episodes?
         self.fetched = FetchState.Nope
@@ -168,10 +170,11 @@ class ShowsTreeModelSeason:
 
 
 class ShowsTreeModelEpisode:
-    def __init__(self, name, number):
+    def __init__(self, name, number, row_in_parent):
         self.name = name
         self.number = number
         self.loading_item = LoadingItem(self)
+        self.row_in_parent = row_in_parent
 
     def data(self, index, role):
         column = index.column()
@@ -245,16 +248,17 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
             return Qt.QModelIndex()
 
         elif type(child.internalPointer()) == ShowsTreeModelSeason:
-            season = child.internalPointer()
-            row = season.show.seasons.index(season)
+            show = child.internalPointer().show
+            row = show.row_in_parent
 
-            return self.createIndex(row, 0, season.show)
+            return self.createIndex(row, 0, show)
 
         elif type(child.internalPointer()) == ShowsTreeModelEpisode:
-            episode = child.internalPointer()
-            row = episode.season.episodes.index(episode)
+            season = child.internalPointer().season
+            row = season.row_in_parent
 
             return self.createIndex(row, 0, episode.season)
+
         elif type(child.internalPointer()) == LoadingItem:
             loading_item = child.internalPointer()
             if loading_item.parent is not None:
