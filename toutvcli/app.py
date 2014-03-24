@@ -41,6 +41,10 @@ from toutvcli.progressbar import ProgressBar
 
 
 class App:
+    QUALITY_MIN = 'MIN'
+    QUALITY_AVG = 'AVERAGE'
+    QUALITY_MAX = 'MAX'
+
     def __init__(self, args):
         self._argparser = self._build_argparser()
         self._args = args
@@ -115,11 +119,16 @@ class App:
         # fetch command
         pf = sp.add_parser('fetch',
                            help='Fetch one or all episodes of an emission')
-        pf.add_argument('-q', '--quality', action='store', default='AVERAGE',
-                        choices=['MIN', 'AVERAGE', 'MAX'],
-                        help='Video quality (default: AVERAGE)')
+        quality_choices = [
+            App.QUALITY_MIN,
+            App.QUALITY_AVG,
+            App.QUALITY_MAX
+        ]
+        pf.add_argument('-q', '--quality', action='store',
+                        default=App.QUALITY_AVG, choices=quality_choices,
+                        help='Video quality (default: {})'.format(App.QUALITY_AVG))
         pf.add_argument('-b', '--bitrate', action='store', type=int,
-                        help='Video bitrate (default: fallback to AVERAGE quality)')
+                        help='Video bitrate (default: use default quality)')
         pf.add_argument('-d', '--directory', action='store',
                         default=os.getcwd(),
                         help='Output directory (default: CWD)')
@@ -421,11 +430,11 @@ class App:
 
         # Choose bitrate
         if bitrate is None:
-            if quality == 'MIN':
+            if quality == App.QUALITY_MIN:
                 bitrate = bitrates[0]
-            elif quality == 'MAX':
+            elif quality == App.QUALITY_MAX:
                 bitrate = bitrates[-1]
-            elif quality == 'AVERAGE':
+            elif quality == App.QUALITY_AVG:
                 bitrate = App._get_average_bitrate(bitrates)
 
         # Create downloader
