@@ -319,24 +319,29 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
     def fetchDone(self, parent, children_list):
         """A fetch work is complete."""
         print("fetchDone for %s" % (parent.internalPointer()))
-        self.beginInsertRows(parent, 0, len(children_list) - 1)
 
+        self.beginRemoveRows(parent, 0, 0)
         if parent.isValid():
-            parent.internalPointer().set_children(children_list)
             parent.internalPointer().fetched = FetchState.Done
         else:
+            self.fetched =  FetchState.Done
+        self.endRemoveRows()
+
+        self.beginInsertRows(parent, 0, len(children_list) - 1)
+        if parent.isValid():
+            parent.internalPointer().set_children(children_list)
+        else:
             self.shows = children_list
-            self.fetched = FetchState.Done
         self.endInsertRows()
-        pass
+
 
     def fetchInit(self, parent):
         if parent.isValid():
             parent.internalPointer().fetched = FetchState.Started
-            self.new_data_required.emit(parent)
         else:
             self.fetched = FetchState.Started
-            self.new_data_required.emit(parent)
+
+        self.new_data_required.emit(parent)
 
 
 
@@ -366,8 +371,9 @@ class ShowsTreeModelFetchThread(Qt.QThread):
     def fetch_shows(self, parent):
         shows = self.datasource.get_shows()
         shows_ret = []
-        for show in shows:
-            shows_ret.append(ShowsTreeModelShow(show.name))
+        for (i, show) in enumerate(shows):
+            new_show = ShowsTreeModelShow(show.name, i)
+            shows_ret.append(new_show)
         self.work_done.emit(parent, shows_ret)
 
     def fetch_seasons(self, parent):
@@ -375,8 +381,10 @@ class ShowsTreeModelFetchThread(Qt.QThread):
         seasons = self.datasource.get_season_for(show.name)
         seasons_ret = []
         print("A")
-        for s in seasons:
-            seasons_ret.append(ShowsTreeModelSeason(s.number))
+        for (i, s) in enumerate(seasons):
+            new_season = ShowsTreeModelSeason(s.number, i)
+            new_season.show = show
+            seasons_ret.append(new_season)
         print("B")
         self.work_done.emit(parent, seasons_ret)
 
