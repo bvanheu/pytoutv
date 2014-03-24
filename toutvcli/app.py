@@ -513,8 +513,8 @@ def _register_sigint(app):
         signal.signal(signal.SIGINT, handler)
 
 
-def run(args):
-    app = App(args)
+def run():
+    app = App(sys.argv[1:])
     _register_sigint(app)
 
     return app.run()
