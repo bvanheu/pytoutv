@@ -131,8 +131,8 @@ class FetchState:
 
 class LoadingItem:
 
-    def __init__(self, parent):
-        self.parent = parent
+    def __init__(self, my_parent):
+        self.my_parent = my_parent
 
     def data(self, index, role):
         column = index.column()
@@ -145,6 +145,12 @@ class LoadingItem:
     def rowCount(self):
         # The Loading item does not have any child.
         return 0
+
+    def parent(self, child, createIndex):
+        if self.my_parent is not None:
+            return createIndex(0, 0, self.my_parent)
+        else:
+            return Qt.QModelIndex()
 
 
 class EmissionsTreeModelEmission:
@@ -176,6 +182,10 @@ class EmissionsTreeModelEmission:
         else:
             # The "Loading" item.
             return 1
+
+    def parent(self, child, createIndex):
+        # An emission is at root level.
+        return Qt.QModelIndex()
 
     def set_children(self, c):
         self.seasons = c
@@ -211,6 +221,9 @@ class EmissionsTreeModelSeason:
             # The "Loading" item.
             return 1
 
+    def parent(self, child, createIndex):
+        return createIndex(self.row_in_parent, 0, self.emission)
+
     def set_children(self, c):
         self.episodes = c
 
@@ -238,6 +251,9 @@ class EmissionsTreeModelEpisode:
     def rowCount(self):
         # An episode does not have any child.
         return 0
+
+    def parent(self, child, createIndex):
+        return createIndex(self.row_in_parent, 0, self.season)
 
 
 class EmissionsTreeModel(Qt.QAbstractItemModel):
@@ -295,30 +311,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         return Qt.QModelIndex()
 
     def parent(self, child):
-        if type(child.internalPointer()) == EmissionsTreeModelEmission:
-            # Emission has no parent
-            return Qt.QModelIndex()
-
-        elif type(child.internalPointer()) == EmissionsTreeModelSeason:
-            emission = child.internalPointer().emission
-            row = emission.row_in_parent
-
-            return self.createIndex(row, 0, emission)
-
-        elif type(child.internalPointer()) == EmissionsTreeModelEpisode:
-            season = child.internalPointer().season
-            row = season.row_in_parent
-
-            return self.createIndex(row, 0, season)
-
-        elif type(child.internalPointer()) == LoadingItem:
-            loading_item = child.internalPointer()
-            if loading_item.parent is not None:
-                return self.createIndex(0, 0, loading_item.parent)
-            else:
-                return Qt.QModelIndex()
-
-        return Qt.QModelIndex()
+        item = child.internalPointer()
+        return item.parent(child, self.createIndex)
 
     def rowCount(self, parent=Qt.QModelIndex()):
         # TODO: Maybe add a rowCount method in the EmissionsTreeModel* classes
