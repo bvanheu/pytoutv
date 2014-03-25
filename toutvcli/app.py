@@ -214,14 +214,13 @@ class App:
                                 overwrite=args.force)
             return
 
-        if args.emission and not args.episode:
+        if args.emission is not None and args.episode is None:
             self._fetch_emission_episodes_name(args.emission,
                                                output_dir=args.directory,
                                                quality=args.quality,
                                                bitrate=args.bitrate,
                                                overwrite=args.force)
-
-        if args.emission and args.episode:
+        elif args.emission is not None and args.episode is not None:
             self._fetch_episode_name(args.emission, args.episode,
                                      output_dir=output_dir, quality=quality,
                                      bitrate=bitrate, overwrite=args.force)
