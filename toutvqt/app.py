@@ -1,4 +1,5 @@
 import sys
+import platform
 from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
@@ -16,7 +17,7 @@ class QTouTvApp(Qt.QApplication):
         self.main_window.show()
 
 
-def _register_sigint(app):
+def _register_sigint():
     if platform.system() == 'Linux':
         import signal
         signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -24,5 +25,6 @@ def _register_sigint(app):
 
 def run():
     app = QTouTvApp(sys.argv)
+    _register_sigint()
 
     return app.exec_()
