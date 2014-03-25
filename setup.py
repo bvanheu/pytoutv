@@ -51,7 +51,7 @@ packages = [
 package_data = {
     'toutvqt': [
         'dat/fakedata.xml',
-        'dat/toutv.ui',
+        'dat/*.ui',
     ]
 }
 install_requires = [

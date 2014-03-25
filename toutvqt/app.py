@@ -6,7 +6,7 @@ from PyQt4 import Qt
 from toutvqt.emissions_treemodel import EmissionsTreeModel, FakeDataSource
 
 
-TOUTV_UI_FILE = resource_filename(__name__, 'dat/toutv.ui')
+TOUTV_UI_FILE = resource_filename(__name__, 'dat/main_window.ui')
 
 
 class TouTvQt(Qt.QApplication):
