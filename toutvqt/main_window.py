@@ -34,13 +34,35 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._setup_file_menu()
         self._setup_help_menu()
 
+    def _setup_none_label(self):
+        self.none_label = Qt.QLabel()
+        self.none_label.setText('Please select an emission in the list above')
+        font = Qt.QFont()
+        font.setItalic(True)
+        self.none_label.setFont(font)
+
+    def _setup_infos(self):
+        self._setup_none_label()
+        self.show_infos_none()
+
     def _setup_ui(self):
         uic.loadUi(QTouTvMainWindow.UI_PATH, baseinstance=self)
         self._add_treeview()
         self._setup_menus()
+        self._setup_infos()
 
     def show_about_dialog(self):
         pos = self.pos()
         pos.setX(pos.x() + 40)
         pos.setY(pos.y() + 40)
         self.about_dialog.show_move(pos)
+
+    def _swap_infos_widget(self, widget):
+        layout = self.infos_frame.layout()
+
+        if layout.count() == 1:
+            layout.takeAt(0)
+        layout.addWidget(widget)
+
+    def show_infos_none(self):
+        self._swap_infos_widget(self.none_label)
