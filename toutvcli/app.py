@@ -70,9 +70,12 @@ class App:
         except toutv.dl.CancelledException as e:
             sys.stderr.write('\nDownload cancelled by user\n'.format(e))
             return 3
+        except toutv.dl.FileExists as e:
+            sys.stderr.write('Destination file exists (use -f to force)\n'.format(e))
+            return 4
         except Exception as e:
             sys.stderr.write('Unknown error: {}\n'.format(e))
-            return 4
+            return 5
 
         return 0
 
@@ -144,6 +147,8 @@ class App:
                         help='Episode name to fetch')
         pf.add_argument('-n', '--no-cache', action='store_true',
                         help='Disable cache')
+        pf.add_argument('-f', '--force', action='store_true',
+                        help='Overwrite existing output file')
         pf.set_defaults(func=self._command_fetch)
 
         # search command
@@ -205,19 +210,21 @@ class App:
             em = args.emission
             episode = self._toutvclient.get_episode_from_url(em)
             self._fetch_episode(episode, output_dir=output_dir,
-                                quality=quality, bitrate=bitrate)
+                                quality=quality, bitrate=bitrate,
+                                overwrite=args.force)
             return
 
         if args.emission and not args.episode:
             self._fetch_emission_episodes_name(args.emission,
                                                output_dir=args.directory,
                                                quality=args.quality,
-                                               bitrate=args.bitrate)
+                                               bitrate=args.bitrate,
+                                               overwrite=args.force)
 
         if args.emission and args.episode:
             self._fetch_episode_name(args.emission, args.episode,
                                      output_dir=output_dir, quality=quality,
-                                     bitrate=bitrate)
+                                     bitrate=bitrate, overwrite=args.force)
 
     def _command_search(self, args):
         self._print_search_results(args.query)
@@ -428,7 +435,7 @@ class App:
     def _on_dl_progress_update(self, total_segments, total_bytes):
         self._print_cur_pb(total_segments, total_bytes)
 
-    def _fetch_episode(self, episode, output_dir, bitrate, quality):
+    def _fetch_episode(self, episode, output_dir, bitrate, quality, overwrite):
         # Get available bitrates for episode
         bitrates = episode.get_available_bitrates()
 
@@ -446,7 +453,8 @@ class App:
         self._dl = toutv.dl.Downloader(episode, bitrate=bitrate,
                                        output_dir=output_dir,
                                        on_dl_start=self._on_dl_start,
-                                       on_progress_update=opu)
+                                       on_progress_update=opu,
+                                       overwrite=overwrite)
 
         # Start download
         self._dl.download()
@@ -455,7 +463,7 @@ class App:
         self._dl = None
 
     def _fetch_episode_name(self, emission_name, episode_name, output_dir,
-                            quality, bitrate=0):
+                            quality, bitrate, overwrite):
         try:
             emission = self._toutvclient.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
@@ -470,9 +478,10 @@ class App:
             return
 
         self._fetch_episode(episode, output_dir=output_dir, quality=quality,
-                            bitrate=bitrate)
+                            bitrate=bitrate, overwrite=overwrite)
 
-    def _fetch_emission_episodes(self, emission, output_dir, bitrate, quality):
+    def _fetch_emission_episodes(self, emission, output_dir, bitrate, quality,
+                                 overwrite):
         episodes = self._toutvclient.get_emission_episodes(emission)
 
         if not episodes:
@@ -484,7 +493,8 @@ class App:
             if self._stop:
                 raise toutv.dl.CancelledException()
             try:
-                self._fetch_episode(episode, output_dir, bitrate, quality)
+                self._fetch_episode(episode, output_dir, bitrate, quality,
+                                    overwrite)
                 sys.stdout.write('\n')
                 sys.stdout.flush()
             except toutv.dl.CancelledException as e:
@@ -494,14 +504,15 @@ class App:
                 sys.stderr.write('Error: cannot fetch "{}"\n'.format(title))
 
     def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
-                                      quality):
+                                      quality, overwrite):
         try:
             emission = self._toutvclient.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
 
-        self._fetch_emission_episodes(emission, output_dir, bitrate, quality)
+        self._fetch_emission_episodes(emission, output_dir, bitrate, quality,
+                                      overwrite)
 
 
 def _register_sigint(app):

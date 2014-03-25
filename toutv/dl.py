@@ -47,16 +47,21 @@ class CancelledException(Exception):
     pass
 
 
+class FileExists(Exception):
+    pass
+
+
 class Downloader:
     def __init__(self, episode, bitrate, output_dir=os.getcwd(),
                  filename=None, on_progress_update=None,
-                 on_dl_start=None):
+                 on_dl_start=None, overwrite=False):
         self._episode = episode
         self._bitrate = bitrate
         self._output_dir = output_dir
         self._filename = filename
         self._on_progress_update = on_progress_update
         self._on_dl_start = on_dl_start
+        self._overwrite = overwrite
 
         self._set_output_path()
 
@@ -128,6 +133,10 @@ class Downloader:
         self._output_path = os.path.join(self._output_dir, self._filename)
 
     def _init_download(self):
+        # Prevent overwriting
+        if not self._overwrite and os.path.exists(self._filename):
+            raise FileExists()
+
         pl, cookies = Downloader.get_episode_playlist_cookies(self._episode)
         self._playlist = pl
         self._cookies = cookies
