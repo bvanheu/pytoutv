@@ -489,6 +489,7 @@ class App:
             return
 
         for episode in episodes.values():
+            title = episode.Title
             if self._stop:
                 raise toutv.dl.CancelledException()
             try:
@@ -498,8 +499,9 @@ class App:
                 sys.stdout.flush()
             except toutv.dl.CancelledException as e:
                 raise e
+            except toutv.dl.FileExists as e:
+                sys.stderr.write('Error: cannot fetch "{}": destination file exists\n'.format(title))
             except:
-                title = episode.Title
                 sys.stderr.write('Error: cannot fetch "{}"\n'.format(title))
 
     def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
