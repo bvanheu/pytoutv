@@ -132,6 +132,10 @@ class LoadingItem:
             else:
                 return ""
 
+    def rowCount(self):
+        # The Loading item does not have any child.
+        return 0
+
 class EmissionsTreeModelEmission:
     def __init__(self, name, row_in_parent):
         self.name = name
@@ -154,9 +158,15 @@ class EmissionsTreeModelEmission:
 
             return "?"
 
+    def rowCount(self):
+        if self.fetched == FetchState.Done:
+            return len(self.seasons)
+        else:
+            # The "Loading" item.
+            return 1
+
     def set_children(self, c):
         self.seasons = c
-
 
 class EmissionsTreeModelSeason:
     def __init__(self, number, row_in_parent):
@@ -179,9 +189,16 @@ class EmissionsTreeModelSeason:
                 return ""
 
             return "?"
+
+    def rowCount(self):
+        if self.fetched == FetchState.Done:
+            return len(self.episodes)
+        else:
+            # The "Loading" item.
+            return 1
+
     def set_children(self, c):
         self.episodes = c
-
 
 class EmissionsTreeModelEpisode:
     def __init__(self, name, number, row_in_parent):
@@ -201,6 +218,10 @@ class EmissionsTreeModelEpisode:
                 return ""
 
             return "?"
+
+    def rowCount(self):
+        # An episode does not have any child.
+        return 0
 
 class EmissionsTreeModel(Qt.QAbstractItemModel):
     def __init__(self, datasource):
@@ -289,33 +310,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             else:
                 # The "Loading" item
                 return 1
-
-        elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
-            # Nombre de saisons pour un emission
-            emission = parent.internalPointer()
-            if emission.fetched == FetchState.Done:
-                return len(emission.seasons)
-            else:
-                # The "Loading" item
-                return 1
-
-        elif type(parent.internalPointer()) == EmissionsTreeModelSeason:
-            # Nombre d'episodes pour une saison
-            season = parent.internalPointer()
-            if season.fetched == FetchState.Done:
-                return len(season.episodes)
-            else:
-                # The "Loading" item
-                return 1
-
-        elif type(parent.internalPointer()) == EmissionsTreeModelEpisode:
-            return 0
-
-        elif type(parent.internalPointer()) == LoadingItem:
-            return 0
-
-        # We should not get here.
-        logging.error("Internal error: unhandled item type")
+        else:
+            return parent.internalPointer().rowCount()
 
     def columnCount(self, parent = Qt.QModelIndex()):
         return 3
