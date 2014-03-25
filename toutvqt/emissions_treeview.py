@@ -15,4 +15,4 @@ class QEmissionsTreeView(Qt.QTreeView):
         data = FakeDataSource(xml_path)
         model = EmissionsTreeModel(data)
         self.setModel(model)
-        self.expanded.connect(model.itemExpanded)
+        self.expanded.connect(model.item_expanded)

@@ -294,10 +294,10 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.fetcher = EmissionsTreeModelFetcher(self.datasource)
         self.fetcher.moveToThread(self.fetch_thread)
         self.fetch_required.connect(self.fetcher.new_work_piece)
-        self.fetcher.fetch_done.connect(self.fetchDone)
+        self.fetcher.fetch_done.connect(self.fetch_done)
 
         # Fetch the root elements
-        self.fetchInit(Qt.QModelIndex())
+        self.init_fetch(Qt.QModelIndex())
 
     fetch_required = QtCore.pyqtSignal(object)
 
@@ -331,7 +331,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
     def columnCount(self, parent=Qt.QModelIndex()):
         return 3
 
-    def fetchDone(self, parent, children_list):
+    def fetch_done(self, parent, children_list):
         """A fetch work is complete."""
 
         # We remove the "Loading".
@@ -350,7 +350,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             self.emissions = children_list
         self.endInsertRows()
 
-    def fetchInit(self, parent):
+    def init_fetch(self, parent):
         if parent.isValid():
             parent.internalPointer().fetched = FetchState.Started
         else:
@@ -359,10 +359,10 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         parent = Qt.QModelIndex(parent)
         self.fetch_required.emit(parent)
 
-    def itemExpanded(self, parent):
+    def item_expanded(self, parent):
         """Slot called when an item in the tree has been expanded"""
         if parent.internalPointer().fetched == FetchState.Nope:
-            self.fetchInit(parent)
+            self.init_fetch(parent)
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
         if not index.isValid():
