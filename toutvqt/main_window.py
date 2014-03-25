@@ -36,7 +36,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
     def _setup_none_label(self):
         self.none_label = Qt.QLabel()
-        self.none_label.setText('Please select an emission in the list above')
+        self.none_label.setText('Please select an item in the list above')
         font = Qt.QFont()
         font.setItalic(True)
         self.none_label.setFont(font)
