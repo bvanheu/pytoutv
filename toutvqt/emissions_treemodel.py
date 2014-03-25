@@ -99,16 +99,25 @@ class FakeDataSource:
             if emission.name != emission_name:
                 continue
 
-            return emission.seasons.values()
+            return sorted(emission.seasons.values(), key = return_number)
         print("Not found %s", emission_name)
         assert(False)
 
+    def get_episodes_for(self, emission_name, season_number):
+        seasons = self.get_season_for(emission_name)
+        assert(seasons is not None)
+
+        for s in seasons:
+            if s.number == season_number:
+                return sorted(s.episodes.values(), key = return_number)
+
+        print("Should not get here")
+        assert(False)
 
 class FetchState:
     Nope = 0
     Started = 1
     Done = 2
-
 
 class LoadingItem:
     def __init__(self, parent):
@@ -121,7 +130,6 @@ class LoadingItem:
                 return "Loading..."
             else:
                 return ""
-
 
 class EmissionsTreeModelEmission:
     def __init__(self, name, row_in_parent):
@@ -262,7 +270,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             season = child.internalPointer().season
             row = season.row_in_parent
 
-            return self.createIndex(row, 0, episode.season)
+            return self.createIndex(row, 0, season)
 
         elif type(child.internalPointer()) == LoadingItem:
             loading_item = child.internalPointer()
@@ -388,8 +396,17 @@ class EmissionsTreeModelFetchThread(Qt.QThread):
         self.work_done.emit(parent, seasons_ret)
 
     def fetch_episodes(self, parent):
-        print("Ohlala")
-        assert(False)
+        season = parent.internalPointer()
+        emission_name = season.emission.name
+
+        episodes = self.datasource.get_episodes_for(emission_name, season.number)
+        episodes_ret = []
+        for (i, e) in enumerate(episodes):
+            new_ep = EmissionsTreeModelEpisode(e.name, e.number, i)
+            new_ep.season = season
+            episodes_ret.append(new_ep)
+
+        self.work_done.emit(parent, episodes_ret)
 
     def run(self):
         while True:
