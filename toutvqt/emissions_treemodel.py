@@ -1,10 +1,11 @@
 from PyQt4 import Qt
 from PyQt4 import QtCore
+
 import datetime
-import sys
-import traceback
-import time
+import logging
 import queue
+import sys
+import time
 import xml.etree.ElementTree as ET
 
 
@@ -201,7 +202,6 @@ class EmissionsTreeModelEpisode:
 
             return "?"
 
-
 class EmissionsTreeModel(Qt.QAbstractItemModel):
     def __init__(self, datasource):
         super(EmissionsTreeModel, self).__init__()
@@ -226,7 +226,6 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
     def index(self, row, column, parent = Qt.QModelIndex()):
         """Returns a QModelIndex to represent a cell of a child of parent."""
-        #print("Index of %s %s r=%d c=%d" % (parent.internalPointer(), parent.isValid(), row, column))
         if not parent.isValid():
             # Create an index for a emission
             if self.fetched == FetchState.Done:
@@ -282,7 +281,6 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         return Qt.QModelIndex()
 
     def rowCount(self, parent = Qt.QModelIndex()):
-        #print("RowCount of %s %s" % (str(parent.internalPointer()), parent.isValid()))
         # TODO: Maybe add a rowCount method in the EmissionsTreeModel* classes and just call it.
         if not parent.isValid():
             # Nombre de emissions
@@ -316,18 +314,16 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         elif type(parent.internalPointer()) == LoadingItem:
             return 0
 
-
-        print("Damn")
-        # All possible types should be covered in the if/elif
-        assert(False)
+        # We should not get here.
+        logging.error("Internal error: unhandled item type")
 
     def columnCount(self, parent = Qt.QModelIndex()):
         return 3
 
     def fetchDone(self, parent, children_list):
         """A fetch work is complete."""
-        print("fetchDone for %s" % (parent.internalPointer()))
 
+        # We remove the "Loading".
         self.beginRemoveRows(parent, 0, 0)
         if parent.isValid():
             parent.internalPointer().fetched = FetchState.Done
@@ -335,6 +331,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             self.fetched =  FetchState.Done
         self.endRemoveRows()
 
+        # We add the actual children.
         self.beginInsertRows(parent, 0, len(children_list) - 1)
         if parent.isValid():
             parent.internalPointer().set_children(children_list)
@@ -353,6 +350,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.new_data_required.emit(parent)
 
     def itemExpanded(self, parent):
+        """Slot called when an item in the tree has been expanded"""
         if parent.internalPointer().fetched == FetchState.Nope:
             self.fetchInit(parent)
 
@@ -372,7 +370,7 @@ class EmissionsTreeModelFetchThread(Qt.QThread):
     work_done = QtCore.pyqtSignal(object, list)
 
     def new_work_piece(self, parent):
-        print("New work piece for %s" % parent.internalPointer())
+        logging.debug("Queueing fetch work for %s" % parent.internalPointer())
         self.queue.put(parent)
 
     def fetch_emissions(self, parent):
@@ -387,12 +385,10 @@ class EmissionsTreeModelFetchThread(Qt.QThread):
         emission = parent.internalPointer()
         seasons = self.datasource.get_season_for(emission.name)
         seasons_ret = []
-        print("A")
         for (i, s) in enumerate(seasons):
             new_season = EmissionsTreeModelSeason(s.number, i)
             new_season.emission = emission
             seasons_ret.append(new_season)
-        print("B")
         self.work_done.emit(parent, seasons_ret)
 
     def fetch_episodes(self, parent):
@@ -411,23 +407,10 @@ class EmissionsTreeModelFetchThread(Qt.QThread):
     def run(self):
         while True:
             parent = self.queue.get()
-            print("Processing work piece for %s" % parent.internalPointer())
+            logging.debug("Fetching children of %s" % parent.internalPointer())
             if not parent.isValid():
                 self.fetch_emissions(parent)
             elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
-                print("C")
                 self.fetch_seasons(parent)
-                print("D")
             elif type(parent.internalPointer()) == EmissionsTreeModelSeason:
                 self.fetch_episodes(parent)
-
-
-if __name__ == "__main__":
-    data = FakeDataSource("fakedata.xml")
-    model = EmissionsTreeModel(data)
-
-    for a_emission in data.get_emissions():
-        print(a_emission)
-        for season in a_emission.get_seasons():
-            for episode in a_emission.get_episodes(season):
-                print(episode)
