@@ -69,6 +69,7 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="action_refresh_emissions"/>
     <addaction name="action_quit"/>
    </widget>
    <widget class="QMenu" name="edit_menu">
@@ -109,6 +110,11 @@
    </property>
    <property name="menuRole">
     <enum>QAction::AboutQtRole</enum>
+   </property>
+  </action>
+  <action name="action_refresh_emissions">
+   <property name="text">
+    <string>&amp;Refresh emissions</string>
    </property>
   </action>
  </widget>
