@@ -18,6 +18,7 @@ def return_number(x):
 
 
 class FakeEmission:
+
     def __init__(self, name):
         self.name = name
         self.seasons = {}
@@ -34,12 +35,13 @@ class FakeEmission:
         self.seasons[season_number].add_episode(episode)
 
     def get_seasons(self):
-        return sorted(self.seasons.values(), key = return_number)
+        return sorted(self.seasons.values(), key=return_number)
 
 
 #    def get_season(self, number):
 #        return self.seasons[number]
 class FakeSeason:
+
     def __init__(self, number):
         self.number = number
         self.episodes = {}
@@ -52,22 +54,25 @@ class FakeSeason:
 
     def get_episodes(self):
         time.sleep(2)
-        return sorted(self.episodes.values(), key = return_number)
+        return sorted(self.episodes.values(), key=return_number)
 
 
 #    def get_episode(self, number):
 #        return self.episodes[number]
 class FakeEpisode:
+
     def __init__(self, name, number):
         self.name = name
-        self.duration = datetime.timedelta(minutes = 22, seconds = 34)
+        self.duration = datetime.timedelta(minutes=22, seconds=34)
         self.number = number
 
     def __repr__(self):
-        return "Episode S%02dE%02d %s" % (self.season.number, self.number, self.name)
+        return "Episode S%02dE%02d %s" % (self.season.number, self.number,
+                                          self.name)
 
 
 class FakeDataSource:
+
     def __init__(self, xmlFile):
         tree = ET.parse(xmlFile)
         root = tree.getroot()
@@ -83,16 +88,18 @@ class FakeDataSource:
 
                 emission = self.emissions[series_id]
 
-                emission.add_episode(season_number, FakeEpisode(episode_name, number))
+                emission.add_episode(
+                    season_number, FakeEpisode(episode_name, number))
 
             elif node.tag == "Series":
                 series_id = int(node.find("id").text)
                 series_name = str(node.find("SeriesName").text)
                 self.emissions[series_id] = FakeEmission(series_name)
     # Returns a list of FakeEmission in alphabetical order
+
     def get_emissions(self):
         time.sleep(2)
-        return sorted(self.emissions.values(), key = return_name)
+        return sorted(self.emissions.values(), key=return_name)
 
     def get_season_for(self, emission_name):
         time.sleep(2)
@@ -100,7 +107,7 @@ class FakeDataSource:
             if emission.name != emission_name:
                 continue
 
-            return sorted(emission.seasons.values(), key = return_number)
+            return sorted(emission.seasons.values(), key=return_number)
         print("Not found %s", emission_name)
         assert(False)
 
@@ -110,17 +117,20 @@ class FakeDataSource:
 
         for s in seasons:
             if s.number == season_number:
-                return sorted(s.episodes.values(), key = return_number)
+                return sorted(s.episodes.values(), key=return_number)
 
         print("Should not get here")
         assert(False)
+
 
 class FetchState:
     Nope = 0
     Started = 1
     Done = 2
 
+
 class LoadingItem:
+
     def __init__(self, parent):
         self.parent = parent
 
@@ -136,7 +146,9 @@ class LoadingItem:
         # The Loading item does not have any child.
         return 0
 
+
 class EmissionsTreeModelEmission:
+
     def __init__(self, name, row_in_parent):
         self.name = name
         self.seasons = []
@@ -168,7 +180,9 @@ class EmissionsTreeModelEmission:
     def set_children(self, c):
         self.seasons = c
 
+
 class EmissionsTreeModelSeason:
+
     def __init__(self, number, row_in_parent):
         self.number = number
         self.episodes = []
@@ -200,7 +214,9 @@ class EmissionsTreeModelSeason:
     def set_children(self, c):
         self.episodes = c
 
+
 class EmissionsTreeModelEpisode:
+
     def __init__(self, name, number, row_in_parent):
         self.name = name
         self.number = number
@@ -223,13 +239,16 @@ class EmissionsTreeModelEpisode:
         # An episode does not have any child.
         return 0
 
+
 class EmissionsTreeModel(Qt.QAbstractItemModel):
+
     def __init__(self, datasource):
         super(EmissionsTreeModel, self).__init__()
         self.emissions = []
         self.datasource = datasource
         self.loading_item = LoadingItem(None)
-        self.fetch_thread = EmissionsTreeModelFetchThread(self.datasource, self)
+        self.fetch_thread = EmissionsTreeModelFetchThread(
+            self.datasource, self)
 
         # Have we fetched the emissions ?
         self.fetched = FetchState.Nope
@@ -245,7 +264,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
     new_data_required = QtCore.pyqtSignal(object)
 
-    def index(self, row, column, parent = Qt.QModelIndex()):
+    def index(self, row, column, parent=Qt.QModelIndex()):
         """Returns a QModelIndex to represent a cell of a child of parent."""
         if not parent.isValid():
             # Create an index for a emission
@@ -301,8 +320,9 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
         return Qt.QModelIndex()
 
-    def rowCount(self, parent = Qt.QModelIndex()):
-        # TODO: Maybe add a rowCount method in the EmissionsTreeModel* classes and just call it.
+    def rowCount(self, parent=Qt.QModelIndex()):
+        # TODO: Maybe add a rowCount method in the EmissionsTreeModel* classes
+        # and just call it.
         if not parent.isValid():
             # Nombre de emissions
             if self.fetched == FetchState.Done:
@@ -313,7 +333,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         else:
             return parent.internalPointer().rowCount()
 
-    def columnCount(self, parent = Qt.QModelIndex()):
+    def columnCount(self, parent=Qt.QModelIndex()):
         return 3
 
     def fetchDone(self, parent, children_list):
@@ -324,7 +344,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         if parent.isValid():
             parent.internalPointer().fetched = FetchState.Done
         else:
-            self.fetched =  FetchState.Done
+            self.fetched = FetchState.Done
         self.endRemoveRows()
 
         # We add the actual children.
@@ -334,7 +354,6 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         else:
             self.emissions = children_list
         self.endInsertRows()
-
 
     def fetchInit(self, parent):
         if parent.isValid():
@@ -350,7 +369,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         if parent.internalPointer().fetched == FetchState.Nope:
             self.fetchInit(parent)
 
-    def data(self, index, role = QtCore.Qt.DisplayRole):
+    def data(self, index, role=QtCore.Qt.DisplayRole):
         if not index.isValid():
             return None
 
@@ -358,6 +377,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
 
 class EmissionsTreeModelFetchThread(Qt.QThread):
+
     def __init__(self, datasource, parent):
         super(EmissionsTreeModelFetchThread, self).__init__(parent)
         self.queue = queue.Queue()
@@ -391,7 +411,8 @@ class EmissionsTreeModelFetchThread(Qt.QThread):
         season = parent.internalPointer()
         emission_name = season.emission.name
 
-        episodes = self.datasource.get_episodes_for(emission_name, season.number)
+        episodes = self.datasource.get_episodes_for(
+            emission_name, season.number)
         episodes_ret = []
         for (i, e) in enumerate(episodes):
             new_ep = EmissionsTreeModelEpisode(e.name, e.number, i)
