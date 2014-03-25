@@ -17,7 +17,7 @@ class TouTvQt(Qt.QApplication):
         """Setup signal/slot connections"""
         self.mainwindow = mainwindow
 
-        self.mainwindow.action_quit.triggered.connect(self.closeAllWindows)
+        self.mainwindow.quit_action.triggered.connect(self.closeAllWindows)
 
         xml_path = resource_filename(__name__, 'dat/fakedata.xml')
         data = FakeDataSource(xml_path)

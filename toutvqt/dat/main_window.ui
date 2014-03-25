@@ -69,26 +69,26 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="action_refresh_emissions"/>
-    <addaction name="action_quit"/>
+    <addaction name="refresh_emissions_action"/>
+    <addaction name="quit_action"/>
    </widget>
    <widget class="QMenu" name="edit_menu">
     <property name="title">
      <string>&amp;Edit</string>
     </property>
-    <addaction name="action_preferences"/>
+    <addaction name="preference_action"/>
    </widget>
    <widget class="QMenu" name="help_menu">
     <property name="title">
      <string>&amp;Help</string>
     </property>
-    <addaction name="action_about"/>
+    <addaction name="about_action"/>
    </widget>
    <addaction name="file_menu"/>
    <addaction name="edit_menu"/>
    <addaction name="help_menu"/>
   </widget>
-  <action name="action_quit">
+  <action name="quit_action">
    <property name="text">
     <string>&amp;Quit</string>
    </property>
@@ -96,7 +96,7 @@
     <enum>QAction::QuitRole</enum>
    </property>
   </action>
-  <action name="action_preferences">
+  <action name="preference_action">
    <property name="text">
     <string>&amp;Preferences</string>
    </property>
@@ -104,7 +104,7 @@
     <enum>QAction::PreferencesRole</enum>
    </property>
   </action>
-  <action name="action_about">
+  <action name="about_action">
    <property name="text">
     <string>&amp;About</string>
    </property>
@@ -112,7 +112,7 @@
     <enum>QAction::AboutQtRole</enum>
    </property>
   </action>
-  <action name="action_refresh_emissions">
+  <action name="refresh_emissions_action">
    <property name="text">
     <string>&amp;Refresh emissions</string>
    </property>
