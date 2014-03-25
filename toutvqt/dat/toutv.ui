@@ -22,7 +22,7 @@
       </property>
       <widget class="QWidget" name="emissions_tab">
        <attribute name="title">
-        <string>Emissions</string>
+        <string>E&amp;missions</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
@@ -43,7 +43,7 @@
       </widget>
       <widget class="QWidget" name="downloads_tab">
        <attribute name="title">
-        <string>Downloads</string>
+        <string>&amp;Downloads</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <item>
@@ -62,44 +62,53 @@
      <x>0</x>
      <y>0</y>
      <width>1170</width>
-     <height>20</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="file_menu">
     <property name="title">
-     <string>File</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="action_quit"/>
    </widget>
    <widget class="QMenu" name="edit_menu">
     <property name="title">
-     <string>Edit</string>
+     <string>&amp;Edit</string>
     </property>
     <addaction name="action_preferences"/>
    </widget>
-   <widget class="QMenu" name="about_menu">
+   <widget class="QMenu" name="help_menu">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="action_about"/>
    </widget>
    <addaction name="file_menu"/>
    <addaction name="edit_menu"/>
-   <addaction name="about_menu"/>
+   <addaction name="help_menu"/>
   </widget>
   <action name="action_quit">
    <property name="text">
-    <string>Quit</string>
+    <string>&amp;Quit</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::QuitRole</enum>
    </property>
   </action>
   <action name="action_preferences">
    <property name="text">
-    <string>Preferences</string>
+    <string>&amp;Preferences</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::PreferencesRole</enum>
    </property>
   </action>
   <action name="action_about">
    <property name="text">
-    <string>About</string>
+    <string>&amp;About</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::AboutQtRole</enum>
    </property>
   </action>
  </widget>
