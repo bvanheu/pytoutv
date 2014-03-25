@@ -146,6 +146,10 @@ class LoadingItem:
         # The Loading item does not have any child.
         return 0
 
+    def index(self, row, column, createIndex):
+        logging.error("Internal error: index() called on LoadingItem")
+        return Qt.QModelIndex()
+
     def parent(self, child, createIndex):
         if self.my_parent is not None:
             return createIndex(0, 0, self.my_parent)
@@ -182,6 +186,12 @@ class EmissionsTreeModelEmission:
         else:
             # The "Loading" item.
             return 1
+
+    def index(self, row, column, createIndex):
+        if self.fetched == FetchState.Done:
+            return createIndex(row, column, self.seasons[row])
+        else:
+            return createIndex(row, column, self.loading_item)
 
     def parent(self, child, createIndex):
         # An emission is at root level.
@@ -221,6 +231,12 @@ class EmissionsTreeModelSeason:
             # The "Loading" item.
             return 1
 
+    def index(self, row, column, createIndex):
+        if self.fetched == FetchState.Done:
+            return createIndex(row, column, self.episodes[row])
+        else:
+            return createIndex(row, column, self.loading_item)
+
     def parent(self, child, createIndex):
         return createIndex(self.row_in_parent, 0, self.emission)
 
@@ -251,6 +267,11 @@ class EmissionsTreeModelEpisode:
     def rowCount(self):
         # An episode does not have any child.
         return 0
+
+
+    def index(self, row, column, createIndex):
+        logging.error("Internal error: index() called on EmissionsTreeModelEpisode")
+        return Qt.QModelIndex()
 
     def parent(self, child, createIndex):
         return createIndex(self.row_in_parent, 0, self.season)
@@ -289,26 +310,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
                 return self.createIndex(row, column, emission)
             else:
                 return self.createIndex(row, column, self.loading_item)
-
-        elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
-            # Create an index for a season
-            emission = parent.internalPointer()
-            if emission.fetched == FetchState.Done:
-                season = emission.seasons[row]
-                return self.createIndex(row, column, season)
-            else:
-                return self.createIndex(row, column, emission.loading_item)
-
-        elif type(parent.internalPointer()) == EmissionsTreeModelSeason:
-            # Create an index for an episode
-            season = parent.internalPointer()
-            if season.fetched == FetchState.Done:
-                episode = season.episodes[row]
-                return self.createIndex(row, column, episode)
-            else:
-                return self.createIndex(row, column, season.loading_item)
-
-        return Qt.QModelIndex()
+        else:
+            return parent.internalPointer().index(row, column, self.createIndex)
 
     def parent(self, child):
         item = child.internalPointer()
