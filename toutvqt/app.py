@@ -1,9 +1,8 @@
-import signal
 import sys
 from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
-from toutvqt.emissions_treemodel import EmissionsTreeModel, FakeDataSource
+from toutvqt.main_window import QTouTvMainWindow
 
 
 TOUTV_UI_FILE = resource_filename(__name__, 'dat/main_window.ui')
@@ -13,24 +12,20 @@ class TouTvQt(Qt.QApplication):
     def __init__(self, args):
         super(TouTvQt, self).__init__(args)
 
-    def setup_ui(self, mainwindow):
-        """Setup signal/slot connections"""
-        self.mainwindow = mainwindow
+        self._start()
 
-        self.mainwindow.quit_action.triggered.connect(self.closeAllWindows)
+    def _start(self):
+        self.main_window = QTouTvMainWindow(self)
+        self.main_window.show()
 
-        xml_path = resource_filename(__name__, 'dat/fakedata.xml')
-        data = FakeDataSource(xml_path)
-        model = EmissionsTreeModel(data)
-        self.mainwindow.emissions_treeview.setModel(model)
-        self.mainwindow.emissions_treeview.expanded.connect(model.itemExpanded)
+
+def _register_sigint(app):
+    if platform.system() == 'Linux':
+        import signal
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
 def run():
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
     app = TouTvQt(sys.argv)
-    mainwindow = uic.loadUi(TOUTV_UI_FILE)
-    app.setup_ui(mainwindow)
-    mainwindow.show()
-    app.exec_()
+
+    return app.exec_()
