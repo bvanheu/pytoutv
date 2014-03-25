@@ -26,9 +26,6 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QTreeView" name="emissions_treeview"/>
-        </item>
-        <item>
          <widget class="QFrame" name="infos_frame">
           <property name="frameShape">
            <enum>QFrame::Panel</enum>
@@ -62,7 +59,7 @@
      <x>0</x>
      <y>0</y>
      <width>1170</width>
-     <height>19</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="file_menu">

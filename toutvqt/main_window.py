@@ -1,8 +1,7 @@
 from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
-from toutvqt.emissions_treemodel import EmissionsTreeModel
-from toutvqt.emissions_treemodel import FakeDataSource
+from toutvqt.emissions_treeview import QEmissionsTreeView
 
 
 class QTouTvMainWindow(Qt.QMainWindow):
@@ -15,19 +14,15 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
         self._setup_ui()
         self._setup_signals()
-        self._setup_treeview()
 
-    def _setup_treeview(self):
-        xml_path = resource_filename(__name__, 'dat/fakedata.xml')
-        data = FakeDataSource(xml_path)
-        model = EmissionsTreeModel(data)
-
-        # TODO: move treeview to own class
-        self.emissions_treeview.setModel(model)
-        self.emissions_treeview.expanded.connect(model.itemExpanded)
+    def _add_treeview(self):
+        self.emissions_treeview = QEmissionsTreeView()
+        layout = self.emissions_tab.layout()
+        layout.insertWidget(0, self.emissions_treeview)
 
     def _setup_signals(self):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
 
     def _setup_ui(self):
         uic.loadUi(QTouTvMainWindow.UI_PATH, baseinstance=self)
+        self._add_treeview()
