@@ -123,6 +123,13 @@ class App:
                         help='Get episode information using a TOU.TV URL')
         pi.set_defaults(func=self._command_info)
 
+        # search command
+        ps = sp.add_parser('search',
+                           help='Search TOU.TV emissions or episodes')
+        ps.add_argument('query', action='store', type=str,
+                        help='Search query')
+        ps.set_defaults(func=self._command_search)
+
         # fetch command
         pf = sp.add_parser('fetch',
                            help='Fetch one or all episodes of an emission')
@@ -152,13 +159,6 @@ class App:
 
 
         pf.set_defaults(func=self._command_fetch)
-
-        # search command
-        ps = sp.add_parser('search',
-                           help='Search TOU.TV emissions or episodes')
-        ps.add_argument('query', action='store', type=str,
-                        help='Search query')
-        ps.set_defaults(func=self._command_search)
 
         return p
 
