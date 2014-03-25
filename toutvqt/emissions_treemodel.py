@@ -319,10 +319,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         return item.parent(child, self.createIndex)
 
     def rowCount(self, parent=Qt.QModelIndex()):
-        # TODO: Maybe add a rowCount method in the EmissionsTreeModel* classes
-        # and just call it.
         if not parent.isValid():
-            # Nombre de emissions
             if self.fetched == FetchState.Done:
                 return len(self.emissions)
             else:
