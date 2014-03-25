@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>infos_frame_emission</class>
- <widget class="QWidget" name="infos_frame_emission">
+ <class>infos_emission_widget</class>
+ <widget class="QWidget" name="infos_emission_widget">
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
    <property name="spacing">
     <number>10</number>
@@ -27,7 +27,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLabel" name="title_label_value">
+        <widget class="QLabel" name="title_value_label">
          <property name="font">
           <font>
            <weight>75</weight>
@@ -47,7 +47,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLabel" name="emission_label_value">
+        <widget class="QLabel" name="emission_value_label">
          <property name="text">
           <string>En audition avec Simon</string>
          </property>
@@ -61,7 +61,7 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QLabel" name="sae_label_value">
+        <widget class="QLabel" name="sae_value_label">
          <property name="text">
           <string>S02E25</string>
          </property>
@@ -75,7 +75,7 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QLabel" name="length_label_value">
+        <widget class="QLabel" name="length_value_label">
          <property name="text">
           <string>3:41</string>
          </property>
@@ -89,7 +89,7 @@
         </widget>
        </item>
        <item row="4" column="1">
-        <widget class="QLabel" name="country_label_value">
+        <widget class="QLabel" name="country_value_label">
          <property name="text">
           <string>Canada</string>
          </property>
@@ -103,7 +103,7 @@
         </widget>
        </item>
        <item row="5" column="1">
-        <widget class="QLabel" name="air_date_label_value">
+        <widget class="QLabel" name="air_date_value_label">
          <property name="text">
           <string>2017/04/23</string>
          </property>
@@ -117,7 +117,7 @@
         </widget>
        </item>
        <item row="6" column="1">
-        <widget class="QLabel" name="network_label_value">
+        <widget class="QLabel" name="network_value_label">
          <property name="text">
           <string>Sun News</string>
          </property>

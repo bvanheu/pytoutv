@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>infos_frame_emission</class>
- <widget class="QWidget" name="infos_frame_emission">
+ <class>infos_emission_widget</class>
+ <widget class="QWidget" name="infos_emission_widget">
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
    <property name="spacing">
     <number>10</number>
@@ -27,7 +27,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLabel" name="title_label_value">
+        <widget class="QLabel" name="title_value_label">
          <property name="font">
           <font>
            <weight>75</weight>
@@ -47,7 +47,7 @@
         </widget>
        </item>
        <item row="2" column="1">
-        <widget class="QLabel" name="country_label_value">
+        <widget class="QLabel" name="country_value_label">
          <property name="text">
           <string>Canada</string>
          </property>
@@ -61,7 +61,7 @@
         </widget>
        </item>
        <item row="3" column="1">
-        <widget class="QLabel" name="genre_label_value">
+        <widget class="QLabel" name="genre_value_label">
          <property name="text">
           <string>Humour</string>
          </property>
@@ -75,7 +75,7 @@
         </widget>
        </item>
        <item row="4" column="1">
-        <widget class="QLabel" name="removal_date_label_value">
+        <widget class="QLabel" name="removal_date_value_label">
          <property name="text">
           <string>2015/01/15</string>
          </property>
@@ -89,7 +89,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLabel" name="episodes_label_value">
+        <widget class="QLabel" name="episodes_value_label">
          <property name="text">
           <string>53</string>
          </property>
