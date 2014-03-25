@@ -16,18 +16,18 @@ def return_number(x):
     return x.number
 
 
-class FakeShow:
+class FakeEmission:
     def __init__(self, name):
         self.name = name
         self.seasons = {}
 
     def __repr__(self):
-        return "Show %s" % (self.name)
+        return "Emission %s" % (self.name)
 
     def add_episode(self, season_number, episode):
         if season_number not in self.seasons:
             season = FakeSeason(season_number)
-            season.show = self
+            season.emission = self
             self.seasons[season_number] = season
 
         self.seasons[season_number].add_episode(episode)
@@ -71,7 +71,7 @@ class FakeDataSource:
         tree = ET.parse(xmlFile)
         root = tree.getroot()
 
-        self.shows = {}
+        self.emissions = {}
 
         for node in root:
             if node.tag == "Episode":
@@ -80,27 +80,27 @@ class FakeDataSource:
                 number = int(node.find("EpisodeNumber").text)
                 season_number = int(node.find("SeasonNumber").text)
 
-                show = self.shows[series_id]
+                emission = self.emissions[series_id]
 
-                show.add_episode(season_number, FakeEpisode(episode_name, number))
+                emission.add_episode(season_number, FakeEpisode(episode_name, number))
 
             elif node.tag == "Series":
                 series_id = int(node.find("id").text)
                 series_name = str(node.find("SeriesName").text)
-                self.shows[series_id] = FakeShow(series_name)
-    # Returns a list of FakeShow in alphabetical order
-    def get_shows(self):
+                self.emissions[series_id] = FakeEmission(series_name)
+    # Returns a list of FakeEmission in alphabetical order
+    def get_emissions(self):
         time.sleep(2)
-        return sorted(self.shows.values(), key = return_name)
+        return sorted(self.emissions.values(), key = return_name)
 
-    def get_season_for(self, show_name):
+    def get_season_for(self, emission_name):
         time.sleep(2)
-        for show in self.shows.values():
-            if show.name != show_name:
+        for emission in self.emissions.values():
+            if emission.name != emission_name:
                 continue
 
-            return show.seasons.values()
-        print("Not found %s", show_name)
+            return emission.seasons.values()
+        print("Not found %s", emission_name)
         assert(False)
 
 
@@ -123,14 +123,14 @@ class LoadingItem:
                 return ""
 
 
-class ShowsTreeModelShow:
+class EmissionsTreeModelEmission:
     def __init__(self, name, row_in_parent):
         self.name = name
         self.seasons = []
         self.loading_item = LoadingItem(self)
         self.row_in_parent = row_in_parent
 
-        # Have we fetched this show's seasons?
+        # Have we fetched this emission's seasons?
         self.fetched = FetchState.Nope
 
     def data(self, index, role):
@@ -149,7 +149,7 @@ class ShowsTreeModelShow:
         self.seasons = c
 
 
-class ShowsTreeModelSeason:
+class EmissionsTreeModelSeason:
     def __init__(self, number, row_in_parent):
         self.number = number
         self.episodes = []
@@ -174,7 +174,7 @@ class ShowsTreeModelSeason:
         self.episodes = c
 
 
-class ShowsTreeModelEpisode:
+class EmissionsTreeModelEpisode:
     def __init__(self, name, number, row_in_parent):
         self.name = name
         self.number = number
@@ -194,15 +194,15 @@ class ShowsTreeModelEpisode:
             return "?"
 
 
-class ShowsTreeModel(Qt.QAbstractItemModel):
+class EmissionsTreeModel(Qt.QAbstractItemModel):
     def __init__(self, datasource):
-        super(ShowsTreeModel, self).__init__()
-        self.shows = []
+        super(EmissionsTreeModel, self).__init__()
+        self.emissions = []
         self.datasource = datasource
         self.loading_item = LoadingItem(None)
-        self.fetch_thread = ShowsTreeModelFetchThread(self.datasource)
+        self.fetch_thread = EmissionsTreeModelFetchThread(self.datasource)
 
-        # Have we fetched the shows ?
+        # Have we fetched the emissions ?
         self.fetched = FetchState.Nope
 
         # Connect signals between us and the thread
@@ -220,23 +220,23 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
         """Returns a QModelIndex to represent a cell of a child of parent."""
         #print("Index of %s %s r=%d c=%d" % (parent.internalPointer(), parent.isValid(), row, column))
         if not parent.isValid():
-            # Create an index for a show
+            # Create an index for a emission
             if self.fetched == FetchState.Done:
-                show = self.shows[row]
-                return self.createIndex(row, column, show)
+                emission = self.emissions[row]
+                return self.createIndex(row, column, emission)
             else:
                 return self.createIndex(row, column, self.loading_item)
 
-        elif type(parent.internalPointer()) == ShowsTreeModelShow:
+        elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
             # Create an index for a season
-            show = parent.internalPointer()
-            if show.fetched == FetchState.Done:
-                season = show.seasons[row]
+            emission = parent.internalPointer()
+            if emission.fetched == FetchState.Done:
+                season = emission.seasons[row]
                 return self.createIndex(row, column, season)
             else:
-                return self.createIndex(row, column, show.loading_item)
+                return self.createIndex(row, column, emission.loading_item)
 
-        elif type(parent.internalPointer()) == ShowsTreeModelSeason:
+        elif type(parent.internalPointer()) == EmissionsTreeModelSeason:
             # Create an index for an episode
             season = parent.internalPointer()
             if season.fetched == FetchState.Done:
@@ -248,17 +248,17 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
         return Qt.QModelIndex()
 
     def parent(self, child):
-        if type(child.internalPointer()) == ShowsTreeModelShow:
-            # Show has no parent
+        if type(child.internalPointer()) == EmissionsTreeModelEmission:
+            # Emission has no parent
             return Qt.QModelIndex()
 
-        elif type(child.internalPointer()) == ShowsTreeModelSeason:
-            show = child.internalPointer().show
-            row = show.row_in_parent
+        elif type(child.internalPointer()) == EmissionsTreeModelSeason:
+            emission = child.internalPointer().emission
+            row = emission.row_in_parent
 
-            return self.createIndex(row, 0, show)
+            return self.createIndex(row, 0, emission)
 
-        elif type(child.internalPointer()) == ShowsTreeModelEpisode:
+        elif type(child.internalPointer()) == EmissionsTreeModelEpisode:
             season = child.internalPointer().season
             row = season.row_in_parent
 
@@ -275,25 +275,25 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
 
     def rowCount(self, parent = Qt.QModelIndex()):
         #print("RowCount of %s %s" % (str(parent.internalPointer()), parent.isValid()))
-        # TODO: Maybe add a rowCount method in the ShowsTreeModel* classes and just call it.
+        # TODO: Maybe add a rowCount method in the EmissionsTreeModel* classes and just call it.
         if not parent.isValid():
-            # Nombre de shows
+            # Nombre de emissions
             if self.fetched == FetchState.Done:
-                return len(self.shows)
+                return len(self.emissions)
             else:
                 # The "Loading" item
                 return 1
 
-        elif type(parent.internalPointer()) == ShowsTreeModelShow:
-            # Nombre de saisons pour un show
-            show = parent.internalPointer()
-            if show.fetched == FetchState.Done:
-                return len(show.seasons)
+        elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
+            # Nombre de saisons pour un emission
+            emission = parent.internalPointer()
+            if emission.fetched == FetchState.Done:
+                return len(emission.seasons)
             else:
                 # The "Loading" item
                 return 1
 
-        elif type(parent.internalPointer()) == ShowsTreeModelSeason:
+        elif type(parent.internalPointer()) == EmissionsTreeModelSeason:
             # Nombre d'episodes pour une saison
             season = parent.internalPointer()
             if season.fetched == FetchState.Done:
@@ -302,7 +302,7 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
                 # The "Loading" item
                 return 1
 
-        elif type(parent.internalPointer()) == ShowsTreeModelEpisode:
+        elif type(parent.internalPointer()) == EmissionsTreeModelEpisode:
             return 0
 
         elif type(parent.internalPointer()) == LoadingItem:
@@ -331,7 +331,7 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
         if parent.isValid():
             parent.internalPointer().set_children(children_list)
         else:
-            self.shows = children_list
+            self.emissions = children_list
         self.endInsertRows()
 
 
@@ -356,9 +356,9 @@ class ShowsTreeModel(Qt.QAbstractItemModel):
         return index.internalPointer().data(index, role)
 
 
-class ShowsTreeModelFetchThread(Qt.QThread):
+class EmissionsTreeModelFetchThread(Qt.QThread):
     def __init__(self, datasource):
-        super(ShowsTreeModelFetchThread, self).__init__()
+        super(EmissionsTreeModelFetchThread, self).__init__()
         self.queue = queue.Queue()
         self.datasource = datasource
 
@@ -368,22 +368,22 @@ class ShowsTreeModelFetchThread(Qt.QThread):
         print("New work piece for %s" % parent.internalPointer())
         self.queue.put(parent)
 
-    def fetch_shows(self, parent):
-        shows = self.datasource.get_shows()
-        shows_ret = []
-        for (i, show) in enumerate(shows):
-            new_show = ShowsTreeModelShow(show.name, i)
-            shows_ret.append(new_show)
-        self.work_done.emit(parent, shows_ret)
+    def fetch_emissions(self, parent):
+        emissions = self.datasource.get_emissions()
+        emissions_ret = []
+        for (i, emission) in enumerate(emissions):
+            new_emission = EmissionsTreeModelEmission(emission.name, i)
+            emissions_ret.append(new_emission)
+        self.work_done.emit(parent, emissions_ret)
 
     def fetch_seasons(self, parent):
-        show = parent.internalPointer()
-        seasons = self.datasource.get_season_for(show.name)
+        emission = parent.internalPointer()
+        seasons = self.datasource.get_season_for(emission.name)
         seasons_ret = []
         print("A")
         for (i, s) in enumerate(seasons):
-            new_season = ShowsTreeModelSeason(s.number, i)
-            new_season.show = show
+            new_season = EmissionsTreeModelSeason(s.number, i)
+            new_season.emission = emission
             seasons_ret.append(new_season)
         print("B")
         self.work_done.emit(parent, seasons_ret)
@@ -397,21 +397,21 @@ class ShowsTreeModelFetchThread(Qt.QThread):
             parent = self.queue.get()
             print("Processing work piece for %s" % parent.internalPointer())
             if not parent.isValid():
-                self.fetch_shows(parent)
-            elif type(parent.internalPointer()) == ShowsTreeModelShow:
+                self.fetch_emissions(parent)
+            elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
                 print("C")
                 self.fetch_seasons(parent)
                 print("D")
-            elif type(parent.internalPointer()) == ShowsTreeModelSeason:
+            elif type(parent.internalPointer()) == EmissionsTreeModelSeason:
                 self.fetch_episodes(parent)
 
 
 if __name__ == "__main__":
     data = FakeDataSource("fakedata.xml")
-    model = ShowsTreeModel(data)
+    model = EmissionsTreeModel(data)
 
-    for a_show in data.get_shows():
-        print(a_show)
-        for season in a_show.get_seasons():
-            for episode in a_show.get_episodes(season):
+    for a_emission in data.get_emissions():
+        print(a_emission)
+        for season in a_emission.get_seasons():
+            for episode in a_emission.get_episodes(season):
                 print(episode)

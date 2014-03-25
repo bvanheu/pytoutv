@@ -20,135 +20,23 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
-      <widget class="QWidget" name="shows_tab">
+      <widget class="QWidget" name="emissions_tab">
        <attribute name="title">
-        <string>Shows</string>
+        <string>Emissions</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QTreeView" name="shows_treeview"/>
+         <widget class="QTreeView" name="emissions_treeview"/>
         </item>
         <item>
          <widget class="QFrame" name="infos_frame">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
-          </property>
           <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
+           <enum>QFrame::Panel</enum>
           </property>
           <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
+           <enum>QFrame::Sunken</enum>
           </property>
-          <layout class="QHBoxLayout" name="horizontalLayout_2">
-           <item>
-            <layout class="QFormLayout" name="formLayout">
-             <item row="0" column="0">
-              <widget class="QLabel" name="info_emission_label">
-               <property name="text">
-                <string>Émission:</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="info_emission">
-               <property name="text">
-                <string>?</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="info_episode_label">
-               <property name="text">
-                <string>Épisode</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="info_episode">
-               <property name="text">
-                <string>?</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="info_duree_label">
-               <property name="text">
-                <string>Durée</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLabel" name="label_2">
-               <property name="text">
-                <string>?</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QFormLayout" name="formLayout_2">
-             <item row="0" column="0">
-              <widget class="QLabel" name="info_emission_label_2">
-               <property name="text">
-                <string>Autre chose</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QLabel" name="info_emission_2">
-               <property name="text">
-                <string>?</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="info_episode_label_2">
-               <property name="text">
-                <string>Machin</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLabel" name="info_episode_2">
-               <property name="text">
-                <string>?</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="info_duree_label_2">
-               <property name="text">
-                <string>Truc</string>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>?</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <spacer name="horizontalSpacer">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>40</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-          </layout>
+          <layout class="QHBoxLayout" name="horizontalLayout_2"/>
          </widget>
         </item>
        </layout>
@@ -174,30 +62,30 @@
      <x>0</x>
      <y>0</y>
      <width>1170</width>
-     <height>27</height>
+     <height>20</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuFile">
+   <widget class="QMenu" name="file_menu">
     <property name="title">
      <string>File</string>
     </property>
     <addaction name="action_quit"/>
    </widget>
-   <widget class="QMenu" name="menuEdit">
+   <widget class="QMenu" name="edit_menu">
     <property name="title">
      <string>Edit</string>
     </property>
     <addaction name="action_preferences"/>
    </widget>
-   <widget class="QMenu" name="menuAbout">
+   <widget class="QMenu" name="about_menu">
     <property name="title">
      <string>Help</string>
     </property>
     <addaction name="action_about"/>
    </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menuEdit"/>
-   <addaction name="menuAbout"/>
+   <addaction name="file_menu"/>
+   <addaction name="edit_menu"/>
+   <addaction name="about_menu"/>
   </widget>
   <action name="action_quit">
    <property name="text">

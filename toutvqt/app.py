@@ -3,7 +3,7 @@ import sys
 from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
-from toutvqt.shows_treemodel import ShowsTreeModel, FakeDataSource
+from toutvqt.emissions_treemodel import EmissionsTreeModel, FakeDataSource
 
 
 TOUTV_UI_FILE = resource_filename(__name__, 'dat/toutv.ui')
@@ -21,9 +21,9 @@ class TouTvQt(Qt.QApplication):
 
         xml_path = resource_filename(__name__, 'dat/fakedata.xml')
         data = FakeDataSource(xml_path)
-        model = ShowsTreeModel(data)
-        self.mainwindow.shows_treeview.setModel(model)
-        self.mainwindow.shows_treeview.expanded.connect(model.itemExpanded)
+        model = EmissionsTreeModel(data)
+        self.mainwindow.emissions_treeview.setModel(model)
+        self.mainwindow.emissions_treeview.expanded.connect(model.itemExpanded)
 
 
 def run():
