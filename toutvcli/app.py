@@ -117,10 +117,10 @@ class App:
                         help='Emission name for which to get information')
         pi.add_argument('episode', action='store', nargs='?', type=str,
                         help='Episode name for which to get information')
-        pi.add_argument('-u', '--url', action='store_true',
-                        help='Get episode information using a TOU.TV URL')
         pi.add_argument('-n', '--no-cache', action='store_true',
                         help='Disable cache')
+        pi.add_argument('-u', '--url', action='store_true',
+                        help='Get episode information using a TOU.TV URL')
         pi.set_defaults(func=self._command_info)
 
         # fetch command
@@ -131,24 +131,26 @@ class App:
             App.QUALITY_AVG,
             App.QUALITY_MAX
         ]
-        pf.add_argument('-q', '--quality', action='store',
-                        default=App.QUALITY_AVG, choices=quality_choices,
-                        help='Video quality (default: {})'.format(App.QUALITY_AVG))
+        pf.add_argument('emission', action='store', type=str,
+                        help='Emission name to fetch')
+        pf.add_argument('episode', action='store', nargs='?', type=str,
+                        help='Episode name to fetch')
         pf.add_argument('-b', '--bitrate', action='store', type=int,
                         help='Video bitrate (default: use default quality)')
         pf.add_argument('-d', '--directory', action='store',
                         default=os.getcwd(),
                         help='Output directory (default: CWD)')
-        pf.add_argument('-u', '--url', action='store_true',
-                        help='Fetch an episode using a TOU.TV URL')
-        pf.add_argument('emission', action='store', type=str,
-                        help='Emission name to fetch')
-        pf.add_argument('episode', action='store', nargs='?', type=str,
-                        help='Episode name to fetch')
-        pf.add_argument('-n', '--no-cache', action='store_true',
-                        help='Disable cache')
         pf.add_argument('-f', '--force', action='store_true',
                         help='Overwrite existing output file')
+        pf.add_argument('-n', '--no-cache', action='store_true',
+                        help='Disable cache')
+        pf.add_argument('-q', '--quality', action='store',
+                        default=App.QUALITY_AVG, choices=quality_choices,
+                        help='Video quality (default: {})'.format(App.QUALITY_AVG))
+        pf.add_argument('-u', '--url', action='store_true',
+                        help='Fetch an episode using a TOU.TV URL')
+
+
         pf.set_defaults(func=self._command_fetch)
 
         # search command
