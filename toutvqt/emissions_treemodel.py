@@ -341,9 +341,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         else:
             self.fetched = FetchState.Started
 
+        parent = Qt.QModelIndex(parent)
         self.new_data_required.emit(parent)
-
-
 
     def itemExpanded(self, parent):
         if parent.internalPointer().fetched == FetchState.Nope:
