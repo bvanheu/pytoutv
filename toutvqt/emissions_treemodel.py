@@ -208,7 +208,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.emissions = []
         self.datasource = datasource
         self.loading_item = LoadingItem(None)
-        self.fetch_thread = EmissionsTreeModelFetchThread(self.datasource)
+        self.fetch_thread = EmissionsTreeModelFetchThread(self.datasource, self)
 
         # Have we fetched the emissions ?
         self.fetched = FetchState.Nope
@@ -364,8 +364,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
 
 class EmissionsTreeModelFetchThread(Qt.QThread):
-    def __init__(self, datasource):
-        super(EmissionsTreeModelFetchThread, self).__init__()
+    def __init__(self, datasource, parent):
+        super(EmissionsTreeModelFetchThread, self).__init__(parent)
         self.queue = queue.Queue()
         self.datasource = datasource
 
