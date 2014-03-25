@@ -23,6 +23,6 @@ def _register_sigint(app):
 
 
 def run():
-    app = TouTvQt(sys.argv)
+    app = QTouTvApp(sys.argv)
 
     return app.exec_()
