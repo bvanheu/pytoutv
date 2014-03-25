@@ -3,7 +3,6 @@ from PyQt4 import QtCore
 
 import datetime
 import logging
-import queue
 import sys
 import time
 import xml.etree.ElementTree as ET
@@ -284,22 +283,23 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.emissions = []
         self.datasource = datasource
         self.loading_item = LoadingItem(None)
-        self.fetch_thread = EmissionsTreeModelFetchThread(
-            self.datasource, self)
 
         # Have we fetched the emissions ?
         self.fetched = FetchState.Nope
 
-        # Connect signals between us and the thread
-        self.new_data_required.connect(self.fetch_thread.new_work_piece)
-        self.fetch_thread.work_done.connect(self.fetchDone)
-
+        # Setup fetch thread and signal connections
+        self.fetch_thread = Qt.QThread()
         self.fetch_thread.start()
+
+        self.fetcher = EmissionsTreeModelFetcher(self.datasource)
+        self.fetcher.moveToThread(self.fetch_thread)
+        self.fetch_required.connect(self.fetcher.new_work_piece)
+        self.fetcher.fetch_done.connect(self.fetchDone)
 
         # Fetch the root elements
         self.fetchInit(Qt.QModelIndex())
 
-    new_data_required = QtCore.pyqtSignal(object)
+    fetch_required = QtCore.pyqtSignal(object)
 
     def index(self, row, column, parent=Qt.QModelIndex()):
         """Returns a QModelIndex to represent a cell of a child of parent."""
@@ -357,7 +357,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             self.fetched = FetchState.Started
 
         parent = Qt.QModelIndex(parent)
-        self.new_data_required.emit(parent)
+        self.fetch_required.emit(parent)
 
     def itemExpanded(self, parent):
         """Slot called when an item in the tree has been expanded"""
@@ -371,18 +371,22 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         return index.internalPointer().data(index, role)
 
 
-class EmissionsTreeModelFetchThread(Qt.QThread):
+class EmissionsTreeModelFetcher(Qt.QObject):
 
-    def __init__(self, datasource, parent):
-        super(EmissionsTreeModelFetchThread, self).__init__(parent)
-        self.queue = queue.Queue()
+    def __init__(self, datasource):
+        super(EmissionsTreeModelFetcher, self).__init__()
         self.datasource = datasource
 
-    work_done = QtCore.pyqtSignal(object, list)
+    fetch_done = QtCore.pyqtSignal(object, list)
 
     def new_work_piece(self, parent):
-        logging.debug("Queueing fetch work for %s" % parent.internalPointer())
-        self.queue.put(parent)
+        logging.debug("Fetching children of %s" % parent.internalPointer())
+        if not parent.isValid():
+            self.fetch_emissions(parent)
+        elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
+            self.fetch_seasons(parent)
+        elif type(parent.internalPointer()) == EmissionsTreeModelSeason:
+            self.fetch_episodes(parent)
 
     def fetch_emissions(self, parent):
         emissions = self.datasource.get_emissions()
@@ -390,7 +394,7 @@ class EmissionsTreeModelFetchThread(Qt.QThread):
         for (i, emission) in enumerate(emissions):
             new_emission = EmissionsTreeModelEmission(emission.name, i)
             emissions_ret.append(new_emission)
-        self.work_done.emit(parent, emissions_ret)
+        self.fetch_done.emit(parent, emissions_ret)
 
     def fetch_seasons(self, parent):
         emission = parent.internalPointer()
@@ -400,7 +404,7 @@ class EmissionsTreeModelFetchThread(Qt.QThread):
             new_season = EmissionsTreeModelSeason(s.number, i)
             new_season.emission = emission
             seasons_ret.append(new_season)
-        self.work_done.emit(parent, seasons_ret)
+        self.fetch_done.emit(parent, seasons_ret)
 
     def fetch_episodes(self, parent):
         season = parent.internalPointer()
@@ -414,15 +418,4 @@ class EmissionsTreeModelFetchThread(Qt.QThread):
             new_ep.season = season
             episodes_ret.append(new_ep)
 
-        self.work_done.emit(parent, episodes_ret)
-
-    def run(self):
-        while True:
-            parent = self.queue.get()
-            logging.debug("Fetching children of %s" % parent.internalPointer())
-            if not parent.isValid():
-                self.fetch_emissions(parent)
-            elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
-                self.fetch_seasons(parent)
-            elif type(parent.internalPointer()) == EmissionsTreeModelSeason:
-                self.fetch_episodes(parent)
+        self.fetch_done.emit(parent, episodes_ret)
