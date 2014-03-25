@@ -268,9 +268,9 @@ class EmissionsTreeModelEpisode:
         # An episode does not have any child.
         return 0
 
-
     def index(self, row, column, createIndex):
-        logging.error("Internal error: index() called on EmissionsTreeModelEpisode")
+        logging.error(
+            "Internal error: index() called on EmissionsTreeModelEpisode")
         return Qt.QModelIndex()
 
     def parent(self, child, createIndex):
@@ -311,7 +311,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             else:
                 return self.createIndex(row, column, self.loading_item)
         else:
-            return parent.internalPointer().index(row, column, self.createIndex)
+            return parent.internalPointer().index(row, column,
+                                                  self.createIndex)
 
     def parent(self, child):
         item = child.internalPointer()
