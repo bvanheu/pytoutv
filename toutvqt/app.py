@@ -5,9 +5,9 @@ from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
 
 
-class TouTvQt(Qt.QApplication):
+class QTouTvApp(Qt.QApplication):
     def __init__(self, args):
-        super(TouTvQt, self).__init__(args)
+        super(QTouTvApp, self).__init__(args)
 
         self._start()
 
