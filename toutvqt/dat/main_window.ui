@@ -47,7 +47,7 @@
      <x>0</x>
      <y>0</y>
      <width>1170</width>
-     <height>20</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="file_menu">
@@ -77,6 +77,9 @@
    <property name="text">
     <string>&amp;Quit</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
+   </property>
    <property name="menuRole">
     <enum>QAction::QuitRole</enum>
    </property>
@@ -84,6 +87,9 @@
   <action name="preference_action">
    <property name="text">
     <string>&amp;Preferences</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
    </property>
    <property name="menuRole">
     <enum>QAction::PreferencesRole</enum>
@@ -93,6 +99,9 @@
    <property name="text">
     <string>&amp;About</string>
    </property>
+   <property name="shortcut">
+    <string>F1</string>
+   </property>
    <property name="menuRole">
     <enum>QAction::AboutQtRole</enum>
    </property>
@@ -100,6 +109,9 @@
   <action name="refresh_emissions_action">
    <property name="text">
     <string>&amp;Refresh emissions</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
    </property>
   </action>
  </widget>
