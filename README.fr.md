@@ -1,102 +1,103 @@
-(Voir [`README.fr.md`](README.fr.md) pour une version française.)
+(See [`README.md`](README.md) for an English version.)
 
-***pytoutv*** is a [TOU.TV](http://tou.tv/) client library written in
-Python 3.
+***pytoutv*** est une librairie écrite en Python 3 qui implémente un client
+pour [TOU.TV](http://tou.tv/).
 
-This repository also holds a command line interface (and a graphical interface
-soon).
+Ce dépôt contient aussi une interface en ligne de commande (et bientôt une
+interface graphique).
 
-_Note_: although this is pytoutv 2, there's no such thing as pytoutv 1. This
-project was previously known as _Tou.tv-console-application_ and targeted
-at Python 2. Its refactoring and renaming to pytoutv led to its version 2.
-The CLI remains mostly compatible with the previous version.
+_Note_ : bien qu'on parle de pytoutv 2, il n'existe pas de version 1 de
+pytoutv. Ce projet était auparavant connu sous le nom
+_Tou.tv-console-application_ et ciblait Python 2. Son réusinage et son
+changement de nom vers pytoutv a mené à sa version 2. L'interface en ligne
+de commande demeure assez compatible avec la version précédente.
 
 
-Dependencies
+Dépendances
 ============
 
-pytoutv needs:
+pytoutv requiert :
 
-  * Python 3.3+, with:
+  * Python 3.3+, avec :
     * [PyCrypto](https://www.dlitz.net/software/pycrypto/)
-      ([available on PyPI](https://pypi.python.org/pypi/pycrypto))
+      ([disponible sur PyPI](https://pypi.python.org/pypi/pycrypto))
     * [Requests](http://python-requests.org/)
-      ([available on PyPI](https://pypi.python.org/pypi/requests))
+      ([disponible sur PyPI](https://pypi.python.org/pypi/requests))
     * [setuptools](https://pythonhosted.org/setuptools/)
       ([disponible sur PyPI](https://pypi.python.org/pypi/setuptools))
 
-pytoutv is known to work on Ubuntu, Debian, Arch Linux and Windows.
+pytoutv est réputé fonctionner sur Ubuntu, Debian, Arch Linux et Windows.
 
 
-Installing
-==========
+Installation
+============
 
-There are several ways to install pytoutv, the easiest being using pip.
+Il existe plusieurs méthodes pour installer pytoutv, la plus facile étant en
+passant par l'outil pip.
 
-Please note that you need Python 3.3+ whatever the method you choose.
+Veuillez noter que Python 3.3+ est requis peu importe la méthode utilisée.
 
 
-Using pip
----------
+Avec pip
+--------
 
-Make sure you have [pip](http://www.pip-installer.org/en/latest/) and
-[setuptools](https://pypi.python.org/pypi/setuptools). Your favorite
-distribution should provide a way to get both.
+Assurez-vous d'avoir [pip](http://www.pip-installer.org/en/latest/) et
+[setuptools](https://pypi.python.org/pypi/setuptools). Votre distribution
+favorite devrait fournir une façon d'obtenir ces paquetages.
 
-Then install pytoutv using pip:
+Installez ensuite pytoutv à l'aide de pip :
 
     $ sudo pip install pytoutv
 
 
-Using setup.py
---------------
+Avec setup.py
+-------------
 
-As long as you have [setuptools](https://pypi.python.org/pypi/setuptools),
-you may install pytoutv directly using its `setup.py` script:
+Tant que vous avez [setuptools](https://pypi.python.org/pypi/setuptools),
+vous pouvez installer pytoutv directement en utilisant son script `setup.py` :
 
-  1. Clone the repo:
+  1. Clonez le dépôt :
 
         $ git clone https://github.com/bvanheu/pytoutv && cd pytoutv
 
-  2. Run the setup script:
+  2. Lancez le script d'installation :
 
         $ sudo ./setup.py install
 
 
-Library
-=======
+Librairie
+=========
 
-Package documentation is not available yet.
-
-
-CLI
-===
-
-Four commands are available using the command line interface tool,
-which, after installing, is simply named `toutv`:
-
-  * `list`: lists emissions (shows) and episodes of a given emission
-  * `info`: outputs informations about an emission or an episode
-  * `fetch`: fetches (downloads) a complete episode or all episodes of
-    a given emission
-  * `search`: searches amongst emissions and episodes
-
-Additionnal features are available, like fetching or getting infos
-using a TOU.TV URL, or a caching mechanism which accelerates
-requests. Use
-
-    $ toutv <command> -h
-
-to get a detailed list of options for command `<command>`.
+La documentation de la librairie n'est pas encore disponible.
 
 
-Examples
+Ligne de commande
+=================
+
+Quatre commandes sont disponibles en utilisant l'outil en ligne de commande
+qui, après installation, se nomme simplement `toutv` :
+
+  * `list` : liste les émissions et épisodes d'une émission donnée
+  * `info` : écrit les informations d'une émission ou d'un épisode
+  * `fetch` : télécharge un épisode ou tous les épisodes d'une émission donnée
+  * `search` : recherche parmi les émissions et épisodes
+
+D'autres fonctionnalités dont disponibles, tels que le téléchargement ou
+l'obtention d'informations en utilisant une URL TOU.TV, ou encore un mécanisme
+de cache qui permet d'accélérer les requêtes. Utilisez
+
+    $ toutv <commande> -h
+
+afin d'obtenir une liste détaillée des options pour la commande `<commande>`.
+
+
+Exemples
 --------
 
-Here are a few CLI usage examples.
+Voici quelques exemples d'utilisation de l'interface en ligne de commande.
 
 
-### Listing all emissions
+### Liste de toutes les émissions
 
     $ toutv list
     2416249839: 2030, Le Big Bang démographique
@@ -110,7 +111,7 @@ Here are a few CLI usage examples.
     ...
 
 
-### Listing episodes of a given emission
+### Liste des épisodes d'une émission donnée
 
     $ toutv list 'physique ou chimie'
     Physique ou chimie:
@@ -128,7 +129,7 @@ Here are a few CLI usage examples.
       ...
 
 
-### Getting informations about an emission
+### Informations d'une émission
 
     $ toutv info 'physique ou chimie'
     Physique ou chimie  [Unknown country]
@@ -146,7 +147,7 @@ Here are a few CLI usage examples.
       * Tags: jeunesse, rogers
 
 
-### Getting information about an episode using its URL
+### Informations d'un épisode en utilisant son URL TOU.TV
 
     $ toutv info -u http://ici.tou.tv/serie-noire/S01E08
     Série noire
@@ -169,13 +170,13 @@ Here are a few CLI usage examples.
         * 1324 kbps
 
 
-### Fetching an episode at maximum available video quality
+### Téléchargement d'un épisode avec la meilleure qualité vidéo disponible
 
     $ toutv fetch -q MAX 'série noire' s01e05
     Série.noire.S01E05.Épisode.5...    63.7 MiB    38/260 [###----------------]  14%
 
 
-### Fetching all episodes of a given emission at average quality
+### Téléchargement de tous les épisodes d'une émission donnée avec une qualité moyenne
 
     $ toutv fetch 'en audition avec simon'
     En.audition.avec.Simon.S01E01...    16.5 MiB   15/15 [####################] 100%
@@ -184,7 +185,7 @@ Here are a few CLI usage examples.
     ...
 
 
-### Searching for episodes and emissions
+### Recherche d'émissions et d'épisodes
 
     $ toutv search politique
     Effective query: politique
@@ -238,26 +239,29 @@ Here are a few CLI usage examples.
     ...
 
 
-Bugs
-====
+Bogues
+======
 
-pytoutv is known to work as of the date of the last repo commit. Should you encounter
-any problem, please [create an issue](https://github.com/bvanheu/pytoutv/issues/new)
-and give details about your situation and what's not working as expected.
-
-
-Contributing
-============
-
-To contribute to any part of this project, send us a GitHub pull request. Make sure
-your Python code follows [PEP-8](http://legacy.python.org/dev/peps/pep-0008/),
-except for long lines that cannot be broken (e.g. long strings).
+pytoutv est réputé fonctionner en date du dernier _commit_ de ce dépôt. Si vous
+rencontrez un bogue quelconque, nous vous saurons gré de
+[créer un problème](https://github.com/bvanheu/pytoutv/issues/new) et de
+fournir le plus de détails possibles à propos de votre situation, en plus de
+spécifier ce qui ne fonctionne pas tel que prévu.
 
 
-Contributors
-============
+Contribuer
+==========
 
-Special thanks to:
+Afin de contribuer à n'importe quelle composante de ce projet, envoyez-nous un
+_pull request_ GitHub. Assurez-vous que votre code Python suive
+[PEP-8](http://legacy.python.org/dev/peps/pep-0008/), sauf pour de très
+longues lignes qui ne peuvent pas être cassées (longues chaines, par exemple).
+
+
+Contributeurs
+=============
+
+Nous tenons à remercier spécialement :
 
   * [Benjamin Vanheuverzwijn](https://github.com/bvanheu)
   * Alexandre Vezina
