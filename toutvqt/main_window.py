@@ -3,6 +3,7 @@ from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.emissions_treeview import QEmissionsTreeView
 from toutvqt.about_dialog import QTouTvAboutDialog
+from toutvqt.infos_frame import QInfosFrame
 
 
 class QTouTvMainWindow(Qt.QMainWindow):
@@ -17,8 +18,11 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
     def _add_treeview(self):
         self.emissions_treeview = QEmissionsTreeView()
-        layout = self.emissions_tab.layout()
-        layout.insertWidget(0, self.emissions_treeview)
+        self.emissions_tab.layout().addWidget(self.emissions_treeview)
+
+    def _add_infos(self):
+        self.infos_frame = QInfosFrame()
+        self.emissions_tab.layout().addWidget(self.infos_frame)
 
     def _setup_file_menu(self):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
@@ -34,20 +38,13 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._setup_file_menu()
         self._setup_help_menu()
 
-    def _setup_none_label(self):
-        self.none_label = Qt.QLabel()
-        self.none_label.setText('Please select an item in the list above')
-        font = Qt.QFont()
-        font.setItalic(True)
-        self.none_label.setFont(font)
-
     def _setup_infos(self):
-        self._setup_none_label()
-        self.show_infos_none()
+        self.infos_frame = QInfosFrame()
 
     def _setup_ui(self):
         uic.loadUi(QTouTvMainWindow.UI_PATH, baseinstance=self)
         self._add_treeview()
+        self._add_infos()
         self._setup_menus()
         self._setup_infos()
 
@@ -56,13 +53,3 @@ class QTouTvMainWindow(Qt.QMainWindow):
         pos.setX(pos.x() + 40)
         pos.setY(pos.y() + 40)
         self.about_dialog.show_move(pos)
-
-    def _swap_infos_widget(self, widget):
-        layout = self.infos_frame.layout()
-
-        if layout.count() == 1:
-            layout.takeAt(0)
-        layout.addWidget(widget)
-
-    def show_infos_none(self):
-        self._swap_infos_widget(self.none_label)
