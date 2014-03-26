@@ -1,3 +1,5 @@
+from pkg_resources import resource_filename
+from PyQt4 import uic
 from PyQt4 import Qt
 
 
@@ -20,6 +22,7 @@ class QInfosFrame(Qt.QFrame):
 
     def show_emission(self, emission):
         print("Selected emission")
+        self._swap_infos_widget(self.emissions_widget)
 
     def show_season(self, season):
         print("Selected season")
@@ -34,8 +37,23 @@ class QInfosFrame(Qt.QFrame):
         font.setItalic(True)
         self.none_label.setFont(font)
 
+    def _setup_emissions_widget(self):
+        self.emissions_widget = QEmissionsWidget()
+
     def _setup_ui(self):
         self.setLayout(Qt.QVBoxLayout())
         self.setFrameShape(Qt.QFrame.Box)
         self.setFrameShadow(Qt.QFrame.Sunken)
         self._setup_none_label()
+        self._setup_emissions_widget()
+
+
+class QEmissionsWidget(Qt.QWidget):
+        UI_PATH = resource_filename(__name__, 'dat/ui/infos_emission_widget.ui')
+
+        def __init__(self):
+                super(QEmissionsWidget, self).__init__()
+                self._setup_ui()
+
+        def _setup_ui(self):
+                uic.loadUi(QEmissionsWidget.UI_PATH, baseinstance=self)
