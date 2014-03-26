@@ -6,7 +6,7 @@ from toutvqt.emissions_treemodel import FakeDataSource
 
 class QEmissionsTreeView(Qt.QTreeView):
     def __init__(self):
-        super(Qt.QTreeView, self).__init__()
+        super(QEmissionsTreeView, self).__init__()
 
         self._setup()
 
