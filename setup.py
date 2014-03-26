@@ -46,7 +46,8 @@ packages = [
 ]
 install_requires = [
     'pycrypto>=2.6.0',
-    'requests>=2.2.0'
+    'requests>=2.2.0',
+    'setuptools>=3.0'
 ]
 
 setup(name='pytoutv',
