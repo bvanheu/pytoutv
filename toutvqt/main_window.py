@@ -45,8 +45,26 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self.emissions_treeview.episode_selected.connect(self.infos_frame.show_episode)
         self.emissions_treeview.none_selected.connect(self.infos_frame.show_infos_none)
 
+    @staticmethod
+    def _get_icon(name):
+        path = resource_filename(__name__, 'dat/icons/{}.png'.format(name))
+
+        return Qt.QIcon(path)
+
+    def _setup_action_icon(self, action_name):
+        action = getattr(self, action_name)
+        icon = QTouTvMainWindow._get_icon(action_name)
+        action.setIcon(icon)
+
+    def _setup_icons(self):
+        self.setWindowIcon(QTouTvMainWindow._get_icon('toutv'))
+        self._setup_action_icon('refresh_emissions_action')
+        self._setup_action_icon('preferences_action')
+        self._setup_action_icon('about_action')
+
     def _setup_ui(self):
         uic.loadUi(QTouTvMainWindow.UI_PATH, baseinstance=self)
+        self._setup_icons()
         self._add_treeview()
         self._add_infos()
         self._setup_menus()

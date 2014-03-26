@@ -53,6 +53,7 @@ package_data = {
     'toutvqt': [
         'dat/fakedata.xml',
         'dat/*.ui',
+        'dat/icons/*.png'
     ]
 }
 install_requires = [
