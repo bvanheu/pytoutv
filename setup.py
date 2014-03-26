@@ -52,7 +52,7 @@ packages = [
 package_data = {
     'toutvqt': [
         'dat/fakedata.xml',
-        'dat/*.ui',
+        'dat/ui/*.ui',
         'dat/icons/*.png'
     ]
 }

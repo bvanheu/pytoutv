@@ -7,7 +7,7 @@ from toutvqt.infos_frame import QInfosFrame
 
 
 class QTouTvMainWindow(Qt.QMainWindow):
-    UI_PATH = resource_filename(__name__, 'dat/main_window.ui')
+    UI_PATH = resource_filename(__name__, 'dat/ui/main_window.ui')
 
     def __init__(self, app):
         super(QTouTvMainWindow, self).__init__()

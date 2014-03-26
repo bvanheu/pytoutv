@@ -4,7 +4,7 @@ from PyQt4 import Qt
 
 
 class QTouTvAboutDialog(Qt.QDialog):
-    UI_PATH = resource_filename(__name__, 'dat/about_dialog.ui')
+    UI_PATH = resource_filename(__name__, 'dat/ui/about_dialog.ui')
 
     def __init__(self):
         super(QTouTvAboutDialog, self).__init__()
