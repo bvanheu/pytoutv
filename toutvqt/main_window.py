@@ -43,6 +43,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self.emissions_treeview.emission_selected.connect(self.infos_frame.show_emission)
         self.emissions_treeview.season_selected.connect(self.infos_frame.show_season)
         self.emissions_treeview.episode_selected.connect(self.infos_frame.show_episode)
+        self.emissions_treeview.none_selected.connect(self.infos_frame.show_infos_none)
 
     def _setup_ui(self):
         uic.loadUi(QTouTvMainWindow.UI_PATH, baseinstance=self)

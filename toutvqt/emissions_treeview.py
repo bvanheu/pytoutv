@@ -13,6 +13,7 @@ class QEmissionsTreeView(Qt.QTreeView):
     emission_selected = QtCore.pyqtSignal(object)
     season_selected = QtCore.pyqtSignal(object)
     episode_selected = QtCore.pyqtSignal(object)
+    none_selected = QtCore.pyqtSignal()
 
     def _setup(self):
         xml_path = resource_filename(__name__, 'dat/fakedata.xml')
@@ -31,6 +32,7 @@ class QEmissionsTreeView(Qt.QTreeView):
         indexes = selected.indexes()
 
         if len(indexes) == 0:
+            self.none_selected.emit()
             return
 
         index = indexes[0]
@@ -41,3 +43,5 @@ class QEmissionsTreeView(Qt.QTreeView):
             self.season_selected.emit(None)
         elif type(item) == EmissionsTreeModelEpisode:
             self.episode_selected.emit(None)
+        else:
+            self.none_selected.emit()
