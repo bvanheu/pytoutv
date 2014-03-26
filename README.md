@@ -254,6 +254,33 @@ your Python code follows [PEP-8](http://legacy.python.org/dev/peps/pep-0008/),
 except for long lines that cannot be broken (e.g. long strings).
 
 
+Python workflow
+---------------
+
+The best way to develop pytoutv locally without installing it globally is to
+create a [virtualenv](http://www.virtualenv.org/en/latest/). If you don't
+have virtualenv, get it now (most distributions provide it as a package).
+
+  1. In the root of the repo, create the virtualenv:
+
+        $ virtualenv virt
+
+  2. Activate the virtualenv:
+
+        $ . ./virt/bin/activate
+
+  3. Use the `develop` command of `setup.py`:
+
+        $ ./setup.py develop
+
+     The first time this executes, if you don't have any of the dependencies,
+     they will be downloaded and installed (locally, in `virt`).
+
+After step 3, you may execute `toutv` (which now resolves to the local version
+of the command). You may as well launch ipython and import `toutv` modules;
+the local modules will be imported.
+
+
 Contributors
 ============
 

@@ -258,6 +258,36 @@ _pull request_ GitHub. Assurez-vous que votre code Python suive
 longues lignes qui ne peuvent pas être cassées (longues chaines, par exemple).
 
 
+Flux de travail avec Python
+---------------------------
+
+La meilleure façon de développer pytoutv localement sans avoir à l'installer
+globalement est de créer un
+[virtualenv](http://www.virtualenv.org/en/latest/). Si vous n'avez pas
+virtualenv, procurez-vous le (la plupart des distributions le fournissent en
+tant que paquetage).
+
+  1. Dans la racine du dépôt, créez le virtualenv :
+
+        $ virtualenv virt
+
+  2. Activez le virtualenv :
+
+        $ . ./virt/bin/activate
+
+  3. Utilisez la commande `develop` du script `setup.py` :
+
+        $ ./setup.py develop
+
+     La première fois que ceci s'exécute, si vous n'avez pas toutes les
+     dépendances du projet, elles seront téléchargées et installées (localement,
+     dans `virt`).
+
+Suite à l'étape 3, vous pouvez exécuter `toutv` (qui pointe maintenant vers la
+version locale de la commande). Vous pouvez aussi lancer ipython et importer
+des modules de `toutv`; les versions locales seront importées.
+
+
 Contributeurs
 =============
 
