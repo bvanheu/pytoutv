@@ -295,10 +295,10 @@ Contributors
 Special thanks to:
 
   * [Benjamin Vanheuverzwijn](https://github.com/bvanheu)
-  * Alexandre Vezina
+  * Alexandre Vézina
   * [Alexis Dorais-Joncas](https://github.com/balexis)
   * [Israel Halle](https://github.com/isra17)
   * [Marc-Etienne M. Leveillé](https://github.com/marc-etienne)
   * [Simon Marchi](https://github.com/simark)
-  * [Simon Carpenter](https://github.com/scarpentier)
+  * [Simon Carpentier](https://github.com/scarpentier)
   * [Philippe Proulx](https://github.com/eepp)
