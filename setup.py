@@ -50,11 +50,11 @@ install_requires = [
 ]
 
 setup(name='pytoutv',
-      version='2.0.0',
+      version='2.0.1',
       description='TOU.TV client library and user interfaces',
       author='Benjamin Vanheuverzwijn',
       author_email='bvanheu@gmail.com',
-      url='https://github.com/bvanheu/Tou.tv-console-application',
+      url='https://github.com/bvanheu/pytoutv',
       keywords='TOUTV',
       license="GPLv3",
       packages=packages,
