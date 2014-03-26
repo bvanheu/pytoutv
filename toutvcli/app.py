@@ -57,7 +57,10 @@ class App:
             return 10
 
         args = self._argparser.parse_args(self._args)
-        self._toutvclient = self._build_toutv_client(args.no_cache)
+        no_cache = False
+        if hasattr(args, 'no_cache'):
+            no_cache = args.no_cache
+        self._toutvclient = self._build_toutv_client(no_cache)
 
         try:
             args.func(args)
@@ -156,7 +159,6 @@ class App:
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
         pf.add_argument('-u', '--url', action='store_true',
                         help='Fetch an episode using a TOU.TV URL')
-
 
         pf.set_defaults(func=self._command_fetch)
 
