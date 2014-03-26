@@ -36,6 +36,7 @@ import toutv.client
 import toutv.cache
 import toutv.config
 import toutv.dl
+from toutv import __version__
 from toutv import m3u8
 from toutvcli.progressbar import ProgressBar
 
@@ -106,6 +107,10 @@ class App:
     def _build_argparser(self):
         p = argparse.ArgumentParser(description='TOU.TV command line client')
         sp = p.add_subparsers(dest='command', help='Commands help')
+
+        # version
+        p.add_argument('-v', '--version', action='version',
+                       version='%(prog)s v{}'.format(__version__))
 
         # list command
         pl = sp.add_parser('list',

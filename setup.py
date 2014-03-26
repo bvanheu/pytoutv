@@ -27,6 +27,7 @@
 
 import sys
 from setuptools import setup
+import toutv
 
 
 # Make sure we run Python 3.3+ here
@@ -51,7 +52,7 @@ install_requires = [
 ]
 
 setup(name='pytoutv',
-      version='2.0.1',
+      version=toutv.__version__,
       description='TOU.TV client library and user interfaces',
       author='Benjamin Vanheuverzwijn',
       author_email='bvanheu@gmail.com',
