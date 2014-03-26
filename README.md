@@ -23,7 +23,7 @@ pytoutv needs:
     * [Requests](http://python-requests.org/)
       ([available on PyPI](https://pypi.python.org/pypi/requests))
     * [setuptools](https://pythonhosted.org/setuptools/)
-      ([disponible sur PyPI](https://pypi.python.org/pypi/setuptools))
+      ([available on PyPI](https://pypi.python.org/pypi/setuptools))
 
 pytoutv is known to work on Ubuntu, Debian, Arch Linux and Windows.
 
