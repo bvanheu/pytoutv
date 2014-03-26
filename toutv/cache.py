@@ -69,10 +69,15 @@ class EmptyCache(Cache):
 
 class ShelveCache(Cache):
     def __init__(self, shelve_filename):
-        self.shelve = shelve.open(shelve_filename)
+        try:
+            self.shelve = shelve.open(shelve_filename)
+        except Exception as e:
+            self.shelve = None
+            raise e
 
     def __del__(self):
-        self.shelve.close()
+        if self.shelve is not None:
+            self.shelve.close()
 
     def _has_key(self, key):
         if key in self.shelve:
