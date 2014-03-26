@@ -108,7 +108,7 @@ class App:
         sp = p.add_subparsers(dest='command', help='Commands help')
 
         # version
-        p.add_argument('-v', '--version', action='version',
+        p.add_argument('-V', '--version', action='version',
                        version='%(prog)s v{}'.format(__version__))
 
         # list command
