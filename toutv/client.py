@@ -144,6 +144,14 @@ class Client:
             if episode_name_upper in search_items:
                 return episode
 
+    @staticmethod
+    def _find_last(regex, text):
+        results = re.findall(regex, text)
+        if not results:
+            return None
+
+        return results[-1]
+
     def get_episode_from_url(self, url):
         # Try sending the request
         try:
@@ -155,15 +163,21 @@ class Client:
             msg = 'Opening URL "{}" returned HTTP status {}'.format(url, r.status_code)
             raise ClientError(msg)
 
-        # Extract emission and episode ID from meta tag
-        regex = r'<meta\s+content="([^".]+)\.([^"]+)"\s+name="ProfilingEmisodeToken"\s*/>'
-        m = re.search(regex, r.text)
-        if m is None:
-            raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
+        # Extract emission ID
+        regex = r'program-(\d+)'
+        emission_m = Client._find_last(regex, r.text)
+        if emission_m is None:
+            raise ClientError('Cannot read emission information for URL "{}"'.format(url))
+
+        # Extract episode ID
+        regex = r'media-(\d+)'
+        episode_m = Client._find_last(regex, r.text)
+        if episode_m is None:
+            raise ClientError('Cannot read episode information for URL "{}"'.format(url))
 
         # Find emission and episode
-        emid = m.group(1)
-        ep_name = m.group(2)
+        emid = emission_m
+        ep_name = episode_m
 
         try:
             emission = self.get_emission_by_name(emid)
