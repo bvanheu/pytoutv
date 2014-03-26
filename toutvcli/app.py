@@ -99,7 +99,7 @@ class App:
         if len(e.candidates) == 1:
             print('Did you mean "{}"?'.format(e.candidates[0]))
         else:
-            print('Did you mean one of the following?')
+            print('Did you mean one of the following?\n')
             for candidate in e.candidates:
                 print('  * {}'.format(candidate))
 
