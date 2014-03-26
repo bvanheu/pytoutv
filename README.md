@@ -281,6 +281,14 @@ of the command). You may as well launch ipython and import `toutv` modules;
 the local modules will be imported.
 
 
+Semantic versioning
+-------------------
+
+pytoutv follows [semantic versioning](http://semver.org/). If you submit a bugfix
+patch, we'll bump the patch version. If you submit a new feature, we'll bump the
+minor version. No version 3 of pytoutv is planned.
+
+
 Contributors
 ============
 

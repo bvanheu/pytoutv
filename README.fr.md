@@ -288,6 +288,15 @@ version locale de la commande). Vous pouvez aussi lancer ipython et importer
 des modules de `toutv`; les versions locales seront importées.
 
 
+Versionnage sémantique
+----------------------
+
+pytoutv suit un [versionnage sémantique](http://semver.org/). Si vous soumettez
+un simple correctif, nous incrémenterons la version de _patch_. Si vous soumettez
+une nouvelle fonctionnalité, nous incrémenterons la version mineure. Aucune version
+3 de pytoutv n'est prévu pour l'instant.
+
+
 Contributeurs
 =============
 
