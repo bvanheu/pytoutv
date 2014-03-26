@@ -19,13 +19,13 @@ class QInfosFrame(Qt.QFrame):
         self._swap_infos_widget(self.none_label)
 
     def show_emission(self, emission):
-        pass
+        print("Selected emission")
 
     def show_season(self, season):
-        pass
+        print("Selected season")
 
     def show_episode(self, episode):
-        pass
+        print("Selected episode")
 
     def _setup_none_label(self):
         self.none_label = Qt.QLabel()

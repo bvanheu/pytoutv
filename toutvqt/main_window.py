@@ -40,6 +40,9 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
     def _setup_infos(self):
         self.infos_frame = QInfosFrame()
+        self.emissions_treeview.emission_selected.connect(self.infos_frame.show_emission)
+        self.emissions_treeview.season_selected.connect(self.infos_frame.show_season)
+        self.emissions_treeview.episode_selected.connect(self.infos_frame.show_episode)
 
     def _setup_ui(self):
         uic.loadUi(QTouTvMainWindow.UI_PATH, baseinstance=self)
