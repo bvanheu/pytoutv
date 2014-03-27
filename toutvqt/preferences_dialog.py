@@ -2,6 +2,7 @@ from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
 from PyQt4 import QtCore
+from PyQt4 import QtGui
 
 
 class QTouTvPreferencesDialog(Qt.QDialog):
@@ -21,6 +22,13 @@ class QTouTvPreferencesDialog(Qt.QDialog):
 
     def _setup_ui(self):
         uic.loadUi(QTouTvPreferencesDialog.UI_PATH, baseinstance=self)
+        self.download_directory_browse.clicked.connect(self._open_download_directory_browser)
+
+    def _open_download_directory_browser(self, checked):
+        download_directory = QtGui.QFileDialog.getExistingDirectory(self, "Select download directory")
+        self.download_directory_value.setText(download_directory)
+
+
 
     def show_move(self, pos):
         self.move(pos)

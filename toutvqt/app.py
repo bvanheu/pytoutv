@@ -20,14 +20,13 @@ class QTouTvApp(Qt.QApplication):
         self._start()
 
     def _start(self):
-        self.main_window.show()
+        self.main_window.start()
 
     def _setup_ui(self):
         self.main_window = QTouTvMainWindow(self, self.client)
 
     def _setup_client(self):
-        tp = transport.JsonTransport(http_proxy = None)
-        self.client = client.Client(transport = tp)
+        self.client = client.Client()
 
     def _setup_config(self):
         # Create a default config
@@ -37,8 +36,14 @@ class QTouTvApp(Qt.QApplication):
         self.main_window.preferences_dialog.config_accepted.connect(self.config.apply_config)
         self.config.config_item_changed.connect(self.main_window.preferences_dialog.update_config_item)
 
+        self.config.config_item_changed.connect(self.config_item_changed)
+
         # Read the settings from disk
         self.config.read_settings()
+
+    def config_item_changed(self, key, value):
+        if key == 'network/http_proxy':
+            self.client.transport.set_http_proxy(value)
 
 def _register_sigint():
     if platform.system() == 'Linux':

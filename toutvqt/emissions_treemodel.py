@@ -290,9 +290,6 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.fetch_required.connect(self.fetcher.new_work_piece)
         self.fetcher.fetch_done.connect(self.fetch_done)
 
-        # Fetch the root elements
-        self.init_fetch(Qt.QModelIndex())
-
     fetch_required = QtCore.pyqtSignal(object)
 
     def index(self, row, column, parent=Qt.QModelIndex()):
@@ -344,7 +341,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             self.emissions = children_list
         self.endInsertRows()
 
-    def init_fetch(self, parent):
+    def init_fetch(self, parent = Qt.QModelIndex()):
         if parent.isValid():
             parent.internalPointer().fetched = FetchState.Started
         else:
