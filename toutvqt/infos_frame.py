@@ -1,6 +1,7 @@
 from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
+from PyQt4 import QtGui
 
 
 class QInfosFrame(Qt.QFrame):
@@ -22,14 +23,13 @@ class QInfosFrame(Qt.QFrame):
         self._swap_infos_widget(self.none_label)
 
     def show_emission(self, emission):
-        print("Selected emission")
-        self._swap_infos_widget(self.emissions_widget)
+        self._swap_infos_widget(self.emission_widget)
 
     def show_season(self, season):
-        print("Selected season")
+        self._swap_infos_widget(self.season_widget)
 
     def show_episode(self, episode):
-        print("Selected episode")
+        self._swap_infos_widget(self.episode_widget)
 
     def _setup_none_label(self):
         self.none_label = Qt.QLabel()
@@ -38,23 +38,46 @@ class QInfosFrame(Qt.QFrame):
         font.setItalic(True)
         self.none_label.setFont(font)
 
-    def _setup_emissions_widget(self):
-        self.emissions_widget = QEmissionsWidget()
+    def _setup_infos_widget(self):
+        self.emission_widget = QEmissionWidget()
+        self.season_widget = QSeasonWidget()
+        self.episode_widget = QEpisodeWidget()
 
     def _setup_ui(self):
         self.setLayout(Qt.QVBoxLayout())
         self.setFrameShape(Qt.QFrame.Box)
         self.setFrameShadow(Qt.QFrame.Sunken)
         self._setup_none_label()
-        self._setup_emissions_widget()
+        self._setup_infos_widget()
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Maximum)
 
 
-class QEmissionsWidget(Qt.QWidget):
+class QEmissionWidget(Qt.QWidget):
         UI_PATH = resource_filename(__name__, 'dat/ui/infos_emission_widget.ui')
 
         def __init__(self):
-                super(QEmissionsWidget, self).__init__()
+                super(QEmissionWidget, self).__init__()
                 self._setup_ui()
 
         def _setup_ui(self):
-                uic.loadUi(QEmissionsWidget.UI_PATH, baseinstance=self)
+                uic.loadUi(QEmissionWidget.UI_PATH, baseinstance=self)
+
+class QSeasonWidget(Qt.QWidget):
+        UI_PATH = resource_filename(__name__, 'dat/ui/infos_season_widget.ui')
+
+        def __init__(self):
+                super(QSeasonWidget, self).__init__()
+                self._setup_ui()
+
+        def _setup_ui(self):
+                uic.loadUi(QSeasonWidget.UI_PATH, baseinstance=self)
+
+class QEpisodeWidget(Qt.QWidget):
+        UI_PATH = resource_filename(__name__, 'dat/ui/infos_episode_widget.ui')
+
+        def __init__(self):
+                super(QEpisodeWidget, self).__init__()
+                self._setup_ui()
+
+        def _setup_ui(self):
+                uic.loadUi(QEpisodeWidget.UI_PATH, baseinstance=self)
