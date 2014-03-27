@@ -53,7 +53,7 @@ Installez ensuite pytoutv à l'aide de pip :
     $ sudo pip install pytoutv
 
 Sous Debian et Ubuntu, pip utilise par défaut les dépendances en Python 2.
-Pour régler ce problème, vous pouvez télécharger la version Python 3 de pip:
+Pour régler ce problème, vous pouvez télécharger la version Python 3 de pip :
 
     $ sudo aptitude install python3-pip
 
@@ -77,9 +77,9 @@ vous pouvez installer pytoutv directement en utilisant son script `setup.py` :
         $ sudo ./setup.py install
 
 Avec Debian et Ubuntu, vous devrez surement spécifier que vous souhaitez
-utiliser Python 3 pour faire rouler le programme:
+utiliser Python 3 pour faire rouler le programme :
 
-        $ sudo python3 ./setup.py install
+    $ sudo python3 ./setup.py install
 
 
 Librairie
