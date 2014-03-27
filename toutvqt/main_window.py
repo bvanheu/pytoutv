@@ -2,22 +2,27 @@ from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.emissions_treeview import QEmissionsTreeView
+from toutvqt.emissions_treemodel import EmissionsTreeModel
 from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.infos_frame import QInfosFrame
+
+from toutv import client
 
 
 class QTouTvMainWindow(Qt.QMainWindow):
     UI_PATH = resource_filename(__name__, 'dat/ui/main_window.ui')
 
-    def __init__(self, app):
+    def __init__(self, app, client):
         super(QTouTvMainWindow, self).__init__()
 
         self._app = app
+        self._client = client
 
         self._setup_ui()
 
     def _add_treeview(self):
-        self.emissions_treeview = QEmissionsTreeView()
+        treeview_model = EmissionsTreeModel(self._client)
+        self.emissions_treeview = QEmissionsTreeView(treeview_model)
         self.emissions_tab.layout().addWidget(self.emissions_treeview)
 
     def _add_infos(self):

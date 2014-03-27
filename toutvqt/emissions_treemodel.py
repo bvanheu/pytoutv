@@ -8,13 +8,14 @@ import time
 import xml.etree.ElementTree as ET
 
 
+def return_bo_title(x):
+    return x.bo.Title
+
 def return_name(x):
     return x.name
 
-
 def return_number(x):
     return x.number
-
 
 class FakeEmission:
 
@@ -158,8 +159,8 @@ class LoadingItem:
 
 class EmissionsTreeModelEmission:
 
-    def __init__(self, name, row_in_parent):
-        self.name = name
+    def __init__(self, emission_bo, row_in_parent):
+        self.bo = emission_bo
         self.seasons = []
         self.loading_item = LoadingItem(self)
         self.row_in_parent = row_in_parent
@@ -171,7 +172,7 @@ class EmissionsTreeModelEmission:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return self.name
+                return self.bo.Title
             elif column == 1:
                 return ""
             elif column == 2:
@@ -209,7 +210,7 @@ class EmissionsTreeModelSeason:
         self.row_in_parent = row_in_parent
 
         # Have we fetched this season's episodes?
-        self.fetched = FetchState.Nope
+        self.fetched = FetchState.Done
 
     def data(self, index, role):
         column = index.column()
@@ -245,9 +246,8 @@ class EmissionsTreeModelSeason:
 
 class EmissionsTreeModelEpisode:
 
-    def __init__(self, name, number, row_in_parent):
-        self.name = name
-        self.number = number
+    def __init__(self, bo, row_in_parent):
+        self.bo = bo
         self.loading_item = LoadingItem(self)
         self.row_in_parent = row_in_parent
 
@@ -255,9 +255,9 @@ class EmissionsTreeModelEpisode:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return "Episode %d" % (self.number)
+                return "Episode %d" % (self.bo.EpisodeNumber)
             elif column == 1:
-                return "%s" % (self.name)
+                return "%s" % (self.bo.Title)
             elif column == 2:
                 return ""
 
@@ -278,10 +278,9 @@ class EmissionsTreeModelEpisode:
 
 class EmissionsTreeModel(Qt.QAbstractItemModel):
 
-    def __init__(self, datasource):
+    def __init__(self, client):
         super(EmissionsTreeModel, self).__init__()
         self.emissions = []
-        self.datasource = datasource
         self.loading_item = LoadingItem(None)
 
         # Have we fetched the emissions ?
@@ -291,7 +290,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.fetch_thread = Qt.QThread()
         self.fetch_thread.start()
 
-        self.fetcher = EmissionsTreeModelFetcher(self.datasource)
+        self.fetcher = EmissionsTreeModelFetcher(client)
         self.fetcher.moveToThread(self.fetch_thread)
         self.fetch_required.connect(self.fetcher.new_work_piece)
         self.fetcher.fetch_done.connect(self.fetch_done)
@@ -373,9 +372,9 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
 class EmissionsTreeModelFetcher(Qt.QObject):
 
-    def __init__(self, datasource):
+    def __init__(self, client):
         super(EmissionsTreeModelFetcher, self).__init__()
-        self.datasource = datasource
+        self.client = client
 
     fetch_done = QtCore.pyqtSignal(object, list)
 
@@ -389,33 +388,38 @@ class EmissionsTreeModelFetcher(Qt.QObject):
             self.fetch_episodes(parent)
 
     def fetch_emissions(self, parent):
-        emissions = self.datasource.get_emissions()
+        emissions = self.client.get_emissions()
         emissions_ret = []
-        for (i, emission) in enumerate(emissions):
-            new_emission = EmissionsTreeModelEmission(emission.name, i)
+        for (i, key) in enumerate(emissions):
+            emission = emissions[key]
+            new_emission = EmissionsTreeModelEmission(emission, i)
             emissions_ret.append(new_emission)
+
         self.fetch_done.emit(parent, emissions_ret)
 
     def fetch_seasons(self, parent):
         emission = parent.internalPointer()
-        seasons = self.datasource.get_season_for(emission.name)
-        seasons_ret = []
-        for (i, s) in enumerate(seasons):
-            new_season = EmissionsTreeModelSeason(s.number, i)
+        episodes = self.client.get_emission_episodes(emission.bo)
+        seasons_set = set()
+        seasons_list = []
+        seasons_dict = {}
+
+        for key in episodes:
+            ep = episodes[key]
+            if ep.SeasonNumber not in seasons_dict:
+                seasons_dict[ep.SeasonNumber] = []
+            seasons_dict[ep.SeasonNumber].append(ep)
+
+
+        for (i, season_number) in enumerate(seasons_dict):
+            episodes = seasons_dict[season_number]
+            new_season = EmissionsTreeModelSeason(season_number, i)
             new_season.emission = emission
-            seasons_ret.append(new_season)
-        self.fetch_done.emit(parent, seasons_ret)
+            for (j, ep) in enumerate(episodes):
+                new_episode = EmissionsTreeModelEpisode(ep, j)
+                new_episode.season = new_season
+                new_season.episodes.append(new_episode)
 
-    def fetch_episodes(self, parent):
-        season = parent.internalPointer()
-        emission_name = season.emission.name
+            seasons_list.append(new_season)
 
-        episodes = self.datasource.get_episodes_for(
-            emission_name, season.number)
-        episodes_ret = []
-        for (i, e) in enumerate(episodes):
-            new_ep = EmissionsTreeModelEpisode(e.name, e.number, i)
-            new_ep.season = season
-            episodes_ret.append(new_ep)
-
-        self.fetch_done.emit(parent, episodes_ret)
+        self.fetch_done.emit(parent, seasons_list)
