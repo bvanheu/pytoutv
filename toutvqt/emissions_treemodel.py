@@ -11,11 +11,14 @@ import xml.etree.ElementTree as ET
 def return_bo_title(x):
     return x.bo.Title
 
+
 def return_name(x):
     return x.name
 
+
 def return_number(x):
     return x.number
+
 
 class FakeEmission:
 
@@ -235,6 +238,7 @@ class EmissionsTreeModelSeason:
     def parent(self, child, createIndex):
         return createIndex(self.row_in_parent, 0, self.emission)
 
+
 class EmissionsTreeModelEpisode:
 
     def __init__(self, bo, row_in_parent):
@@ -400,7 +404,6 @@ class EmissionsTreeModelFetcher(Qt.QObject):
             if ep.SeasonNumber not in seasons_dict:
                 seasons_dict[ep.SeasonNumber] = []
             seasons_dict[ep.SeasonNumber].append(ep)
-
 
         for (i, season_number) in enumerate(seasons_dict):
             episodes = seasons_dict[season_number]

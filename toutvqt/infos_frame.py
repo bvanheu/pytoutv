@@ -5,6 +5,7 @@ from PyQt4 import QtGui
 
 
 class QInfosFrame(Qt.QFrame):
+
     def __init__(self):
         super(QInfosFrame, self).__init__()
 
@@ -49,11 +50,13 @@ class QInfosFrame(Qt.QFrame):
         self.setFrameShadow(Qt.QFrame.Sunken)
         self._setup_none_label()
         self._setup_infos_widget()
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Maximum)
+        self.setSizePolicy(
+            QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Maximum)
 
 
 class QEmissionWidget(Qt.QWidget):
-        UI_PATH = resource_filename(__name__, 'dat/ui/infos_emission_widget.ui')
+        UI_PATH = resource_filename(
+            __name__, 'dat/ui/infos_emission_widget.ui')
 
         def __init__(self):
                 super(QEmissionWidget, self).__init__()
@@ -61,6 +64,7 @@ class QEmissionWidget(Qt.QWidget):
 
         def _setup_ui(self):
                 uic.loadUi(QEmissionWidget.UI_PATH, baseinstance=self)
+
 
 class QSeasonWidget(Qt.QWidget):
         UI_PATH = resource_filename(__name__, 'dat/ui/infos_season_widget.ui')
@@ -71,6 +75,7 @@ class QSeasonWidget(Qt.QWidget):
 
         def _setup_ui(self):
                 uic.loadUi(QSeasonWidget.UI_PATH, baseinstance=self)
+
 
 class QEpisodeWidget(Qt.QWidget):
         UI_PATH = resource_filename(__name__, 'dat/ui/infos_episode_widget.ui')
