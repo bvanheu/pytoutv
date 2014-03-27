@@ -9,9 +9,7 @@ class QTouTvConfig(Qt.QObject):
 	def __init__(self):
 		super(QTouTvConfig, self).__init__()
 		self._fill_defaults()
-
-		# config_dict starts with the default
-		self.config_dict = self.defaults.copy()
+		self.config_dict = {}
 		self.config_item_changed.connect(self.tmp)
 
 	config_item_changed = QtCore.pyqtSignal(str, object)
@@ -32,7 +30,7 @@ class QTouTvConfig(Qt.QObject):
 
 	def read_settings(self):
 		settings = QSettings()
-		read_config = {}
+		read_config = self.defaults.copy()
 		keys = settings.allKeys()
 
 		for k in keys:
