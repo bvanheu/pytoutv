@@ -53,11 +53,16 @@ class JsonTransport(Transport):
         self.mapper = toutv.mapper.JsonMapper()
         self.proxies = None
 
+        self.set_http_proxy(http_proxy)
+
+    def set_http_proxy(self, http_proxy):
         if http_proxy:
             self.proxies = {
                 "http": http_proxy,
                 "https": http_proxy,
             }
+        else:
+            self.proxies = None
 
     def _do_query(self, endpoint, params={}):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
