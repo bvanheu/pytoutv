@@ -120,6 +120,14 @@ requests. Use
 to get a detailed list of options for command `<command>`.
 
 
+Proxy
+-----
+
+Please note `toutv` honors the `HTTP_PROXY` and `HTTPS_PROXY` environment
+variables, which should contain the full URLs of HTTP(S) proxies to use, including
+the scheme (`http://`, `https://`).
+
+
 Examples
 --------
 

@@ -121,6 +121,14 @@ de cache qui permet d'accélérer les requêtes. Utilisez
 afin d'obtenir une liste détaillée des options pour la commande `<commande>`.
 
 
+Proxy
+-----
+
+Veuillez noter que `toutv` honore les variables d'environnement `HTTP_PROXY` et
+`HTTPS_PROXY`, qui devraient contenir les URL complètes des proxies à utiliser,
+incluant le schéma (`http://`, `https://`).
+
+
 Exemples
 --------
 
