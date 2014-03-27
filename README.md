@@ -27,7 +27,7 @@ pytoutv needs:
 
 pytoutv is known to work on Ubuntu, Debian, Arch Linux and Windows.
 
-Under Debian and Ubuntu, be sure to install the Python3 dependencies:
+Under Debian and Ubuntu, be sure to install the Python 3 dependencies:
 
     sudo aptitude install python3-crypto python3-requests python3-setuptools
 
