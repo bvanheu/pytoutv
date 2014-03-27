@@ -6,6 +6,7 @@ from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
 
 from toutv import client
+from toutv import transport
 
 
 class QTouTvApp(Qt.QApplication):
@@ -20,7 +21,8 @@ class QTouTvApp(Qt.QApplication):
         self.main_window.show()
 
     def _setup_client(self):
-        self.client = client.Client()
+        tp = transport.JsonTransport(http_proxy = None)
+        self.client = client.Client(transport = tp)
 
 
 def _register_sigint():
