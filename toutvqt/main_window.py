@@ -4,6 +4,7 @@ from PyQt4 import Qt
 from toutvqt.emissions_treeview import QEmissionsTreeView
 from toutvqt.emissions_treemodel import EmissionsTreeModel
 from toutvqt.about_dialog import QTouTvAboutDialog
+from toutvqt.preferences_dialog import QTouTvPreferencesDialog
 from toutvqt.infos_frame import QInfosFrame
 
 from toutv import client
@@ -38,7 +39,8 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
 
     def _setup_edit_menu(self):
-        pass
+        self.preferences_dialog = QTouTvPreferencesDialog()
+        self.preferences_action.triggered.connect(self.show_preferences_dialog)
 
     def _setup_help_menu(self):
         self.about_dialog = QTouTvAboutDialog()
@@ -46,6 +48,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
     def _setup_menus(self):
         self._setup_file_menu()
+        self._setup_edit_menu()
         self._setup_help_menu()
 
     @staticmethod
@@ -77,3 +80,9 @@ class QTouTvMainWindow(Qt.QMainWindow):
         pos.setX(pos.x() + 40)
         pos.setY(pos.y() + 40)
         self.about_dialog.show_move(pos)
+
+    def show_preferences_dialog(self):
+        pos = self.pos()
+        pos.setX(pos.x() + 40)
+        pos.setY(pos.y() + 40)
+        self.preferences_dialog.show_move(pos)
