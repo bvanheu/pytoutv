@@ -28,6 +28,9 @@ pytoutv requiert :
 
 pytoutv est réputé fonctionner sur Ubuntu, Debian, Arch Linux et Windows.
 
+Sous Debian et Ubuntu, soyez bien sûr d'installer les dépendances en Python 3:
+
+    $ sudo aptitude install python3-crypto python3-requests python3-setuptools
 
 Installation
 ============
@@ -49,6 +52,15 @@ Installez ensuite pytoutv à l'aide de pip :
 
     $ sudo pip install pytoutv
 
+Sous Debian et Ubuntu, pip utilise par défaut les dépendances en Python 2.
+Pour régler ce problème, vous pouvez télécharger la version Python 3 de pip:
+
+    $ sudo aptitude install python3-pip
+
+Par la suite, il ne suffit que de lancer l'installation avec ce paquet:
+
+    $ sudo pip3 install pytoutv
+
 
 Avec setup.py
 -------------
@@ -63,6 +75,11 @@ vous pouvez installer pytoutv directement en utilisant son script `setup.py` :
   2. Lancez le script d'installation :
 
         $ sudo ./setup.py install
+
+Avec Debian et Ubuntu, vous devrez surement spécifier que vous souhaitez
+utiliser Python 3 pour faire rouler le programme:
+
+        $ sudo python3 ./setup.py install
 
 
 Librairie
