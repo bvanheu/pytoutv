@@ -24,12 +24,15 @@ class QInfosFrame(Qt.QFrame):
         self._swap_infos_widget(self.none_label)
 
     def show_emission(self, emission):
+        self.emission_widget.fill_info(emission)
         self._swap_infos_widget(self.emission_widget)
 
-    def show_season(self, season):
+    def show_season(self, emission, season_number):
+        self.season_widget.fill_info(emission, season_number)
         self._swap_infos_widget(self.season_widget)
 
     def show_episode(self, episode):
+        self.episode_widget.fill_info(episode)
         self._swap_infos_widget(self.episode_widget)
 
     def _setup_none_label(self):
@@ -65,6 +68,9 @@ class QEmissionWidget(Qt.QWidget):
         def _setup_ui(self):
                 uic.loadUi(QEmissionWidget.UI_PATH, baseinstance=self)
 
+        def fill_info(self, emission):
+            self.title_value_label.setText(emission.Title)
+
 
 class QSeasonWidget(Qt.QWidget):
         UI_PATH = resource_filename(__name__, 'dat/ui/infos_season_widget.ui')
@@ -76,6 +82,9 @@ class QSeasonWidget(Qt.QWidget):
         def _setup_ui(self):
                 uic.loadUi(QSeasonWidget.UI_PATH, baseinstance=self)
 
+        def fill_info(self, emission, season_number):
+            self.title_value_label.setText(emission.Title + " (season selected)")
+
 
 class QEpisodeWidget(Qt.QWidget):
         UI_PATH = resource_filename(__name__, 'dat/ui/infos_episode_widget.ui')
@@ -86,3 +95,6 @@ class QEpisodeWidget(Qt.QWidget):
 
         def _setup_ui(self):
                 uic.loadUi(QEpisodeWidget.UI_PATH, baseinstance=self)
+
+        def fill_info(self, episode):
+            self.title_value_label.setText(episode.Title)
