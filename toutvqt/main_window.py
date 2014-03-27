@@ -23,6 +23,11 @@ class QTouTvMainWindow(Qt.QMainWindow):
     def _add_infos(self):
         self.infos_frame = QInfosFrame()
         self.emissions_tab.layout().addWidget(self.infos_frame)
+        treeview = self.emissions_treeview
+        treeview.emission_selected.connect(self.infos_frame.show_emission)
+        treeview.season_selected.connect(self.infos_frame.show_season)
+        treeview.episode_selected.connect(self.infos_frame.show_episode)
+        treeview.none_selected.connect(self.infos_frame.show_infos_none)
 
     def _setup_file_menu(self):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
@@ -37,14 +42,6 @@ class QTouTvMainWindow(Qt.QMainWindow):
     def _setup_menus(self):
         self._setup_file_menu()
         self._setup_help_menu()
-
-    def _setup_infos(self):
-        self.infos_frame = QInfosFrame()
-        treeview = self.emissions_treeview
-        treeview.emission_selected.connect(self.infos_frame.show_emission)
-        treeview.season_selected.connect(self.infos_frame.show_season)
-        treeview.episode_selected.connect(self.infos_frame.show_episode)
-        treeview.none_selected.connect(self.infos_frame.show_infos_none)
 
     @staticmethod
     def _get_icon(name):
@@ -69,7 +66,6 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._add_treeview()
         self._add_infos()
         self._setup_menus()
-        self._setup_infos()
 
     def show_about_dialog(self):
         pos = self.pos()

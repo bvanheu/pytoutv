@@ -14,7 +14,8 @@ class QInfosFrame(Qt.QFrame):
         layout = self.layout()
 
         if layout.count() == 1:
-            layout.takeAt(0)
+            cur_widget = layout.itemAt(0).widget()
+            cur_widget.setParent(None)
         layout.addWidget(widget)
 
     def show_infos_none(self):
