@@ -49,14 +49,21 @@ class Transport:
 
 
 class JsonTransport(Transport):
-    def __init__(self):
+    def __init__(self, http_proxy = None):
         self.mapper = toutv.mapper.JsonMapper()
+        self.proxies = None
+
+        if http_proxy:
+            self.proxies = {
+                "http": http_proxy,
+                "https": http_proxy,
+            }
 
     def _do_query(self, endpoint, params={}):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
 
         try:
-            r = requests.get(url, params=params, headers=toutv.config.HEADERS)
+            r = requests.get(url, params=params, headers=toutv.config.HEADERS, proxies=self.proxies)
             response_obj = r.json()
 
             return response_obj['d']
