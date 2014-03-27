@@ -197,6 +197,9 @@ class EmissionsTreeModelEmission:
         # An emission is at root level.
         return Qt.QModelIndex()
 
+    def should_fetch(self):
+        return self.fetched == FetchState.Nope
+
     def set_children(self, c):
         self.seasons = c
 
@@ -206,11 +209,7 @@ class EmissionsTreeModelSeason:
     def __init__(self, number, row_in_parent):
         self.number = number
         self.episodes = []
-        self.loading_item = LoadingItem(self)
         self.row_in_parent = row_in_parent
-
-        # Have we fetched this season's episodes?
-        self.fetched = FetchState.Done
 
     def data(self, index, role):
         column = index.column()
@@ -225,24 +224,16 @@ class EmissionsTreeModelSeason:
             return "?"
 
     def rowCount(self):
-        if self.fetched == FetchState.Done:
-            return len(self.episodes)
-        else:
-            # The "Loading" item.
-            return 1
+        return len(self.episodes)
 
     def index(self, row, column, createIndex):
-        if self.fetched == FetchState.Done:
-            return createIndex(row, column, self.episodes[row])
-        else:
-            return createIndex(row, column, self.loading_item)
+        return createIndex(row, column, self.episodes[row])
+
+    def should_fetch(self):
+        return False
 
     def parent(self, child, createIndex):
         return createIndex(self.row_in_parent, 0, self.emission)
-
-    def set_children(self, c):
-        self.episodes = c
-
 
 class EmissionsTreeModelEpisode:
 
@@ -360,7 +351,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
     def item_expanded(self, parent):
         """Slot called when an item in the tree has been expanded"""
-        if parent.internalPointer().fetched == FetchState.Nope:
+        if parent.internalPointer().should_fetch():
             self.init_fetch(parent)
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
