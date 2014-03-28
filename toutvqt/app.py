@@ -14,6 +14,9 @@ class QTouTvApp(Qt.QApplication):
     def __init__(self, args):
         super(QTouTvApp, self).__init__(args)
 
+        self.setOrganizationName("src")
+        self.setApplicationName("toutv")
+
         self._setup_client()
         self._setup_ui()
         self._setup_config()
