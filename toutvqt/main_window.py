@@ -23,8 +23,9 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._setup_ui()
 
     def _add_treeview(self):
-        treeview_model = EmissionsTreeModel(self._client)
-        self.emissions_treeview = QEmissionsTreeView(treeview_model)
+        model = EmissionsTreeModel(self._client)
+        self._treeview_model = model
+        self.emissions_treeview = QEmissionsTreeView(model)
         self.emissions_tab.layout().addWidget(self.emissions_treeview)
 
     def _add_tableview(self):
@@ -82,6 +83,10 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._add_infos()
         self._add_tableview()
         self._setup_menus()
+
+    def closeEvent(self, close_event):
+        self.infos_frame.exit()
+        self._treeview_model.exit()
 
     def _setup_ui_post_show(self):
         self.emissions_treeview.set_default_columns_widths()

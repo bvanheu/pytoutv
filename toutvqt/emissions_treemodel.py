@@ -166,6 +166,10 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.fetch_required.connect(self.fetcher.new_work_piece)
         self.fetcher.fetch_done.connect(self.fetch_done)
 
+    def exit(self):
+        self.fetch_thread.quit()
+        self.fetch_thread.wait()
+
     def index(self, row, column, parent=Qt.QModelIndex()):
         """Returns a QModelIndex to represent a cell of a child of parent."""
         if not parent.isValid():

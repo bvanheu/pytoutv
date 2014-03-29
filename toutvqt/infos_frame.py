@@ -19,6 +19,9 @@ class QInfosFrame(Qt.QFrame):
                 swappable_widget.hide()
         widget.show()
 
+    def exit(self):
+        self.episode_widget.exit()
+
     def show_infos_none(self):
         self._swap_infos_widget(self.none_label)
 
@@ -187,6 +190,10 @@ class QEpisodeInfosWidget(QInfosWidget):
 
         self._setup_ui(QEpisodeInfosWidget._UI_PATH)
         self._setup_thumb_fetching();
+
+    def exit(self):
+        self._fetch_thumb_thread.quit()
+        self._fetch_thumb_thread.wait()
 
     def _setup_ui(self, ui_path):
         super(QEpisodeInfosWidget, self)._setup_ui(ui_path)
