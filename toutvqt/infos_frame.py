@@ -197,6 +197,18 @@ class QEpisodeInfosWidget(QInfosWidget):
             sae = '-'
         self.sae_value_label.setText(sae)
 
+    def _set_director(self):
+        director = self._episode.get_director()
+        if director is None:
+            director = '-'
+        self.director_value_label.setText(director)
+
+    def _set_author(self):
+        author = self._episode.get_author()
+        if author is None:
+            author = '-'
+        self.author_value_label.setText(author)
+
     def _set_titles(self):
         emission = self._episode.get_emission()
         self.title_value_label.setText(self._episode.get_title())
@@ -216,6 +228,8 @@ class QEpisodeInfosWidget(QInfosWidget):
         self._episode = episode
 
         self._set_titles()
+        self._set_author()
+        self._set_director()
         self._set_description()
         self._set_air_date()
         self._set_length()

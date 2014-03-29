@@ -303,6 +303,12 @@ class Episode:
     def get_id(self):
         return self.Id
 
+    def get_author(self):
+        return self.PeopleAuthor
+
+    def get_director(self):
+        return self.PeopleDirector
+
     def get_year(self):
         return self.Year
 

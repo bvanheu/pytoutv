@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>479</width>
-    <height>140</height>
+    <height>182</height>
    </rect>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
@@ -103,6 +103,34 @@
         <widget class="QLabel" name="air_date_value_label">
          <property name="text">
           <string>2017/04/23</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="author_label">
+         <property name="text">
+          <string>Author(s):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QLabel" name="author_value_label">
+         <property name="text">
+          <string>Bla bla</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="director_label">
+         <property name="text">
+          <string>Director(s):</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QLabel" name="director_value_label">
+         <property name="text">
+          <string>Rolf</string>
          </property>
         </widget>
        </item>

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>441</width>
-    <height>190</height>
+    <width>428</width>
+    <height>140</height>
    </rect>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
