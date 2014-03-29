@@ -38,3 +38,4 @@ TOUTV_PLAYLIST_PARAMS = {
     'output': 'json'
 }
 TOUTV_JSON_URL_PREFIX = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'
+TOUTV_BASE_URL = 'http://ici.tou.tv'

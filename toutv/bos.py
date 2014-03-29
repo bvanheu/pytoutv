@@ -29,6 +29,7 @@ import re
 import os
 import datetime
 import toutv.dl
+import toutv.config
 
 
 def _clean_description(desc):
@@ -46,7 +47,10 @@ class AbstractEmission:
         return self.Genre
 
     def get_url(self):
-        return self.Url
+        if self.Url is None:
+            return None
+
+        return '{}/{}'.format(toutv.config.TOUTV_BASE_URL, self.Url)
 
     def get_removal_date(self):
         if self.DateRetraitOuEmbargo is None:
@@ -279,7 +283,10 @@ class Episode:
         return self.GenreTitle
 
     def get_url(self):
-        return self.Url
+        if self.Url is None:
+            return None
+
+        return '{}/{}'.format(toutv.config.TOUTV_BASE_URL, self.Url)
 
     def get_season_number(self):
         return self.SeasonNumber

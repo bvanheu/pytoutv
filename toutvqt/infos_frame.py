@@ -2,6 +2,7 @@ from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
 from PyQt4 import QtGui
+import webbrowser
 
 
 class QInfosFrame(Qt.QFrame):
@@ -60,8 +61,22 @@ class QInfosWidget(Qt.QWidget):
     def __init__(self):
         super(QInfosWidget, self).__init__()
 
+        self._url = None
+
     def _setup_ui(self, ui_path):
         uic.loadUi(ui_path, baseinstance=self)
+        self.goto_toutv_btn.clicked.connect(self._on_goto_toutv_btn_clicked)
+
+    def _set_toutv_url(self, url):
+        self._url = url
+        if url is None:
+            self.goto_toutv_btn.hide()
+        else:
+            self.goto_toutv_btn.show()
+
+    def _on_goto_toutv_btn_clicked(self):
+        if self._url is not None:
+            webbrowser.open(self._url)
 
 
 class QEmissionCommonInfosWidget:
@@ -103,6 +118,8 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
         self.description_value_label.setText(description)
         self._set_common_infos(emission)
 
+        self._set_toutv_url(emission.get_url())
+
 
 class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
     UI_PATH = resource_filename(__name__, 'dat/ui/season_infos_widget.ui')
@@ -118,6 +135,8 @@ class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
         self.season_number_value_label.setText(str(season_number))
         self.episodes_value_label.setText(nb_episodes)
         self._set_common_infos(emission)
+
+        self._set_toutv_url(emission.get_url())
 
 
 class QEpisodeInfosWidget(QInfosWidget):
@@ -151,3 +170,5 @@ class QEpisodeInfosWidget(QInfosWidget):
         self.air_date_value_label.setText(air_date)
         self.length_value_label.setText(length)
         self.description_value_label.setText(description)
+
+        self._set_toutv_url(episode.get_url())
