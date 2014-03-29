@@ -6,6 +6,14 @@ Python 3.
 This repository also holds a command line interface (and a graphical interface
 soon).
 
+pytoutv, thanks to TOU.TV's public API (see
+[`toutv/config.py`](toutv/config.py) for public URLs), is able to
+retrieve lists of emissions (shows) and episodes, get emissions and episodes
+informations and fetch any video file publicly distributed by the TOU.TV
+service. Informations, including video files, downloaded using pytoutv are
+for personal use only and should not be redistributed unless otherwise
+authorized by TOU.TV owners.
+
 _Note_: although this is pytoutv 2, there's no such thing as pytoutv 1. This
 project was previously known as _Tou.tv-console-application_ and targeted
 at Python 2. Its refactoring and renaming to pytoutv led to its version 2.
