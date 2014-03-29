@@ -2,9 +2,20 @@
 <ui version="4.0">
  <class>infos_emission_widget</class>
  <widget class="QWidget" name="infos_emission_widget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>392</width>
+    <height>230</height>
+   </rect>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
    <property name="spacing">
     <number>10</number>
+   </property>
+   <property name="margin">
+    <number>0</number>
    </property>
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
