@@ -33,7 +33,7 @@
        <item row="0" column="0">
         <widget class="QLabel" name="title_label">
          <property name="text">
-          <string>Title:</string>
+          <string>Episode:</string>
          </property>
         </widget>
        </item>
@@ -203,7 +203,7 @@
         </size>
        </property>
        <property name="text">
-        <string>Go to TOU.TV</string>
+        <string>&amp;Go to TOU.TV</string>
        </property>
       </widget>
      </item>
