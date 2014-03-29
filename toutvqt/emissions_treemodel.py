@@ -1,11 +1,7 @@
 from PyQt4 import Qt
 from PyQt4 import QtCore
-import datetime
 import logging
-import sys
 import re
-import time
-import xml.etree.ElementTree as ET
 
 
 class FetchState:
