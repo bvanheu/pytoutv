@@ -6,6 +6,15 @@ pour [TOU.TV](http://tou.tv/).
 Ce dépôt contient aussi une interface en ligne de commande (et bientôt une
 interface graphique).
 
+pytoutv, grâce à l'API publique de TOU.TV (voir
+[`toutv/config.py`](toutv/config.py) pour les URL publiques), est en
+mesure de récupérer les listes d'émissions et d'épisodes, obtenir des
+informations sur des émissions ou des épisodes ou télécharger n'importe quel
+fichier vidéo distribué publiquement par le service TOU.TV. Les informations
+téléchargées, incluant les fichiers vidéo, sont destinées à un usage personnel
+et ne devraient pas être redistribuées, à moins d'une autorisation préalable
+fournie par les propriétaires de TOU.TV.
+
 _Note_ : bien qu'on parle de pytoutv 2, il n'existe pas de version 1 de
 pytoutv. Ce projet était auparavant connu sous le nom
 _Tou.tv-console-application_ et ciblait Python 2. Son réusinage et son
