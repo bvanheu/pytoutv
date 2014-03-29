@@ -54,7 +54,8 @@ class QEmissionsTreeView(Qt.QTreeView):
         if type(item) == EmissionsTreeModelEmission:
             self.emission_selected.emit(item.bo)
         elif type(item) == EmissionsTreeModelSeason:
-            self.season_selected.emit(item.emission.bo, item.number, item.episodes)
+            self.season_selected.emit(item.emission.bo, item.number,
+                                      item.episodes)
         elif type(item) == EmissionsTreeModelEpisode:
             self.episode_selected.emit(item.bo)
         else:
