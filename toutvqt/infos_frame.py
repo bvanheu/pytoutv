@@ -56,6 +56,14 @@ class QInfosFrame(Qt.QFrame):
                            QtGui.QSizePolicy.Maximum)
 
 
+class QInfosWidget(Qt.QWidget):
+    def __init__(self):
+        super(QInfosWidget, self).__init__()
+
+    def _setup_ui(self, ui_path):
+        uic.loadUi(ui_path, baseinstance=self)
+
+
 class QEmissionCommonInfosWidget:
     def _set_common_infos(self, emission):
         country = '-'
@@ -77,15 +85,13 @@ class QEmissionCommonInfosWidget:
         self.genre_value_label.setText(genre)
 
 
-class QEmissionInfosWidget(Qt.QWidget, QEmissionCommonInfosWidget):
+class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
     UI_PATH = resource_filename(__name__, 'dat/ui/emission_infos_widget.ui')
 
     def __init__(self):
         super(QEmissionInfosWidget, self).__init__()
-        self._setup_ui()
 
-    def _setup_ui(self):
-        uic.loadUi(QEmissionInfosWidget.UI_PATH, baseinstance=self)
+        self._setup_ui(QEmissionInfosWidget.UI_PATH)
 
     def set_emission(self, emission):
         title = emission.get_title()
@@ -98,15 +104,13 @@ class QEmissionInfosWidget(Qt.QWidget, QEmissionCommonInfosWidget):
         self._set_common_infos(emission)
 
 
-class QSeasonInfosWidget(Qt.QWidget, QEmissionCommonInfosWidget):
+class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
     UI_PATH = resource_filename(__name__, 'dat/ui/season_infos_widget.ui')
 
     def __init__(self):
         super(QSeasonInfosWidget, self).__init__()
-        self._setup_ui()
 
-    def _setup_ui(self):
-        uic.loadUi(QSeasonInfosWidget.UI_PATH, baseinstance=self)
+        self._setup_ui(QSeasonInfosWidget.UI_PATH)
 
     def set_infos(self, emission, season_number, episodes):
         nb_episodes = str(len(episodes))
@@ -116,15 +120,13 @@ class QSeasonInfosWidget(Qt.QWidget, QEmissionCommonInfosWidget):
         self._set_common_infos(emission)
 
 
-class QEpisodeInfosWidget(Qt.QWidget):
+class QEpisodeInfosWidget(QInfosWidget):
     UI_PATH = resource_filename(__name__, 'dat/ui/episode_infos_widget.ui')
 
     def __init__(self):
         super(QEpisodeInfosWidget, self).__init__()
-        self._setup_ui()
 
-    def _setup_ui(self):
-        uic.loadUi(QEpisodeInfosWidget.UI_PATH, baseinstance=self)
+        self._setup_ui(QEpisodeInfosWidget.UI_PATH)
 
     def set_episode(self, episode):
         title = episode.get_title()
