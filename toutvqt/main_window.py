@@ -1,6 +1,7 @@
 from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
+from toutvqt.downloads_tableview import QDownloadsTableView
 from toutvqt.emissions_treeview import QEmissionsTreeView
 from toutvqt.emissions_treemodel import EmissionsTreeModel
 from toutvqt.about_dialog import QTouTvAboutDialog
@@ -24,6 +25,10 @@ class QTouTvMainWindow(Qt.QMainWindow):
         treeview_model = EmissionsTreeModel(self._client)
         self.emissions_treeview = QEmissionsTreeView(treeview_model)
         self.emissions_tab.layout().addWidget(self.emissions_treeview)
+
+    def _add_tableview(self):
+        self.downloads_tableview = QDownloadsTableView()
+        self.downloads_tab.layout().addWidget(self.downloads_tableview)
 
     def _add_infos(self):
         self.infos_frame = QInfosFrame()
@@ -73,6 +78,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._setup_icons()
         self._add_treeview()
         self._add_infos()
+        self._add_tableview()
         self._setup_menus()
 
     def _setup_ui_post_show(self):
