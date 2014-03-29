@@ -27,7 +27,7 @@ class QTouTvPreferencesDialog(Qt.QDialog):
     def _open_download_directory_browser(self, checked):
         msg = 'Select download directory'
         dl_dir = QtGui.QFileDialog.getExistingDirectory(self, msg)
-        self.download_directory_value.setText(download_directory)
+        self.download_directory_value.setText(dl_dir)
 
     def show_move(self, pos):
         self.move(pos)

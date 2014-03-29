@@ -12,7 +12,6 @@ class QEmissionsTreeViewStyleDelegate(Qt.QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         if type(index.internalPointer()) is LoadingItem:
-            print(type(index))
             option.font.setItalic(True)
         Qt.QStyledItemDelegate.paint(self, painter, option, index)
 
