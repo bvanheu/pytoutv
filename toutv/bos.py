@@ -37,7 +37,7 @@ def _clean_description(desc):
     desc = desc.replace('\n', ' ')
     desc = desc.replace('  ', ' ')
 
-    return desc
+    return desc.strip()
 
 
 class AbstractEmission:
