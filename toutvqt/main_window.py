@@ -39,7 +39,8 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
     def _setup_edit_menu(self):
         self.preferences_dialog = QTouTvPreferencesDialog()
-        self.preferences_action.triggered.connect(self._show_preferences_dialog)
+        _show_prefs_cb = self._show_preferences_dialog
+        self.preferences_action.triggered.connect(_show_prefs_cb)
 
     def _setup_help_menu(self):
         self.about_dialog = QTouTvAboutDialog()
