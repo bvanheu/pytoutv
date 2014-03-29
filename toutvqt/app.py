@@ -1,3 +1,4 @@
+import os
 import sys
 import platform
 from pkg_resources import resource_filename
@@ -47,6 +48,14 @@ class QTouTvApp(Qt.QApplication):
     def _config_item_changed(self, key, value):
         if key == 'network/http_proxy':
             self._client.transport.set_http_proxy(value)
+        if key == 'files/download_directory':
+            # Create output directory if it doesn't exist
+            if not os.path.exists(value):
+                try:
+                    os.makedirs(value)
+                except:
+                    # Ignore; should fail later
+                    pass
 
 
 def _register_sigint():
