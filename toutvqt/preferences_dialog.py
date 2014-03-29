@@ -18,7 +18,6 @@ class QTouTvPreferencesDialog(Qt.QDialog):
 
     def _setup_signals(self):
         self.accepted.connect(self.send_config_accepted)
-        # self.quit_action.triggered.connect(self._app.closeAllWindows)
 
     def _setup_ui(self):
         uic.loadUi(QTouTvPreferencesDialog.UI_PATH, baseinstance=self)
