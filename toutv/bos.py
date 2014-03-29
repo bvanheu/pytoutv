@@ -28,6 +28,7 @@
 import re
 import os
 import datetime
+import requests
 import toutv.dl
 import toutv.config
 
@@ -272,6 +273,32 @@ class Episode:
 
     def get_title(self):
         return self.Title
+
+    def cache_medium_thumb(self):
+        if not hasattr(self, '_medium_thumb_data'):
+            self._medium_thumb_data = None
+
+        if self._medium_thumb_data is not None:
+            return
+
+        url = self.ImageThumbMoyenL
+        if url is None:
+            return
+
+        try:
+            r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
+        except:
+            return
+
+        if r.status_code != 200:
+            return
+
+        self._medium_thumb_data = r.content
+
+    def get_medium_thumb_data(self):
+        self.cache_medium_thumb()
+
+        return self._medium_thumb_data
 
     def get_id(self):
         return self.Id

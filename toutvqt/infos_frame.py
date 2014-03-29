@@ -202,6 +202,16 @@ class QEpisodeInfosWidget(QInfosWidget):
         self.title_value_label.setText(self._episode.get_title())
         self.emission_title_value_label.setText(emission.get_title())
 
+    def _set_thumb(self):
+        jpeg_data = self._episode.get_medium_thumb_data()
+        if jpeg_data is not None:
+            pixmap = Qt.QPixmap()
+            ret = pixmap.loadFromData(jpeg_data, 'JPEG')
+            if ret:
+                expected_width = self.thumb_value_label.width()
+                scaled_pixmap = pixmap.scaledToWidth(expected_width, 1)
+                self.thumb_value_label.setPixmap(scaled_pixmap)
+
     def set_episode(self, episode):
         self._episode = episode
 
@@ -210,4 +220,5 @@ class QEpisodeInfosWidget(QInfosWidget):
         self._set_air_date()
         self._set_length()
         self._set_sae()
+        self._set_thumb()
         self._set_toutv_url(episode.get_url())

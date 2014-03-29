@@ -290,7 +290,7 @@ class EmissionsTreeModelFetcher(Qt.QObject):
                 seasons_dict[ep.get_season_number()] = []
             seasons_dict[ep.get_season_number()].append(ep)
 
-        for (i, season_number) in enumerate(seasons_dict):
+        for i, season_number in enumerate(seasons_dict):
             episodes = seasons_dict[season_number]
             new_season = EmissionsTreeModelSeason(season_number, i)
             new_season.emission = emission
