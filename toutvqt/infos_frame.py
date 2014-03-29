@@ -80,24 +80,39 @@ class QInfosWidget(Qt.QWidget):
 
 
 class QEmissionCommonInfosWidget:
-    def _set_common_infos(self, emission):
-        country = '-'
-        if emission.get_country() is not None:
-            country = emission.get_country()
-        network = '-'
-        if emission.get_network() is not None:
-            network = emission.get_network()
-        removal_date = '-'
-        if emission.get_removal_date() is not None:
-            removal_date = str(emission.get_removal_date().date())
-        genre = '-'
-        if emission.get_genre() is not None:
-            genre = emission.get_genre().get_title()
-
-        self.country_value_label.setText(country)
-        self.network_value_label.setText(network)
+    def _set_removal_date(self):
+        removal_date = self._emission.get_removal_date()
+        if removal_date is None:
+            removal_date = '-'
+        else:
+            removal_date = str(removal_date)
         self.removal_date_value_label.setText(removal_date)
+
+    def _set_genre(self):
+        genre = self._emission.get_genre()
+        if genre is None:
+            genre = '-'
+        else:
+            genre = genre.get_title()
         self.genre_value_label.setText(genre)
+
+    def _set_network(self):
+        network = self._emission.get_network()
+        if network is None:
+            network = '-'
+        self.network_value_label.setText(network)
+
+    def _set_country(self):
+        country = self._emission.get_country()
+        if country is None:
+            country = '-'
+        self.country_value_label.setText(country)
+
+    def _set_common_infos(self):
+        self._set_removal_date()
+        self._set_genre()
+        self._set_network()
+        self._set_country()
 
 
 class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
@@ -108,16 +123,21 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 
         self._setup_ui(QEmissionInfosWidget.UI_PATH)
 
-    def set_emission(self, emission):
-        title = emission.get_title()
-        description = ''
-        if emission.get_description() is not None:
-            description = emission.get_description()
+    def _set_title(self):
+        self.title_value_label.setText(self._emission.get_title())
 
-        self.title_value_label.setText(title)
+    def _set_description(self):
+        description = self._emission.get_description()
+        if description is None:
+            description = ''
         self.description_value_label.setText(description)
-        self._set_common_infos(emission)
 
+    def set_emission(self, emission):
+        self._emission = emission
+
+        self._set_title()
+        self._set_description()
+        self._set_common_infos()
         self._set_toutv_url(emission.get_url())
 
 
@@ -129,13 +149,20 @@ class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 
         self._setup_ui(QSeasonInfosWidget.UI_PATH)
 
+    def _set_season_number(self):
+        self.season_number_value_label.setText(str(self._season_number))
+
+    def _set_number_episodes(self):
+        self.number_episodes_value_label.setText(str(len(self._episodes)))
+
     def set_infos(self, emission, season_number, episodes):
-        nb_episodes = str(len(episodes))
+        self._emission = emission
+        self._season_number = season_number
+        self._episodes = episodes
 
-        self.season_number_value_label.setText(str(season_number))
-        self.episodes_value_label.setText(nb_episodes)
+        self._set_season_number()
+        self._set_number_episodes()
         self._set_common_infos(emission)
-
         self._set_toutv_url(emission.get_url())
 
 
@@ -147,28 +174,40 @@ class QEpisodeInfosWidget(QInfosWidget):
 
         self._setup_ui(QEpisodeInfosWidget.UI_PATH)
 
-    def set_episode(self, episode):
-        title = episode.get_title()
-        emission_title = episode.get_emission().get_title()
-        description = ''
-        if episode.get_description() is not None:
-            description = episode.get_description()
-        sae = '-'
-        if episode.get_sae() is not None:
-            sae = episode.get_sae()
-        air_date = '-'
-        if episode.get_air_date() is not None:
-            air_date = str(episode.get_air_date())
-        length = '-'
-        if episode.get_length() is not None:
-            minutes, seconds = episode.get_length()
-            length = '{}:{:02}'.format(minutes, seconds)
-
-        self.title_value_label.setText(title)
-        self.emission_title_value_label.setText(emission_title)
-        self.sae_value_label.setText(sae)
-        self.air_date_value_label.setText(air_date)
-        self.length_value_label.setText(length)
+    def _set_description(self):
+        description = self._episode.get_description()
+        if description is None:
+            description = '-'
         self.description_value_label.setText(description)
 
+    def _set_air_date(self):
+        air_date = self._episode.get_air_date()
+        if air_date is None:
+            air_date = '-'
+        self.air_date_value_label.setText(str(air_date))
+
+    def _set_length(self):
+        minutes, seconds = self._episode.get_length()
+        length = '{}:{:02}'.format(minutes, seconds)
+        self.length_value_label.setText(length)
+
+    def _set_sae(self):
+        sae = self._episode.get_sae()
+        if sae is None:
+            sae = '-'
+        self.sae_value_label.setText(sae)
+
+    def _set_titles(self):
+        emission = self._episode.get_emission()
+        self.title_value_label.setText(self._episode.get_title())
+        self.emission_title_value_label.setText(emission.get_title())
+
+    def set_episode(self, episode):
+        self._episode = episode
+
+        self._set_titles()
+        self._set_description()
+        self._set_air_date()
+        self._set_length()
+        self._set_sae()
         self._set_toutv_url(episode.get_url())
