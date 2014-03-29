@@ -53,10 +53,12 @@ class EmissionsTreeModelEmission:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return self.bo.Title
+                return self.bo.get_title()
             elif column == 1:
-                return ''
-            elif column == 2:
+                network = self.bo.get_network()
+                if network is not None:
+                    return network
+
                 return ''
 
             return '?'
@@ -95,10 +97,8 @@ class EmissionsTreeModelSeason:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return 'Saison {}'.format(self.number)
+                return 'Season {}'.format(self.number)
             elif column == 1:
-                return ''
-            elif column == 2:
                 return ''
 
             return '?'
@@ -126,10 +126,12 @@ class EmissionsTreeModelEpisode:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return 'Episode {}'.format(self.bo.EpisodeNumber)
+                return self.bo.get_title()
             elif column == 1:
-                return self.bo.Title
-            elif column == 2:
+                episode_number = self.bo.get_episode_number()
+                if episode_number is not None:
+                    return episode_number
+
                 return ''
 
             return '?'
@@ -195,7 +197,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             return parent.internalPointer().rowCount()
 
     def columnCount(self, parent=Qt.QModelIndex()):
-        return 3
+        return 2
 
     def fetch_done(self, parent, children_list):
         """A fetch work is complete."""
@@ -256,9 +258,15 @@ class EmissionsTreeModelFetcher(Qt.QObject):
 
     def fetch_emissions(self, parent):
         emissions = self.client.get_emissions()
+
+        # Sort
+        title_func = lambda ekey: emissions[ekey].get_title()
+        emissions_keys = list(emissions.keys())
+        emissions_keys.sort(key=title_func)
+
         emissions_ret = []
-        for (i, key) in enumerate(emissions):
-            emission = emissions[key]
+        for i, ekey in enumerate(emissions_keys):
+            emission = emissions[ekey]
             new_emission = EmissionsTreeModelEmission(emission, i)
             emissions_ret.append(new_emission)
 
@@ -271,11 +279,16 @@ class EmissionsTreeModelFetcher(Qt.QObject):
         seasons_list = []
         seasons_dict = {}
 
-        for key in episodes:
+        # Sort
+        title_func = lambda ekey: episodes[ekey].get_episode_number()
+        episodes_keys = list(episodes.keys())
+        episodes_keys.sort(key=title_func)
+
+        for key in episodes_keys:
             ep = episodes[key]
-            if ep.SeasonNumber not in seasons_dict:
-                seasons_dict[ep.SeasonNumber] = []
-            seasons_dict[ep.SeasonNumber].append(ep)
+            if ep.get_season_number() not in seasons_dict:
+                seasons_dict[ep.get_season_number()] = []
+            seasons_dict[ep.get_season_number()].append(ep)
 
         for (i, season_number) in enumerate(seasons_dict):
             episodes = seasons_dict[season_number]

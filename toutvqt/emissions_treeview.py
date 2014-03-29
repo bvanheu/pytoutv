@@ -25,6 +25,9 @@ class QEmissionsTreeView(Qt.QTreeView):
 
         selection_model.selectionChanged.connect(self.item_selection_changed)
 
+    def set_default_columns_widths(self):
+        self.setColumnWidth(0, self.width() - 250)
+
     def item_selection_changed(self, selected, deselected):
         indexes = selected.indexes()
 

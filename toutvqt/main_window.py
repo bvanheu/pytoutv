@@ -75,10 +75,14 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._add_infos()
         self._setup_menus()
 
+    def _setup_ui_post_show(self):
+        self.emissions_treeview.set_default_columns_widths()
+
     def start(self):
         # Let's start downloading the root elements
         self.emissions_treeview.model().init_fetch()
         self.show()
+        self._setup_ui_post_show()
 
     def show_about_dialog(self):
         pos = self.pos()
