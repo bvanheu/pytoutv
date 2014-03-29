@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>392</width>
-    <height>230</height>
+    <width>410</width>
+    <height>142</height>
    </rect>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
@@ -58,7 +58,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLabel" name="emission_value_label">
+        <widget class="QLabel" name="emission_title_value_label">
          <property name="text">
           <string>En audition avec Simon</string>
          </property>
@@ -93,51 +93,44 @@
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="country_label">
-         <property name="text">
-          <string>Country:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLabel" name="country_value_label">
-         <property name="text">
-          <string>Canada</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
         <widget class="QLabel" name="air_date_label">
          <property name="text">
           <string>Air date:</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="4" column="1">
         <widget class="QLabel" name="air_date_value_label">
          <property name="text">
           <string>2017/04/23</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="network_label">
-         <property name="text">
-          <string>Network:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QLabel" name="network_value_label">
-         <property name="text">
-          <string>Sun News</string>
-         </property>
-        </widget>
-       </item>
       </layout>
      </item>
      <item>
-      <widget class="QLabel" name="description_label_value">
+      <spacer name="verticalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>6</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QLabel" name="description_value_label">
+       <property name="font">
+        <font>
+         <pointsize>8</pointsize>
+        </font>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -160,7 +153,7 @@
        <property name="sizeHint" stdset="0">
         <size>
          <width>20</width>
-         <height>40</height>
+         <height>0</height>
         </size>
        </property>
       </spacer>
@@ -177,13 +170,19 @@
        <property name="sizeHint" stdset="0">
         <size>
          <width>20</width>
-         <height>40</height>
+         <height>0</height>
         </size>
        </property>
       </spacer>
      </item>
      <item>
       <widget class="QPushButton" name="goto_toutv_btn">
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="text">
         <string>Go to TOU.TV</string>
        </property>
@@ -191,6 +190,12 @@
      </item>
      <item>
       <widget class="QPushButton" name="dl_btn">
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="font">
         <font>
          <weight>75</weight>
@@ -198,7 +203,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Download</string>
+        <string>Download episode</string>
        </property>
       </widget>
      </item>

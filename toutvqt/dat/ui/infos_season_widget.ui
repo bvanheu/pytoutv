@@ -6,11 +6,11 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>446</width>
-    <height>188</height>
+    <width>392</width>
+    <height>124</height>
    </rect>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout" stretch="3,2">
+  <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0">
    <property name="spacing">
     <number>10</number>
    </property>
@@ -31,14 +31,14 @@
         <number>6</number>
        </property>
        <item row="0" column="0">
-        <widget class="QLabel" name="title_label">
+        <widget class="QLabel" name="season_number_label">
          <property name="text">
-          <string>Title:</string>
+          <string>Season number:</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QLabel" name="title_value_label">
+        <widget class="QLabel" name="season_number_value_label">
          <property name="font">
           <font>
            <weight>75</weight>
@@ -46,7 +46,7 @@
           </font>
          </property>
          <property name="text">
-          <string>En audition avec Simon</string>
+          <string>17</string>
          </property>
         </widget>
        </item>
@@ -78,14 +78,14 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="removal_date_label">
          <property name="text">
           <string>Removal date:</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <widget class="QLabel" name="removal_date_value_label">
          <property name="text">
           <string>2015/01/15</string>
@@ -106,36 +106,21 @@
          </property>
         </widget>
        </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="network_label">
+         <property name="text">
+          <string>Network:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLabel" name="network_value_label">
+         <property name="text">
+          <string>CBC</string>
+         </property>
+        </widget>
+       </item>
       </layout>
-     </item>
-     <item>
-      <widget class="QLabel" name="description_label_value">
-       <property name="text">
-        <string/>
-       </property>
-       <property name="textFormat">
-        <enum>Qt::PlainText</enum>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-       </property>
-       <property name="wordWrap">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="verticalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
      </item>
     </layout>
    </item>
@@ -149,13 +134,19 @@
        <property name="sizeHint" stdset="0">
         <size>
          <width>20</width>
-         <height>40</height>
+         <height>0</height>
         </size>
        </property>
       </spacer>
      </item>
      <item>
       <widget class="QPushButton" name="goto_toutv_btn">
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="text">
         <string>Go to TOU.TV</string>
        </property>
@@ -163,6 +154,18 @@
      </item>
      <item>
       <widget class="QPushButton" name="dl_btn">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>200</width>
+         <height>16777215</height>
+        </size>
+       </property>
        <property name="font">
         <font>
          <weight>75</weight>
@@ -170,7 +173,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Download all episodes</string>
+        <string>Download season episodes</string>
        </property>
       </widget>
      </item>

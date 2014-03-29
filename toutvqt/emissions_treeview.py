@@ -7,7 +7,7 @@ from toutvqt.emissions_treemodel import EmissionsTreeModelEpisode
 
 class QEmissionsTreeView(Qt.QTreeView):
     emission_selected = QtCore.pyqtSignal(object)
-    season_selected = QtCore.pyqtSignal(object, int)
+    season_selected = QtCore.pyqtSignal(object, int, list)
     episode_selected = QtCore.pyqtSignal(object)
     none_selected = QtCore.pyqtSignal()
 
@@ -40,7 +40,7 @@ class QEmissionsTreeView(Qt.QTreeView):
         if type(item) == EmissionsTreeModelEmission:
             self.emission_selected.emit(item.bo)
         elif type(item) == EmissionsTreeModelSeason:
-            self.season_selected.emit(item.emission.bo, item.number)
+            self.season_selected.emit(item.emission.bo, item.number, item.episodes)
         elif type(item) == EmissionsTreeModelEpisode:
             self.episode_selected.emit(item.bo)
         else:

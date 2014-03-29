@@ -31,6 +31,13 @@ import datetime
 import toutv.dl
 
 
+def _clean_description(desc):
+    desc = desc.replace('\n', ' ')
+    desc = desc.replace('  ', ' ')
+
+    return desc
+
+
 class AbstractEmission:
     def get_id(self):
         return self.Id
@@ -125,7 +132,7 @@ class Emission(AbstractEmission):
         return self.Country
 
     def get_description(self):
-        return self.Description
+        return _clean_description(self.Description)
 
     def get_network(self):
         return self.Network
@@ -284,10 +291,17 @@ class Episode:
         return self.SeasonAndEpisode
 
     def get_description(self):
-        return self.Description
+        return _clean_description(self.Description)
 
     def get_emission_id(self):
         return self.CategoryId
+
+    def get_length(self):
+        tot_seconds = int(self.Length) // 1000
+        minutes = tot_seconds // 60
+        seconds = tot_seconds - (60 * minutes)
+
+        return minutes, seconds
 
     def get_air_date(self):
         if self.AirDateFormated is None:
