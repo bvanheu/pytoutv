@@ -1,18 +1,20 @@
 from pkg_resources import resource_filename
 from PyQt4 import Qt, QtCore
-from toutvqt.emissions_treemodel import EmissionsTreeModelEmission, EmissionsTreeModelEpisode, EmissionsTreeModelSeason
+from toutvqt.emissions_treemodel import EmissionsTreeModelEmission
+from toutvqt.emissions_treemodel import EmissionsTreeModelSeason
+from toutvqt.emissions_treemodel import EmissionsTreeModelEpisode
 
 
 class QEmissionsTreeView(Qt.QTreeView):
-    def __init__(self, model):
-        super(QEmissionsTreeView, self).__init__()
-
-        self._setup(model)
-
     emission_selected = QtCore.pyqtSignal(object)
     season_selected = QtCore.pyqtSignal(object, int)
     episode_selected = QtCore.pyqtSignal(object)
     none_selected = QtCore.pyqtSignal()
+
+    def __init__(self, model):
+        super(QEmissionsTreeView, self).__init__()
+
+        self._setup(model)
 
     def _setup(self, model):
         self.setModel(model)

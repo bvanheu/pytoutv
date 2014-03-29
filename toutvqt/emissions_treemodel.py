@@ -1,6 +1,5 @@
 from PyQt4 import Qt
 from PyQt4 import QtCore
-
 import datetime
 import logging
 import sys
@@ -8,26 +7,13 @@ import time
 import xml.etree.ElementTree as ET
 
 
-def return_bo_title(x):
-    return x.bo.Title
-
-
-def return_name(x):
-    return x.name
-
-
-def return_number(x):
-    return x.number
-
-
 class FetchState:
-    Nope = 0
-    Started = 1
-    Done = 2
+    NOPE = 0
+    STARTED = 1
+    DONE = 2
 
 
 class LoadingItem:
-
     def __init__(self, my_parent):
         self.my_parent = my_parent
 
@@ -35,16 +21,17 @@ class LoadingItem:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return "Loading..."
+                return 'Loading...'
             else:
-                return ""
+                return ''
 
     def rowCount(self):
         # The Loading item does not have any child.
         return 0
 
     def index(self, row, column, createIndex):
-        logging.error("Internal error: index() called on LoadingItem")
+        logging.error('Internal error: index() called on LoadingItem')
+
         return Qt.QModelIndex()
 
     def parent(self, child, createIndex):
@@ -55,15 +42,12 @@ class LoadingItem:
 
 
 class EmissionsTreeModelEmission:
-
     def __init__(self, emission_bo, row_in_parent):
         self.bo = emission_bo
         self.seasons = []
         self.loading_item = LoadingItem(self)
         self.row_in_parent = row_in_parent
-
-        # Have we fetched this emission's seasons?
-        self.fetched = FetchState.Nope
+        self.fetched = FetchState.NOPE
 
     def data(self, index, role):
         column = index.column()
@@ -71,38 +55,37 @@ class EmissionsTreeModelEmission:
             if column == 0:
                 return self.bo.Title
             elif column == 1:
-                return ""
+                return ''
             elif column == 2:
-                return ""
+                return ''
 
-            return "?"
+            return '?'
 
     def rowCount(self):
-        if self.fetched == FetchState.Done:
+        if self.fetched == FetchState.DONE:
             return len(self.seasons)
         else:
-            # The "Loading" item.
+            # The "Loading" item
             return 1
 
     def index(self, row, column, createIndex):
-        if self.fetched == FetchState.Done:
+        if self.fetched == FetchState.DONE:
             return createIndex(row, column, self.seasons[row])
         else:
             return createIndex(row, column, self.loading_item)
 
     def parent(self, child, createIndex):
-        # An emission is at root level.
+        # An emission is at root level
         return Qt.QModelIndex()
 
     def should_fetch(self):
-        return self.fetched == FetchState.Nope
+        return self.fetched == FetchState.NOPE
 
     def set_children(self, c):
         self.seasons = c
 
 
 class EmissionsTreeModelSeason:
-
     def __init__(self, number, row_in_parent):
         self.number = number
         self.episodes = []
@@ -112,13 +95,13 @@ class EmissionsTreeModelSeason:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return "Saison %d" % (self.number)
+                return 'Saison {}'.format(self.number)
             elif column == 1:
-                return ""
+                return ''
             elif column == 2:
-                return ""
+                return ''
 
-            return "?"
+            return '?'
 
     def rowCount(self):
         return len(self.episodes)
@@ -134,7 +117,6 @@ class EmissionsTreeModelSeason:
 
 
 class EmissionsTreeModelEpisode:
-
     def __init__(self, bo, row_in_parent):
         self.bo = bo
         self.loading_item = LoadingItem(self)
@@ -144,21 +126,21 @@ class EmissionsTreeModelEpisode:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return "Episode %d" % (self.bo.EpisodeNumber)
+                return 'Episode {}'.format(self.bo.EpisodeNumber)
             elif column == 1:
-                return "%s" % (self.bo.Title)
+                return self.bo.Title
             elif column == 2:
-                return ""
+                return ''
 
-            return "?"
+            return '?'
 
     def rowCount(self):
-        # An episode does not have any child.
+        # An episode does not have any child
         return 0
 
     def index(self, row, column, createIndex):
-        logging.error(
-            "Internal error: index() called on EmissionsTreeModelEpisode")
+        msg = 'Internal error: index() called on EmissionsTreeModelEpisode'
+        logging.error(msg)
         return Qt.QModelIndex()
 
     def parent(self, child, createIndex):
@@ -166,14 +148,15 @@ class EmissionsTreeModelEpisode:
 
 
 class EmissionsTreeModel(Qt.QAbstractItemModel):
+    fetch_required = QtCore.pyqtSignal(object)
 
     def __init__(self, client):
         super(EmissionsTreeModel, self).__init__()
         self.emissions = []
         self.loading_item = LoadingItem(None)
 
-        # Have we fetched the emissions ?
-        self.fetched = FetchState.Nope
+        # Have we fetched the emissions?
+        self.fetched = FetchState.NOPE
 
         # Setup fetch thread and signal connections
         self.fetch_thread = Qt.QThread()
@@ -184,13 +167,11 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.fetch_required.connect(self.fetcher.new_work_piece)
         self.fetcher.fetch_done.connect(self.fetch_done)
 
-    fetch_required = QtCore.pyqtSignal(object)
-
     def index(self, row, column, parent=Qt.QModelIndex()):
         """Returns a QModelIndex to represent a cell of a child of parent."""
         if not parent.isValid():
             # Create an index for a emission
-            if self.fetched == FetchState.Done:
+            if self.fetched == FetchState.DONE:
                 emission = self.emissions[row]
                 return self.createIndex(row, column, emission)
             else:
@@ -205,7 +186,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
     def rowCount(self, parent=Qt.QModelIndex()):
         if not parent.isValid():
-            if self.fetched == FetchState.Done:
+            if self.fetched == FetchState.DONE:
                 return len(self.emissions)
             else:
                 # The "Loading" item
@@ -219,15 +200,15 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
     def fetch_done(self, parent, children_list):
         """A fetch work is complete."""
 
-        # We remove the "Loading".
+        # Remove the "Loading"
         self.beginRemoveRows(parent, 0, 0)
         if parent.isValid():
-            parent.internalPointer().fetched = FetchState.Done
+            parent.internalPointer().fetched = FetchState.DONE
         else:
-            self.fetched = FetchState.Done
+            self.fetched = FetchState.DONE
         self.endRemoveRows()
 
-        # We add the actual children.
+        # Add the actual children
         self.beginInsertRows(parent, 0, len(children_list) - 1)
         if parent.isValid():
             parent.internalPointer().set_children(children_list)
@@ -235,17 +216,17 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             self.emissions = children_list
         self.endInsertRows()
 
-    def init_fetch(self, parent = Qt.QModelIndex()):
+    def init_fetch(self, parent=Qt.QModelIndex()):
         if parent.isValid():
-            parent.internalPointer().fetched = FetchState.Started
+            parent.internalPointer().fetched = FetchState.STARTED
         else:
-            self.fetched = FetchState.Started
+            self.fetched = FetchState.STARTED
 
         parent = Qt.QModelIndex(parent)
         self.fetch_required.emit(parent)
 
     def item_expanded(self, parent):
-        """Slot called when an item in the tree has been expanded"""
+        """Slot called when an item in the tree has been expanded."""
         if parent.internalPointer().should_fetch():
             self.init_fetch(parent)
 
@@ -257,15 +238,15 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
 
 class EmissionsTreeModelFetcher(Qt.QObject):
+    fetch_done = QtCore.pyqtSignal(object, list)
 
     def __init__(self, client):
         super(EmissionsTreeModelFetcher, self).__init__()
         self.client = client
 
-    fetch_done = QtCore.pyqtSignal(object, list)
-
     def new_work_piece(self, parent):
-        logging.debug("Fetching children of %s" % parent.internalPointer())
+        msg = 'Fetching children of {}'.format(parent.internalPointer())
+        logging.debug(msg)
         if not parent.isValid():
             self.fetch_emissions(parent)
         elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
@@ -304,7 +285,6 @@ class EmissionsTreeModelFetcher(Qt.QObject):
                 new_episode = EmissionsTreeModelEpisode(ep, j)
                 new_episode.season = new_season
                 new_season.episodes.append(new_episode)
-
             seasons_list.append(new_season)
 
         self.fetch_done.emit(parent, seasons_list)
