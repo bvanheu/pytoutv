@@ -235,4 +235,5 @@ class QEpisodeInfosWidget(QInfosWidget):
         self._set_length()
         self._set_sae()
         self._set_thumb()
-        self._set_toutv_url(episode.get_url())
+        url = '{}?autoplay=true'.format(episode.get_url())
+        self._set_toutv_url(url)
