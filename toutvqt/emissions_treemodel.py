@@ -274,7 +274,7 @@ class EmissionsTreeModelFetcher(Qt.QObject):
             emission_title = re.sub('ç', 'c', emission_title)
             emission_title = re.sub('Ç', 'C', emission_title)
 
-            return emission_title
+            return emission_title.lower()
 
         emissions = self.client.get_emissions()
 
