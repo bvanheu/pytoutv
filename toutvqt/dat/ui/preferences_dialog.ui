@@ -44,7 +44,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="download_directory_label">
         <property name="text">
-         <string>Download directory</string>
+         <string>Download directory:</string>
         </property>
        </widget>
       </item>
@@ -77,7 +77,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="http_proxy_label">
         <property name="text">
-         <string>HTTP/HTTPS proxy</string>
+         <string>HTTP(S) proxy URL:</string>
         </property>
        </widget>
       </item>
