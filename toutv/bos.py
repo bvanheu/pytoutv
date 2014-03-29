@@ -275,10 +275,8 @@ class Episode:
         return self.Title
 
     def cache_medium_thumb(self):
-        if not hasattr(self, '_medium_thumb_data'):
-            self._medium_thumb_data = None
-
-        if self._medium_thumb_data is not None:
+        if self.has_medium_thumb_data():
+            # No need to download again
             return
 
         url = self.ImageThumbMoyenL
@@ -299,6 +297,12 @@ class Episode:
         self.cache_medium_thumb()
 
         return self._medium_thumb_data
+
+    def has_medium_thumb_data(self):
+        if not hasattr(self, '_medium_thumb_data'):
+            self._medium_thumb_data = None
+
+        return (self._medium_thumb_data is not None)
 
     def get_id(self):
         return self.Id

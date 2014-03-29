@@ -2,6 +2,7 @@ from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
 from PyQt4 import QtGui
+from PyQt4 import QtCore
 import webbrowser
 
 
@@ -13,12 +14,10 @@ class QInfosFrame(Qt.QFrame):
         self.show_infos_none()
 
     def _swap_infos_widget(self, widget):
-        layout = self.layout()
-
-        if layout.count() == 1:
-            cur_widget = layout.itemAt(0).widget()
-            cur_widget.setParent(None)
-        layout.addWidget(widget)
+        for swappable_widget in self._swappable_widgets:
+            if widget is not swappable_widget:
+                swappable_widget.hide()
+        widget.show()
 
     def show_infos_none(self):
         self._swap_infos_widget(self.none_label)
@@ -43,15 +42,26 @@ class QInfosFrame(Qt.QFrame):
         self.none_label.setFont(font)
 
     def _setup_infos_widget(self):
+        self._setup_none_label()
         self.emission_widget = QEmissionInfosWidget()
         self.season_widget = QSeasonInfosWidget()
         self.episode_widget = QEpisodeInfosWidget()
+
+        self._swappable_widgets = [
+            self.emission_widget,
+            self.season_widget,
+            self.episode_widget,
+            self.none_label,
+        ]
+
+        for widget in self._swappable_widgets:
+            widget.hide()
+            self.layout().addWidget(widget)
 
     def _setup_ui(self):
         self.setLayout(Qt.QVBoxLayout())
         self.setFrameShape(Qt.QFrame.Box)
         self.setFrameShadow(Qt.QFrame.Sunken)
-        self._setup_none_label()
         self._setup_infos_widget()
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,
                            QtGui.QSizePolicy.Maximum)
@@ -168,11 +178,39 @@ class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 
 class QEpisodeInfosWidget(QInfosWidget):
     _UI_PATH = resource_filename(__name__, 'dat/ui/episode_infos_widget.ui')
+    _fetch_thumb_required = QtCore.pyqtSignal(object)
 
     def __init__(self):
         super(QEpisodeInfosWidget, self).__init__()
 
+        self._episode = None
+
         self._setup_ui(QEpisodeInfosWidget._UI_PATH)
+        self._setup_thumb_fetching();
+
+    def _setup_ui(self, ui_path):
+        super(QEpisodeInfosWidget, self)._setup_ui(ui_path)
+        width = self.thumb_value_label.width()
+        min_height = round(width * 9 / 16) + 1
+        self.thumb_value_label.setMinimumHeight(min_height)
+
+    def _setup_thumb_fetching(self):
+        # Setup fetch thread and signal connections
+        self._fetch_thumb_thread = Qt.QThread()
+        self._fetch_thumb_thread.start()
+
+        self._thumb_fetcher = QEpisodeThumbFetcher()
+        self._thumb_fetcher.moveToThread(self._fetch_thumb_thread)
+        self._fetch_thumb_required.connect(self._thumb_fetcher.fetch_thumb)
+        self._thumb_fetcher.fetch_done.connect(self._thumb_fetched)
+
+    def _thumb_fetched(self, episode):
+        if episode is not self._episode:
+            # Ignore; next time will be faster anyway
+            self._set_no_thumb()
+            return
+
+        self._set_thumb()
 
     def _set_description(self):
         description = self._episode.get_description()
@@ -214,15 +252,29 @@ class QEpisodeInfosWidget(QInfosWidget):
         self.title_value_label.setText(self._episode.get_title())
         self.emission_title_value_label.setText(emission.get_title())
 
+    def _set_no_thumb(self):
+        self.thumb_value_label.setPixmap(Qt.QPixmap())
+
     def _set_thumb(self):
         jpeg_data = self._episode.get_medium_thumb_data()
-        if jpeg_data is not None:
-            pixmap = Qt.QPixmap()
-            ret = pixmap.loadFromData(jpeg_data, 'JPEG')
-            if ret:
-                expected_width = self.thumb_value_label.width()
-                scaled_pixmap = pixmap.scaledToWidth(expected_width, 1)
-                self.thumb_value_label.setPixmap(scaled_pixmap)
+        if jpeg_data is None:
+            self._set_no_thumb()
+
+        pixmap = Qt.QPixmap()
+        ret = pixmap.loadFromData(jpeg_data, 'JPEG')
+        if not ret:
+            self._set_no_thumb()
+
+        smooth_transform = QtCore.Qt.SmoothTransformation
+        width = self.thumb_value_label.width()
+        scaled_pixmap = pixmap.scaledToWidth(width, smooth_transform)
+        self.thumb_value_label.setPixmap(pixmap)
+
+    def _try_set_thumb(self):
+        if self._episode.has_medium_thumb_data():
+            self._set_thumb()
+            return
+        self._fetch_thumb_required.emit(self._episode)
 
     def set_episode(self, episode):
         self._episode = episode
@@ -234,6 +286,17 @@ class QEpisodeInfosWidget(QInfosWidget):
         self._set_air_date()
         self._set_length()
         self._set_sae()
-        self._set_thumb()
+        self._try_set_thumb()
         url = '{}?autoplay=true'.format(episode.get_url())
         self._set_toutv_url(url)
+
+
+class QEpisodeThumbFetcher(Qt.QObject):
+    fetch_done = QtCore.pyqtSignal(object)
+
+    def __init__(self):
+        super(QEpisodeThumbFetcher, self).__init__()
+
+    def fetch_thumb(self, episode):
+        episode.get_medium_thumb_data()
+        self.fetch_done.emit(episode)
