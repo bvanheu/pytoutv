@@ -3,6 +3,7 @@ from PyQt4 import QtCore
 import datetime
 import logging
 import sys
+import re
 import time
 import xml.etree.ElementTree as ET
 
@@ -257,12 +258,29 @@ class EmissionsTreeModelFetcher(Qt.QObject):
             self.fetch_episodes(parent)
 
     def fetch_emissions(self, parent):
+        def key_func(ekey):
+            # Cheap and easy way to sort latin titles (which is the case here)
+            emission_title = emissions[ekey].get_title()
+            emission_title = re.sub('[àáâä]', 'a', emission_title)
+            emission_title = re.sub('[ÀÁÂÄ]', 'A', emission_title)
+            emission_title = re.sub('[éèêë]', 'e', emission_title)
+            emission_title = re.sub('[ÉÈÊË]', 'E', emission_title)
+            emission_title = re.sub('[íìîï]', 'i', emission_title)
+            emission_title = re.sub('[ÍÌÎÏ]', 'I', emission_title)
+            emission_title = re.sub('[óòôö]', 'o', emission_title)
+            emission_title = re.sub('[ÓÒÔÖ]', 'O', emission_title)
+            emission_title = re.sub('[úùûü]', 'u', emission_title)
+            emission_title = re.sub('[ÚÙÛÜ]', 'U', emission_title)
+            emission_title = re.sub('ç', 'c', emission_title)
+            emission_title = re.sub('Ç', 'C', emission_title)
+
+            return emission_title
+
         emissions = self.client.get_emissions()
 
         # Sort
-        title_func = lambda ekey: emissions[ekey].get_title()
         emissions_keys = list(emissions.keys())
-        emissions_keys.sort(key=title_func)
+        emissions_keys.sort(key=key_func)
 
         emissions_ret = []
         for i, ekey in enumerate(emissions_keys):
@@ -280,9 +298,9 @@ class EmissionsTreeModelFetcher(Qt.QObject):
         seasons_dict = {}
 
         # Sort
-        title_func = lambda ekey: episodes[ekey].get_episode_number()
+        key_func = lambda ekey: int(episodes[ekey].get_episode_number())
         episodes_keys = list(episodes.keys())
-        episodes_keys.sort(key=title_func)
+        episodes_keys.sort(key=key_func)
 
         for key in episodes_keys:
             ep = episodes[key]
