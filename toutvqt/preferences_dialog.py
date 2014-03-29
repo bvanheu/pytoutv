@@ -6,7 +6,8 @@ from PyQt4 import QtGui
 
 
 class QTouTvPreferencesDialog(Qt.QDialog):
-    UI_PATH = resource_filename(__name__, 'dat/ui/preferences_dialog.ui')
+    _UI_PATH = resource_filename(__name__, 'dat/ui/preferences_dialog.ui')
+    config_accepted = QtCore.pyqtSignal(dict)
 
     def __init__(self):
         super(QTouTvPreferencesDialog, self).__init__()
@@ -14,13 +15,11 @@ class QTouTvPreferencesDialog(Qt.QDialog):
         self._setup_ui()
         self._setup_signals()
 
-    config_accepted = QtCore.pyqtSignal(dict)
-
     def _setup_signals(self):
-        self.accepted.connect(self.send_config_accepted)
+        self.accepted.connect(self._send_config_accepted)
 
     def _setup_ui(self):
-        uic.loadUi(QTouTvPreferencesDialog.UI_PATH, baseinstance=self)
+        uic.loadUi(QTouTvPreferencesDialog._UI_PATH, baseinstance=self)
         open_dl_dir_slot = self._open_download_directory_browser
         self.download_directory_browse.clicked.connect(open_dl_dir_slot)
 
@@ -33,7 +32,7 @@ class QTouTvPreferencesDialog(Qt.QDialog):
         self.move(pos)
         self.exec()
 
-    def send_config_accepted(self):
+    def _send_config_accepted(self):
         config = {}
 
         config['network/http_proxy'] = self.http_proxy_value.text()

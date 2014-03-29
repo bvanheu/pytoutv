@@ -116,12 +116,12 @@ class QEmissionCommonInfosWidget:
 
 
 class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
-    UI_PATH = resource_filename(__name__, 'dat/ui/emission_infos_widget.ui')
+    _UI_PATH = resource_filename(__name__, 'dat/ui/emission_infos_widget.ui')
 
     def __init__(self):
         super(QEmissionInfosWidget, self).__init__()
 
-        self._setup_ui(QEmissionInfosWidget.UI_PATH)
+        self._setup_ui(QEmissionInfosWidget._UI_PATH)
 
     def _set_title(self):
         self.title_value_label.setText(self._emission.get_title())
@@ -142,12 +142,12 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 
 
 class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
-    UI_PATH = resource_filename(__name__, 'dat/ui/season_infos_widget.ui')
+    _UI_PATH = resource_filename(__name__, 'dat/ui/season_infos_widget.ui')
 
     def __init__(self):
         super(QSeasonInfosWidget, self).__init__()
 
-        self._setup_ui(QSeasonInfosWidget.UI_PATH)
+        self._setup_ui(QSeasonInfosWidget._UI_PATH)
 
     def _set_season_number(self):
         self.season_number_value_label.setText(str(self._season_number))
@@ -167,12 +167,12 @@ class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 
 
 class QEpisodeInfosWidget(QInfosWidget):
-    UI_PATH = resource_filename(__name__, 'dat/ui/episode_infos_widget.ui')
+    _UI_PATH = resource_filename(__name__, 'dat/ui/episode_infos_widget.ui')
 
     def __init__(self):
         super(QEpisodeInfosWidget, self).__init__()
 
-        self._setup_ui(QEpisodeInfosWidget.UI_PATH)
+        self._setup_ui(QEpisodeInfosWidget._UI_PATH)
 
     def _set_description(self):
         description = self._episode.get_description()

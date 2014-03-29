@@ -6,12 +6,11 @@ from toutvqt.emissions_treemodel import EmissionsTreeModel
 from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.preferences_dialog import QTouTvPreferencesDialog
 from toutvqt.infos_frame import QInfosFrame
-
 from toutv import client
 
 
 class QTouTvMainWindow(Qt.QMainWindow):
-    UI_PATH = resource_filename(__name__, 'dat/ui/main_window.ui')
+    _UI_PATH = resource_filename(__name__, 'dat/ui/main_window.ui')
 
     def __init__(self, app, client):
         super(QTouTvMainWindow, self).__init__()
@@ -40,11 +39,11 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
     def _setup_edit_menu(self):
         self.preferences_dialog = QTouTvPreferencesDialog()
-        self.preferences_action.triggered.connect(self.show_preferences_dialog)
+        self.preferences_action.triggered.connect(self._show_preferences_dialog)
 
     def _setup_help_menu(self):
         self.about_dialog = QTouTvAboutDialog()
-        self.about_action.triggered.connect(self.show_about_dialog)
+        self.about_action.triggered.connect(self._show_about_dialog)
 
     def _setup_menus(self):
         self._setup_file_menu()
@@ -69,7 +68,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._setup_action_icon('about_action')
 
     def _setup_ui(self):
-        uic.loadUi(QTouTvMainWindow.UI_PATH, baseinstance=self)
+        uic.loadUi(QTouTvMainWindow._UI_PATH, baseinstance=self)
         self._setup_icons()
         self._add_treeview()
         self._add_infos()
@@ -84,13 +83,13 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self.show()
         self._setup_ui_post_show()
 
-    def show_about_dialog(self):
+    def _show_about_dialog(self):
         pos = self.pos()
         pos.setX(pos.x() + 40)
         pos.setY(pos.y() + 40)
         self.about_dialog.show_move(pos)
 
-    def show_preferences_dialog(self):
+    def _show_preferences_dialog(self):
         pos = self.pos()
         pos.setX(pos.x() + 60)
         pos.setY(pos.y() + 60)

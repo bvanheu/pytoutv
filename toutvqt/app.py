@@ -5,7 +5,6 @@ from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
 from toutvqt.config import QTouTvConfig
-
 from toutv import client
 from toutv import transport
 
@@ -26,28 +25,28 @@ class QTouTvApp(Qt.QApplication):
         self.main_window.start()
 
     def _setup_ui(self):
-        self.main_window = QTouTvMainWindow(self, self.client)
+        self.main_window = QTouTvMainWindow(self, self._client)
 
     def _setup_client(self):
-        self.client = client.Client()
+        self._client = client.Client()
 
     def _setup_config(self):
         # Create a default config
-        self.config = QTouTvConfig()
+        self._config = QTouTvConfig()
 
         # Connect the signals between the config and preferences dialog
         preferences_dialog = self.main_window.preferences_dialog
-        config_item_changed = self.config.config_item_changed
-        preferences_dialog.config_accepted.connect(self.config.apply_config)
+        config_item_changed = self._config.config_item_changed
+        preferences_dialog.config_accepted.connect(self._config.apply_config)
         config_item_changed.connect(preferences_dialog.update_config_item)
-        self.config.config_item_changed.connect(self.config_item_changed)
+        self._config.config_item_changed.connect(self._config_item_changed)
 
         # Read the settings from disk
-        self.config.read_settings()
+        self._config.read_settings()
 
-    def config_item_changed(self, key, value):
+    def _config_item_changed(self, key, value):
         if key == 'network/http_proxy':
-            self.client.transport.set_http_proxy(value)
+            self._client.transport.set_http_proxy(value)
 
 
 def _register_sigint():
