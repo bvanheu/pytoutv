@@ -162,7 +162,7 @@ class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 
         self._set_season_number()
         self._set_number_episodes()
-        self._set_common_infos(emission)
+        self._set_common_infos()
         self._set_toutv_url(emission.get_url())
 
 

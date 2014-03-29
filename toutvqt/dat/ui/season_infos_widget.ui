@@ -93,14 +93,14 @@
         </widget>
        </item>
        <item row="1" column="0">
-        <widget class="QLabel" name="episodes_label">
+        <widget class="QLabel" name="number_episodes_label">
          <property name="text">
           <string>Episodes:</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLabel" name="episodes_value_label">
+        <widget class="QLabel" name="number_episodes_value_label">
          <property name="text">
           <string>53</string>
          </property>
