@@ -5,7 +5,6 @@ from PyQt4 import QtGui
 
 
 class QInfosFrame(Qt.QFrame):
-
     def __init__(self):
         super(QInfosFrame, self).__init__()
 
@@ -58,43 +57,43 @@ class QInfosFrame(Qt.QFrame):
 
 
 class QEmissionWidget(Qt.QWidget):
-        UI_PATH = resource_filename(
-            __name__, 'dat/ui/infos_emission_widget.ui')
+    UI_PATH = resource_filename(
+        __name__, 'dat/ui/infos_emission_widget.ui')
 
-        def __init__(self):
-                super(QEmissionWidget, self).__init__()
-                self._setup_ui()
+    def __init__(self):
+        super(QEmissionWidget, self).__init__()
+        self._setup_ui()
 
-        def _setup_ui(self):
-                uic.loadUi(QEmissionWidget.UI_PATH, baseinstance=self)
+    def _setup_ui(self):
+        uic.loadUi(QEmissionWidget.UI_PATH, baseinstance=self)
 
-        def fill_info(self, emission):
-            self.title_value_label.setText(emission.Title)
+    def fill_info(self, emission):
+        self.title_value_label.setText(emission.Title)
 
 
 class QSeasonWidget(Qt.QWidget):
-        UI_PATH = resource_filename(__name__, 'dat/ui/infos_season_widget.ui')
+    UI_PATH = resource_filename(__name__, 'dat/ui/infos_season_widget.ui')
 
-        def __init__(self):
-                super(QSeasonWidget, self).__init__()
-                self._setup_ui()
+    def __init__(self):
+        super(QSeasonWidget, self).__init__()
+        self._setup_ui()
 
-        def _setup_ui(self):
-                uic.loadUi(QSeasonWidget.UI_PATH, baseinstance=self)
+    def _setup_ui(self):
+        uic.loadUi(QSeasonWidget.UI_PATH, baseinstance=self)
 
-        def fill_info(self, emission, season_number):
-            self.title_value_label.setText(emission.Title + " (season selected)")
+    def fill_info(self, emission, season_number):
+        self.title_value_label.setText(emission.Title + " (season selected)")
 
 
 class QEpisodeWidget(Qt.QWidget):
-        UI_PATH = resource_filename(__name__, 'dat/ui/infos_episode_widget.ui')
+    UI_PATH = resource_filename(__name__, 'dat/ui/infos_episode_widget.ui')
 
-        def __init__(self):
-                super(QEpisodeWidget, self).__init__()
-                self._setup_ui()
+    def __init__(self):
+        super(QEpisodeWidget, self).__init__()
+        self._setup_ui()
 
-        def _setup_ui(self):
-                uic.loadUi(QEpisodeWidget.UI_PATH, baseinstance=self)
+    def _setup_ui(self):
+        uic.loadUi(QEpisodeWidget.UI_PATH, baseinstance=self)
 
-        def fill_info(self, episode):
-            self.title_value_label.setText(episode.Title)
+    def fill_info(self, episode):
+        self.title_value_label.setText(episode.Title)

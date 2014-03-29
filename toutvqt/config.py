@@ -7,7 +7,7 @@ import logging
 
 
 class QTouTvConfig(Qt.QObject):
-    DEFAULT_DOWNLOAD_DIRECTORY = QDir.home().absoluteFilePath("Tou.Tv")
+    DEFAULT_DOWNLOAD_DIRECTORY = QDir.home().absoluteFilePath('Tou.Tv')
 
     def __init__(self):
         super(QTouTvConfig, self).__init__()
@@ -20,8 +20,8 @@ class QTouTvConfig(Qt.QObject):
     def _fill_defaults(self):
         """Fills defaults with sensible default values."""
         self.defaults = {}
-        self.defaults[
-            'files/download_directory'] = QTouTvConfig.DEFAULT_DOWNLOAD_DIRECTORY
+        def_dl_dir = QTouTvConfig.DEFAULT_DOWNLOAD_DIRECTORY
+        self.defaults['files/download_directory'] = def_dl_dir
         self.defaults['network/htp_proxy'] = None
 
     def write_settings(self):
@@ -33,7 +33,8 @@ class QTouTvConfig(Qt.QObject):
                 if self.config_dict[k] != self.defaults[k]:
                     settings.setValue(k, self.config_dict[k])
             else:
-                logging.warning("Config key %s not found in defaults" % (k))
+                msg = 'Config key {} not found in defaults'.format(k)
+                logging.warning(msg)
                 settings.setValue(k, self.config_dict[k])
 
     def read_settings(self):

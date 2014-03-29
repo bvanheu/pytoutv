@@ -10,7 +10,7 @@ class QTouTvAboutDialog(Qt.QDialog):
         super(QTouTvAboutDialog, self).__init__()
 
         self._setup_ui()
-        #self._setup_signals()
+        # self._setup_signals()
 
     def _setup_signals(self):
         self.quit_action.triggered.connect(self._app.closeAllWindows)

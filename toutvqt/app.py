@@ -36,9 +36,10 @@ class QTouTvApp(Qt.QApplication):
         self.config = QTouTvConfig()
 
         # Connect the signals between the config and preferences dialog
-        self.main_window.preferences_dialog.config_accepted.connect(self.config.apply_config)
-        self.config.config_item_changed.connect(self.main_window.preferences_dialog.update_config_item)
-
+        preferences_dialog = self.main_window.preferences_dialog
+        config_item_changed = self.config.config_item_changed
+        preferences_dialog.config_accepted.connect(self.config.apply_config)
+        config_item_changed.connect(preferences_dialog.update_config_item)
         self.config.config_item_changed.connect(self.config_item_changed)
 
         # Read the settings from disk
@@ -47,6 +48,7 @@ class QTouTvApp(Qt.QApplication):
     def config_item_changed(self, key, value):
         if key == 'network/http_proxy':
             self.client.transport.set_http_proxy(value)
+
 
 def _register_sigint():
     if platform.system() == 'Linux':
