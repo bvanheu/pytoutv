@@ -78,7 +78,7 @@ class QEmissionCommonInfosWidget:
 
 
 class QEmissionInfosWidget(Qt.QWidget, QEmissionCommonInfosWidget):
-    UI_PATH = resource_filename(__name__, 'dat/ui/infos_emission_widget.ui')
+    UI_PATH = resource_filename(__name__, 'dat/ui/emission_infos_widget.ui')
 
     def __init__(self):
         super(QEmissionInfosWidget, self).__init__()
@@ -99,7 +99,7 @@ class QEmissionInfosWidget(Qt.QWidget, QEmissionCommonInfosWidget):
 
 
 class QSeasonInfosWidget(Qt.QWidget, QEmissionCommonInfosWidget):
-    UI_PATH = resource_filename(__name__, 'dat/ui/infos_season_widget.ui')
+    UI_PATH = resource_filename(__name__, 'dat/ui/season_infos_widget.ui')
 
     def __init__(self):
         super(QSeasonInfosWidget, self).__init__()
@@ -117,7 +117,7 @@ class QSeasonInfosWidget(Qt.QWidget, QEmissionCommonInfosWidget):
 
 
 class QEpisodeInfosWidget(Qt.QWidget):
-    UI_PATH = resource_filename(__name__, 'dat/ui/infos_episode_widget.ui')
+    UI_PATH = resource_filename(__name__, 'dat/ui/episode_infos_widget.ui')
 
     def __init__(self):
         super(QEpisodeInfosWidget, self).__init__()
