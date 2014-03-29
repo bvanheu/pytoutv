@@ -250,26 +250,29 @@ class App:
     def _print_search_results(self, query):
         searchresult = self._toutvclient.search(query)
 
-        print('Effective query: {}\n'.format(searchresult.ModifiedQuery))
+        modified_query = searchresult.get_modified_query()
+        print('Effective query: {}\n'.format(modified_query))
 
-        if not searchresult.Results:
+        if not searchresult.get_results():
             print('No results')
             return
 
-        for result in searchresult.Results:
-            if result.Emission is not None:
-                emission = result.Emission
-                print('Emission: {}  [{}]'.format(emission.Title, emission.Id))
+        for result in searchresult.get_results():
+            if result.get_emission() is not None:
+                emission = result.get_emission()
+                print('Emission: {}  [{}]'.format(emission.get_title(),
+                                                  emission.get_id()))
 
-                if emission.Description:
+                if emission.get_description():
                     print('')
-                    description = textwrap.wrap(emission.Description, 78)
+                    description = textwrap.wrap(emission.get_description(), 78)
                     for line in description:
                         print('  {}'.format(line))
 
-            if result.Episode is not None:
-                episode = result.Episode
-                print('Episode: {}  [{}]'.format(episode.Title, episode.Id))
+            if result.get_episode() is not None:
+                episode = result.get_episode()
+                print('Episode: {}  [{}]'.format(episode.get_title(),
+                                                 episode.get_id()))
 
                 infos_lines = []
 
@@ -278,8 +281,9 @@ class App:
                     line = '  * Air date: {}'.format(air_date)
                     infos_lines.append(line)
 
-                if episode.CategoryId is not None:
-                    line = '  * Emission ID: {}'.format(episode.CategoryId)
+                emission_id = episode.get_emission_id()
+                if emission_id is not None:
+                    line = '  * Emission ID: {}'.format(emission_id)
                     infos_lines.append(line)
 
                 if infos_lines:
@@ -287,9 +291,9 @@ class App:
                     for line in infos_lines:
                         print(line)
 
-                if episode.Description:
+                if episode.get_description():
                     print('')
-                    description = textwrap.wrap(episode.Description, 78)
+                    description = textwrap.wrap(episode.get_description(), 78)
                     for line in description:
                         print('  {}'.format(line))
 
@@ -299,13 +303,13 @@ class App:
         if all:
             emissions = self._toutvclient.get_emissions()
             emissions_keys = list(emissions.keys())
-            title_func = lambda ekey: emissions[ekey].Title
+            title_func = lambda ekey: emissions[ekey].get_title()
             id_func = lambda ekey: ekey
         else:
             repertoire = self._toutvclient.get_page_repertoire()
-            repertoire_emissions = repertoire.Emissions
+            repertoire_emissions = repertoire.get_emissions()
             emissions_keys = list(repertoire_emissions.keys())
-            title_func = lambda ekey: repertoire_emissions[ekey].Titre
+            title_func = lambda ekey: repertoire_emissions[ekey].get_title()
             id_func = lambda ekey: ekey
 
         emissions_keys.sort(key=title_func)
@@ -317,18 +321,18 @@ class App:
     def _print_list_episodes(self, emission):
         episodes = self._toutvclient.get_emission_episodes(emission)
 
-        print('{}:\n'.format(emission.Title))
+        print('{}:\n'.format(emission.get_title()))
         if len(episodes) == 0:
             print('No available episodes')
             return
 
-        key_func = lambda key: episodes[key].SeasonAndEpisode
+        key_func = lambda key: episodes[key].get_sae()
         episodes_keys = list(episodes.keys())
         episodes_keys.sort(key=key_func)
         for ekey in episodes_keys:
             episode = episodes[ekey]
-            sae = episode.SeasonAndEpisode
-            title = episode.Title
+            sae = episode.get_sae()
+            title = episode.get_title()
             print('  * {}: {} {}'.format(ekey, sae, title))
 
     def _print_list_episodes_name(self, emission_name):
@@ -341,32 +345,28 @@ class App:
         self._print_list_episodes(emission)
 
     def _print_info_emission(self, emission):
-        inner = emission.Country
+        inner = emission.get_country()
         if inner is None:
             inner = 'Unknown country'
-        if emission.Year is not None:
-            inner = '{}, {}'.format(inner, emission.Year)
-        print('{}  [{}]'.format(emission.Title, inner))
+        if emission.get_year() is not None:
+            inner = '{}, {}'.format(inner, emission.get_year())
+        print('{}  [{}]'.format(emission.get_title(), inner))
 
-        if emission.Description is not None:
+        if emission.get_description() is not None:
             print('')
-            description = textwrap.wrap(emission.Description, 80)
+            description = textwrap.wrap(emission.get_description(), 80)
             for line in description:
                 print(line)
 
         infos_lines = []
-        if emission.Network is not None:
-            line = '  * Network: {}'.format(emission.Network)
+        if emission.get_network() is not None:
+            line = '  * Network: {}'.format(emission.get_network())
             infos_lines.append(line)
         removal_date = emission.get_removal_date()
         if removal_date is not None:
             line = '  * Removal date: {}'.format(removal_date)
             infos_lines.append(line)
-        tags = []
-        if emission.EstContenuJeunesse is not None:
-            tags.append('jeunesse')
-        if emission.EstExclusiviteRogers is not None:
-            tags.append('rogers')
+        tags = emission.get_tags()
         if tags:
             tags_list = ', '.join(tags)
             line = '  * Tags: {}'.format(tags_list)
@@ -390,12 +390,12 @@ class App:
         emission = episode.get_emission()
         bitrates = episode.get_available_bitrates()
 
-        print(emission.Title)
-        print('{}  [{}]'.format(episode.Title, episode.SeasonAndEpisode))
+        print(emission.get_title())
+        print('{}  [{}]'.format(episode.get_title(), episode.get_sae()))
 
-        if episode.Description is not None:
+        if episode.get_description() is not None:
             print('')
-            description = textwrap.wrap(episode.Description, 80)
+            description = textwrap.wrap(episode.get_description(), 80)
             for line in description:
                 print(line)
 
@@ -503,12 +503,12 @@ class App:
         episodes = self._toutvclient.get_emission_episodes(emission)
 
         if not episodes:
-            title = emission.Title
+            title = emission.get_title()
             print('No episodes available for emission "{}"'.format(title))
             return
 
         for episode in episodes.values():
-            title = episode.Title
+            title = episode.get_title()
             if self._stop:
                 raise toutv.dl.CancelledException()
             try:
