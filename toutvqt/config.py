@@ -7,7 +7,8 @@ import logging
 
 
 class QTouTvConfig(Qt.QObject):
-    DEFAULT_DOWNLOAD_DIRECTORY = QDir.home().absoluteFilePath('Tou.Tv')
+    DEFAULT_DOWNLOAD_DIRECTORY = QDir.home().absoluteFilePath('TOU.TV Downloads')
+    config_item_changed = QtCore.pyqtSignal(str, object)
 
     def __init__(self):
         super(QTouTvConfig, self).__init__()
@@ -15,14 +16,12 @@ class QTouTvConfig(Qt.QObject):
         self.config_dict = {}
         self.config_item_changed.connect(self.tmp)
 
-    config_item_changed = QtCore.pyqtSignal(str, object)
-
     def _fill_defaults(self):
         """Fills defaults with sensible default values."""
         self.defaults = {}
         def_dl_dir = QTouTvConfig.DEFAULT_DOWNLOAD_DIRECTORY
         self.defaults['files/download_directory'] = def_dl_dir
-        self.defaults['network/htp_proxy'] = None
+        self.defaults['network/http_proxy'] = None
 
     def write_settings(self):
         settings = QSettings()
