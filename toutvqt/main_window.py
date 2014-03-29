@@ -92,6 +92,6 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
     def show_preferences_dialog(self):
         pos = self.pos()
-        pos.setX(pos.x() + 40)
-        pos.setY(pos.y() + 40)
+        pos.setX(pos.x() + 60)
+        pos.setY(pos.y() + 60)
         self.preferences_dialog.show_move(pos)
