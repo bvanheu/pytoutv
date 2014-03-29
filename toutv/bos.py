@@ -32,6 +32,15 @@ import toutv.dl
 
 
 class AbstractEmission:
+    def get_id(self):
+        return self.Id
+
+    def get_genre(self):
+        return self.Genre
+
+    def get_url(self):
+        return self.Url
+
     def get_removal_date(self):
         if self.DateRetraitOuEmbargo is None:
             return None
@@ -45,6 +54,9 @@ class AbstractEmission:
             return datetime.datetime.fromtimestamp(ts)
 
         return None
+
+    def __str__(self):
+        return '{} ({})'.format(self.get_title(), self.get_id())
 
 
 class Emission(AbstractEmission):
@@ -103,8 +115,29 @@ class Emission(AbstractEmission):
         self.Url = None
         self.Year = None
 
-    def __str__(self):
-        return '{} ({})'.format(self.Title, self.Id)
+    def get_title(self):
+        return self.Title
+
+    def get_year(self):
+        return self.Year
+
+    def get_country(self):
+        return self.Country
+
+    def get_description(self):
+        return self.Description
+
+    def get_network(self):
+        return self.Network
+
+    def get_tags(self):
+        tags = []
+        if self.EstExclusiviteRogers:
+            tags.append('rogers')
+        if self.EstContenuJeunesse:
+            tags.append('youth')
+
+        return tags
 
 
 class Genre:
@@ -118,8 +151,14 @@ class Genre:
         self.Title = None
         self.Url = None
 
+    def get_id(self):
+        return self.Id
+
+    def get_title(self):
+        return self.Title
+
     def __str__(self):
-        return '{} ({})'.format(self.Title, self.Id)
+        return '{} ({})'.format(self.get_title(), self.get_id())
 
 
 class Episode:
@@ -220,6 +259,36 @@ class Episode:
         self.Year = None
         self.iTunesLinkUrl = None
 
+    def get_title(self):
+        return self.Title
+
+    def get_id(self):
+        return self.Id
+
+    def get_year(self):
+        return self.Year
+
+    def get_genre_title(self):
+        return self.GenreTitle
+
+    def get_url(self):
+        return self.Url
+
+    def get_season_number(self):
+        return self.SeasonNumber
+
+    def get_episode_number(self):
+        return self.EpisodeNumber
+
+    def get_sae(self):
+        return self.SeasonAndEpisode
+
+    def get_description(self):
+        return self.Description
+
+    def get_emission_id(self):
+        return self.CategoryId
+
     def get_air_date(self):
         if self.AirDateFormated is None:
             return None
@@ -260,7 +329,7 @@ class Episode:
         return sorted(bitrates)
 
     def __str__(self):
-        return '{} ({})'.format(self.Title, self.Id)
+        return '{} ({})'.format(self.get_title(), self.get_id())
 
 
 class EmissionRepertoire(AbstractEmission):
@@ -285,24 +354,42 @@ class EmissionRepertoire(AbstractEmission):
         self.TitreIndex = None
         self.Url = None
 
-    def __str__(self):
-        return '{} ({})'.format(self.Titre, self.Id)
+    def get_title(self):
+        return self.Titre
 
+    def get_country(self):
+        return self.Pays
+
+    def get_year(self):
+        return self.AnneeProduction
 
 class SearchResults:
     def __init__(self):
         self.ModifiedQuery = None
         self.Results = None
 
+    def get_modified_query(self):
+        return self.ModifiedQuery
+
+    def get_results(self):
+        return self.Results
 
 class SearchResultData:
     def __init__(self):
         self.Emission = None
         self.Episode = None
 
+    def get_emission(self):
+        return self.Emission
+
+    def get_episode(self):
+        return self.Episode
 
 class Repertoire:
     def __init__(self):
         self.Emissions = None
         self.Genres = None
         self.Pays = None
+
+    def get_emissions(self):
+        return self.Emissions
