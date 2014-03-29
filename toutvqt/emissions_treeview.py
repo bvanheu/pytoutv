@@ -3,6 +3,18 @@ from PyQt4 import Qt, QtCore
 from toutvqt.emissions_treemodel import EmissionsTreeModelEmission
 from toutvqt.emissions_treemodel import EmissionsTreeModelSeason
 from toutvqt.emissions_treemodel import EmissionsTreeModelEpisode
+from toutvqt.emissions_treemodel import LoadingItem
+
+
+class QEmissionsTreeViewStyleDelegate(Qt.QStyledItemDelegate):
+    def __init__(self):
+        super(QEmissionsTreeViewStyleDelegate, self).__init__()
+
+    def paint(self, painter, option, index):
+        if type(index.internalPointer()) is LoadingItem:
+            print(type(index))
+            option.font.setItalic(True)
+        Qt.QStyledItemDelegate.paint(self, painter, option, index)
 
 
 class QEmissionsTreeView(Qt.QTreeView):
@@ -22,6 +34,8 @@ class QEmissionsTreeView(Qt.QTreeView):
 
         selection_model = Qt.QItemSelectionModel(model)
         self.setSelectionModel(selection_model)
+
+        self.setItemDelegate(QEmissionsTreeViewStyleDelegate())
 
         selection_model.selectionChanged.connect(self.item_selection_changed)
 
