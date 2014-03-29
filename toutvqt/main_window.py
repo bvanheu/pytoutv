@@ -1,6 +1,7 @@
 from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
+from toutvqt.downloads_tablemodel import QDownloadsTableModel
 from toutvqt.downloads_tableview import QDownloadsTableView
 from toutvqt.emissions_treeview import QEmissionsTreeView
 from toutvqt.emissions_treemodel import EmissionsTreeModel
@@ -27,7 +28,8 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self.emissions_tab.layout().addWidget(self.emissions_treeview)
 
     def _add_tableview(self):
-        self.downloads_tableview = QDownloadsTableView()
+        tableview_model = QDownloadsTableModel()
+        self.downloads_tableview = QDownloadsTableView(tableview_model)
         self.downloads_tab.layout().addWidget(self.downloads_tableview)
 
     def _add_infos(self):
