@@ -280,8 +280,9 @@ class QEpisodeInfosWidget(QInfosWidget):
     def _try_set_thumb(self):
         if self._episode.has_medium_thumb_data():
             self._set_thumb()
-            return
-        self._fetch_thumb_required.emit(self._episode)
+        else:
+            self._set_no_thumb()
+            self._fetch_thumb_required.emit(self._episode)
 
     def set_episode(self, episode):
         self._episode = episode
