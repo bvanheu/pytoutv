@@ -4,6 +4,7 @@ from PyQt4 import Qt
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import webbrowser
+from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
 
 
 class QInfosFrame(Qt.QFrame):
@@ -79,6 +80,7 @@ class QInfosWidget(Qt.QWidget):
     def _setup_ui(self, ui_path):
         uic.loadUi(ui_path, baseinstance=self)
         self.goto_toutv_btn.clicked.connect(self._on_goto_toutv_btn_clicked)
+        self.dl_btn.clicked.connect(self._on_dl_btn_clicked)
 
     def _set_toutv_url(self, url):
         self._url = url
@@ -90,6 +92,9 @@ class QInfosWidget(Qt.QWidget):
     def _on_goto_toutv_btn_clicked(self):
         if self._url is not None:
             webbrowser.open(self._url)
+
+    def _on_dl_btn_clicked(self):
+        pass
 
 
 class QEmissionCommonInfosWidget:
@@ -297,6 +302,24 @@ class QEpisodeInfosWidget(QInfosWidget):
         self._try_set_thumb()
         url = '{}?autoplay=true'.format(episode.get_url())
         self._set_toutv_url(url)
+
+    def _on_bitrate_chosen(self, bitrate):
+        print('chose {} bps'.format(bitrate))
+
+    def _on_dl_btn_clicked(self):
+        pos = QtGui.QCursor().pos()
+        cursor = self.dl_btn.cursor()
+        self.dl_btn.setCursor(QtCore.Qt.WaitCursor)
+        bitrates = self._episode.get_available_bitrates()
+        self.dl_btn.setCursor(cursor)
+        if len(bitrates) > 1:
+            dialog = QChooseBitrateDialog(bitrates)
+            dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
+            pos.setX(pos.x() - dialog.width())
+            pos.setY(pos.y() - dialog.height())
+            dialog.show_move(pos)
+        else:
+            print('single bitrate: {}'.format(bitrate[0]))
 
 
 class QEpisodeThumbFetcher(Qt.QObject):
