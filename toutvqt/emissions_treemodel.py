@@ -147,14 +147,14 @@ class EmissionsTreeModelEpisode:
 
 
 class EmissionsTreeModel(Qt.QAbstractItemModel):
+    _HEADER = [
+        'Title',
+        'Infos',
+    ]
     fetch_required = QtCore.pyqtSignal(object)
 
     def __init__(self, client):
         super(EmissionsTreeModel, self).__init__()
-        self._header_names = [
-            'Title',
-            'Infos',
-        ]
         self.emissions = []
         self.loading_item = LoadingItem(None)
 
@@ -245,7 +245,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
     def headerData(self, section, orientation, role = QtCore.Qt.DisplayRole):
         if role == QtCore.Qt.DisplayRole:
-            return self._header_names[section]
+            return EmissionsTreeModel._HEADER[section]
 
 
 class EmissionsTreeModelFetcher(Qt.QObject):
