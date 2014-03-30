@@ -4,10 +4,11 @@ from PyQt4 import Qt
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import webbrowser
-from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
 
 
 class QInfosFrame(Qt.QFrame):
+    select_download = QtCore.pyqtSignal(object)
+
     def __init__(self):
         super(QInfosFrame, self).__init__()
 
@@ -52,6 +53,7 @@ class QInfosFrame(Qt.QFrame):
         self.emission_widget = QEmissionInfosWidget(self._thumb_fetcher)
         self.season_widget = QSeasonInfosWidget()
         self.episode_widget = QEpisodeInfosWidget(self._thumb_fetcher)
+        self.episode_widget.select_download.connect(self.select_download)
 
         self._swappable_widgets = [
             self.emission_widget,
@@ -245,6 +247,7 @@ class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 class QEpisodeInfosWidget(QInfosWidget):
     _UI_PATH = resource_filename(__name__, 'dat/ui/episode_infos_widget.ui')
     _fetch_thumb_required = QtCore.pyqtSignal(object)
+    select_download = QtCore.pyqtSignal(object)
 
     def __init__(self, thumb_fetcher):
         super(QEpisodeInfosWidget, self).__init__()
@@ -352,23 +355,8 @@ class QEpisodeInfosWidget(QInfosWidget):
         url = '{}?autoplay=true'.format(episode.get_url())
         self._set_toutv_url(url)
 
-    def _on_bitrate_chosen(self, bitrate):
-        print('chose {} bps'.format(bitrate))
-
     def _on_dl_btn_clicked(self):
-        pos = QtGui.QCursor().pos()
-        cursor = self.dl_btn.cursor()
-        self.dl_btn.setCursor(QtCore.Qt.WaitCursor)
-        bitrates = self._episode.get_available_bitrates()
-        self.dl_btn.setCursor(cursor)
-        if len(bitrates) > 1:
-            dialog = QChooseBitrateDialog(bitrates)
-            dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
-            pos.setX(pos.x() - dialog.width())
-            pos.setY(pos.y() - dialog.height())
-            dialog.show_move(pos)
-        else:
-            print('single bitrate: {}'.format(bitrate[0]))
+        self.select_download.emit(self._episode)
 
 
 class QThumbFetcher(Qt.QObject):

@@ -1,6 +1,8 @@
 from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
+from PyQt4 import QtCore
+from PyQt4 import QtGui
 from toutvqt.download_manager import QDownloadManager
 from toutvqt.downloads_tablemodel import QDownloadsTableModel
 from toutvqt.downloads_tableview import QDownloadsTableView
@@ -8,6 +10,7 @@ from toutvqt.emissions_treeview import QEmissionsTreeView
 from toutvqt.emissions_treemodel import EmissionsTreeModel
 from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.preferences_dialog import QTouTvPreferencesDialog
+from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
 from toutvqt.infos_frame import QInfosFrame
 from toutv import client
 
@@ -37,6 +40,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
 
     def _add_infos(self):
         self.infos_frame = QInfosFrame()
+        self.infos_frame.select_download.connect(self.on_select_download)
         self.emissions_tab.layout().addWidget(self.infos_frame)
         treeview = self.emissions_treeview
         treeview.emission_selected.connect(self.infos_frame.show_emission)
@@ -111,3 +115,22 @@ class QTouTvMainWindow(Qt.QMainWindow):
         pos.setX(pos.x() + 60)
         pos.setY(pos.y() + 60)
         self.preferences_dialog.show_move(pos)
+
+    def on_select_download(self, episode):
+        pos = QtGui.QCursor().pos()
+        cursor = self.cursor()
+        self.setCursor(QtCore.Qt.WaitCursor)
+        bitrates = episode.get_available_bitrates()
+        self.setCursor(cursor)
+        if len(bitrates) > 1:
+            dialog = QChooseBitrateDialog(bitrates)
+            dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
+            pos.setX(pos.x() - dialog.width())
+            pos.setY(pos.y() - dialog.height())
+            dialog.show_move(pos)
+        else:
+            print('single bitrate: {}'.format(bitrate[0]))
+            self._on_bitrate_chosen(bitrate[0])
+
+    def _on_bitrate_chosen(self, bitrate):
+        print('chose {} bps'.format(bitrate))
