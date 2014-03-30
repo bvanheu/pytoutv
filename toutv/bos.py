@@ -101,6 +101,8 @@ class AbstractEmission:
             return None
 
         # Format looks like: /Date(1395547200000-0400)/
+        # Sometimes we have weird values: '/Date(-62135578800000-0500)/',
+        # we'll return None in that case.
         d = self.DateRetraitOuEmbargo
         m = re.match(r'/Date\((\d+)-\d+\)/', d)
         if m is not None:
