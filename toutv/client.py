@@ -33,7 +33,6 @@ import toutv.cache
 import toutv.mapper
 import toutv.transport
 import toutv.config
-import toutv.bos as bos
 import toutv.dl
 from toutv import m3u8
 
