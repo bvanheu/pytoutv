@@ -199,7 +199,7 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
         smooth_transform = QtCore.Qt.SmoothTransformation
         width = self.thumb_value_label.width()
         scaled_pixmap = pixmap.scaledToWidth(width, smooth_transform)
-        self.thumb_value_label.setPixmap(pixmap)
+        self.thumb_value_label.setPixmap(scaled_pixmap)
 
     def _try_set_thumb(self):
         if self._emission.has_medium_thumb_data():
@@ -328,7 +328,7 @@ class QEpisodeInfosWidget(QInfosWidget):
         smooth_transform = QtCore.Qt.SmoothTransformation
         width = self.thumb_value_label.width()
         scaled_pixmap = pixmap.scaledToWidth(width, smooth_transform)
-        self.thumb_value_label.setPixmap(pixmap)
+        self.thumb_value_label.setPixmap(scaled_pixmap)
 
     def _try_set_thumb(self):
         if self._episode.has_medium_thumb_data():
