@@ -49,21 +49,25 @@ class ThumbnailProvider:
             # No need to download again
             return
 
-        url = self.get_medium_thumb_url()
-        if url is None:
-            return
+        urls = self.get_medium_thumb_urls()
+        for url in urls:
+            if url is None or len(url) == 0:
+                continue
 
-        try:
-            r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
-        except Exception as e:
-            logging.warning(e)
-            return
+            try:
+                print(url)
+                logging.debug("HTTP-getting %s" % url)
+                r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
+            except Exception as e:
+                logging.warning(e)
+                continue
 
-        if r.status_code != 200:
-            logging.warning("Thumbnail fetch HTTP ret code = %d for url = %s" % (r.status_code, url))
-            return
+            if r.status_code != 200:
+                logging.warning("Thumbnail fetch HTTP ret code = %d for url = %s" % (r.status_code, url))
+                continue
 
-        self._medium_thumb_data = r.content
+            self._medium_thumb_data = r.content
+            break
 
     def get_medium_thumb_data(self):
         self.cache_medium_thumb()
@@ -76,8 +80,9 @@ class ThumbnailProvider:
 
         return (self._medium_thumb_data is not None)
 
-    def get_medium_thumb_url(self):
-        raise NotImplementedError("get_medium_thumb_url needs to be implemented in derived classes.")
+    def get_medium_thumb_urls(self):
+        """ Returns a list of possible thumbnail urls in order of preference. """
+        raise NotImplementedError("get_medium_thumb_urls needs to be implemented in derived classes.")
 
 class AbstractEmission:
     def get_id(self):
@@ -190,8 +195,12 @@ class Emission(AbstractEmission, ThumbnailProvider):
 
         return tags
 
-    def get_medium_thumb_url(self):
-        return self.ImagePromoNormalK
+    def get_medium_thumb_urls(self):
+        # TODO put that somewhere else ?
+        THUMB_URL_FORMAT = "http://images.tou.tv/w_400,c_scale/v1/emissions/16x9/%s.jpg"
+        name = self.Url.replace("-", "")
+        url = THUMB_URL_FORMAT % name
+        return [url, self.ImagePromoNormalK]
 
 
 class Genre:
@@ -399,7 +408,7 @@ class Episode(ThumbnailProvider):
         return sorted(bitrates)
 
     def get_medium_thumb_url(self):
-        return self.ImageThumbMoyenL
+        return [self.ImageThumbMoyenL]
 
     def __str__(self):
         return '{} ({})'.format(self.get_title(), self.get_id())
