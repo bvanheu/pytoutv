@@ -149,6 +149,7 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
     def __init__(self, thumb_fetcher):
         super(QEmissionInfosWidget, self).__init__()
         self._thumb_fetcher = thumb_fetcher
+        self._emission = None
 
         self._setup_ui(QEmissionInfosWidget._UI_PATH)
         self._setup_thumb_fetching()
