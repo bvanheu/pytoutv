@@ -14,8 +14,12 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         '%',
     ]
 
-    def __init__(self, parent=None):
+    def __init__(self, download_manager, parent=None):
         super(QDownloadsTableModel, self).__init__(parent)
+        self._download_manager = download_manager
+
+    def exit(self):
+        self._download_manager.exit()
 
     def rowCount(self, parent):
         if not parent.isValid():
