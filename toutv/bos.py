@@ -198,7 +198,7 @@ class Emission(AbstractEmission, ThumbnailProvider):
 
     def get_medium_thumb_urls(self):
         # TODO put that somewhere else ?
-        THUMB_URL_FORMAT = "http://images.tou.tv/w_400,c_scale/v1/emissions/16x9/%s.jpg"
+        THUMB_URL_FORMAT = "http://images.tou.tv/w_400,c_scale,r_5/v1/emissions/16x9/%s.jpg"
         name = self.Url.replace("-", "")
         url = THUMB_URL_FORMAT % name
         return [url, self.ImagePromoNormalK]
