@@ -55,7 +55,6 @@ class ThumbnailProvider:
                 continue
 
             try:
-                print(url)
                 logging.debug("HTTP-getting %s" % url)
                 r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
             except Exception as e:
