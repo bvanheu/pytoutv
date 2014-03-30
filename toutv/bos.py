@@ -40,6 +40,40 @@ def _clean_description(desc):
     return desc.strip()
 
 
+class ThumbnailProvider:
+    def cache_medium_thumb(self):
+        if self.has_medium_thumb_data():
+            # No need to download again
+            return
+
+        url = self.get_medium_thumb_url()
+        if url is None:
+            return
+
+        try:
+            r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
+        except:
+            return
+
+        if r.status_code != 200:
+            return
+
+        self._medium_thumb_data = r.content
+
+    def get_medium_thumb_data(self):
+        self.cache_medium_thumb()
+
+        return self._medium_thumb_data
+
+    def has_medium_thumb_data(self):
+        if not hasattr(self, '_medium_thumb_data'):
+            self._medium_thumb_data = None
+
+        return (self._medium_thumb_data is not None)
+
+    def get_medium_thumb_url(self):
+        raise NotImplementedError("get_medium_thumb_url needs to be implemented in derived classes.")
+
 class AbstractEmission:
     def get_id(self):
         return self.Id
@@ -71,7 +105,7 @@ class AbstractEmission:
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class Emission(AbstractEmission):
+class Emission(AbstractEmission, ThumbnailProvider):
     def __init__(self):
         self.CategoryURL = None
         self.ClassCategory = None
@@ -151,6 +185,9 @@ class Emission(AbstractEmission):
 
         return tags
 
+    def get_medium_thumb_url(self):
+        return self.ImagePromoNormalK
+
 
 class Genre:
     def __init__(self):
@@ -173,7 +210,7 @@ class Genre:
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class Episode:
+class Episode(ThumbnailProvider):
     def __init__(self):
         self.AdPattern = None
         self.AirDateFormated = None
@@ -274,36 +311,6 @@ class Episode:
     def get_title(self):
         return self.Title
 
-    def cache_medium_thumb(self):
-        if self.has_medium_thumb_data():
-            # No need to download again
-            return
-
-        url = self.ImageThumbMoyenL
-        if url is None:
-            return
-
-        try:
-            r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
-        except:
-            return
-
-        if r.status_code != 200:
-            return
-
-        self._medium_thumb_data = r.content
-
-    def get_medium_thumb_data(self):
-        self.cache_medium_thumb()
-
-        return self._medium_thumb_data
-
-    def has_medium_thumb_data(self):
-        if not hasattr(self, '_medium_thumb_data'):
-            self._medium_thumb_data = None
-
-        return (self._medium_thumb_data is not None)
-
     def get_id(self):
         return self.Id
 
@@ -385,6 +392,9 @@ class Episode:
         bitrates = Episode._get_video_bitrates(playlist)
 
         return sorted(bitrates)
+
+    def get_medium_thumb_url(self):
+        return self.ImageThumbMoyenL
 
     def __str__(self):
         return '{} ({})'.format(self.get_title(), self.get_id())
