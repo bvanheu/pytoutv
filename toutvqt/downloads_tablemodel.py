@@ -18,7 +18,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         super(QDownloadsTableModel, self).__init__(parent)
 
     def rowCount(self, parent):
-        return 5
+        if not parent.isValid():
+            return 5
+        else:
+            return 0
 
     def columnCount(self, parent):
         return len(QDownloadsTableModel._HEADER)
