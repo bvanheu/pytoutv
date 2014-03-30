@@ -49,7 +49,7 @@ class QInfosFrame(Qt.QFrame):
 
     def _setup_infos_widget(self):
         self._setup_none_label()
-        self.emission_widget = QEmissionInfosWidget()
+        self.emission_widget = QEmissionInfosWidget(self._thumb_fetcher)
         self.season_widget = QSeasonInfosWidget()
         self.episode_widget = QEpisodeInfosWidget(self._thumb_fetcher)
 
@@ -144,11 +144,25 @@ class QEmissionCommonInfosWidget:
 
 class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
     _UI_PATH = resource_filename(__name__, 'dat/ui/emission_infos_widget.ui')
+    _fetch_thumb_required = QtCore.pyqtSignal(object)
 
-    def __init__(self):
+    def __init__(self, thumb_fetcher):
         super(QEmissionInfosWidget, self).__init__()
+        self._thumb_fetcher = thumb_fetcher
 
         self._setup_ui(QEmissionInfosWidget._UI_PATH)
+        self._setup_thumb_fetching();
+
+    def _setup_ui(self, ui_path):
+        super(QEmissionInfosWidget, self)._setup_ui(ui_path)
+        width = self.thumb_value_label.width()
+        min_height = round(width * 9 / 16) + 1
+        self.thumb_value_label.setMinimumHeight(min_height)
+
+    def _setup_thumb_fetching(self):
+        # Setup signal connections with thumb fetcher
+        self._fetch_thumb_required.connect(self._thumb_fetcher.fetch_thumb)
+        self._thumb_fetcher.fetch_done.connect(self._thumb_fetched)
 
     def _set_title(self):
         self.title_value_label.setText(self._emission.get_title())
@@ -166,6 +180,40 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
         self._set_description()
         self._set_common_infos()
         self._set_toutv_url(emission.get_url())
+        self._try_set_thumb()
+
+    def _set_no_thumb(self):
+        self.thumb_value_label.setPixmap(Qt.QPixmap())
+
+    def _set_thumb(self):
+        jpeg_data = self._emission.get_medium_thumb_data()
+        if jpeg_data is None:
+            self._set_no_thumb()
+
+        pixmap = Qt.QPixmap()
+        ret = pixmap.loadFromData(jpeg_data, 'JPEG')
+        if not ret:
+            self._set_no_thumb()
+            return
+
+        smooth_transform = QtCore.Qt.SmoothTransformation
+        width = self.thumb_value_label.width()
+        scaled_pixmap = pixmap.scaledToWidth(width, smooth_transform)
+        self.thumb_value_label.setPixmap(pixmap)
+
+    def _try_set_thumb(self):
+        if self._emission.has_medium_thumb_data():
+            self._set_thumb()
+        else:
+            self._set_no_thumb()
+            self._fetch_thumb_required.emit(self._emission)
+
+    def _thumb_fetched(self, emission):
+        if emission is not self._emission:
+            # Not us, or too late. Ignore; next time will be faster anyway.
+            return
+
+        self._set_thumb()
 
 
 class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
