@@ -25,10 +25,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re
-import os
+
 import datetime
+import logging
+import os
+import re
 import requests
+
 import toutv.dl
 import toutv.config
 
@@ -52,10 +55,12 @@ class ThumbnailProvider:
 
         try:
             r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
-        except:
+        except Exception as e:
+            logging.warning(e)
             return
 
         if r.status_code != 200:
+            logging.warning("Thumbnail fetch HTTP ret code = %d for url = %s" % (r.status_code, url))
             return
 
         self._medium_thumb_data = r.content
