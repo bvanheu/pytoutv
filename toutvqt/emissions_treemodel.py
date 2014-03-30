@@ -55,9 +55,7 @@ class EmissionsTreeModelEmission:
                 network = self.bo.get_network()
                 if network is None:
                     network = ''
-
                 return network
-
             return ''
 
     def rowCount(self):
@@ -214,7 +212,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             return parent.internalPointer().rowCount()
 
     def columnCount(self, parent=Qt.QModelIndex()):
-        return 3
+        return len(self._HEADER)
 
     def fetch_done(self, parent, children_list):
         """A fetch work is complete."""
