@@ -151,7 +151,7 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
         self._thumb_fetcher = thumb_fetcher
 
         self._setup_ui(QEmissionInfosWidget._UI_PATH)
-        self._setup_thumb_fetching();
+        self._setup_thumb_fetching()
 
     def _setup_ui(self, ui_path):
         super(QEmissionInfosWidget, self)._setup_ui(ui_path)
@@ -252,7 +252,7 @@ class QEpisodeInfosWidget(QInfosWidget):
         self._thumb_fetcher = thumb_fetcher
 
         self._setup_ui(QEpisodeInfosWidget._UI_PATH)
-        self._setup_thumb_fetching();
+        self._setup_thumb_fetching()
 
     def _setup_ui(self, ui_path):
         super(QEpisodeInfosWidget, self)._setup_ui(ui_path)
