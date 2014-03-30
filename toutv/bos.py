@@ -408,7 +408,7 @@ class Episode(ThumbnailProvider):
 
         return sorted(bitrates)
 
-    def get_medium_thumb_url(self):
+    def get_medium_thumb_urls(self):
         return [self.ImageThumbMoyenL]
 
     def __str__(self):
