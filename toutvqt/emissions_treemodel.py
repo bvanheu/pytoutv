@@ -253,7 +253,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
         return index.internalPointer().data(index, role)
 
-    def headerData(self, section, orientation, role = QtCore.Qt.DisplayRole):
+    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
         if role == QtCore.Qt.DisplayRole:
             return EmissionsTreeModel._HEADER[section]
 
