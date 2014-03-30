@@ -11,6 +11,7 @@ class QInfosFrame(Qt.QFrame):
     def __init__(self):
         super(QInfosFrame, self).__init__()
 
+        self._setup_thumb_fetching()
         self._setup_ui()
         self.show_infos_none()
 
@@ -21,7 +22,8 @@ class QInfosFrame(Qt.QFrame):
         widget.show()
 
     def exit(self):
-        self.episode_widget.exit()
+        self._fetch_thumb_thread.quit()
+        self._fetch_thumb_thread.wait()
 
     def show_infos_none(self):
         self._swap_infos_widget(self.none_label)
@@ -49,7 +51,7 @@ class QInfosFrame(Qt.QFrame):
         self._setup_none_label()
         self.emission_widget = QEmissionInfosWidget()
         self.season_widget = QSeasonInfosWidget()
-        self.episode_widget = QEpisodeInfosWidget()
+        self.episode_widget = QEpisodeInfosWidget(self._thumb_fetcher)
 
         self._swappable_widgets = [
             self.emission_widget,
@@ -69,6 +71,13 @@ class QInfosFrame(Qt.QFrame):
         self._setup_infos_widget()
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,
                            QtGui.QSizePolicy.Maximum)
+
+    def _setup_thumb_fetching(self):
+        self._fetch_thumb_thread = Qt.QThread()
+        self._fetch_thumb_thread.start()
+
+        self._thumb_fetcher = QThumbFetcher()
+        self._thumb_fetcher.moveToThread(self._fetch_thumb_thread)
 
 
 class QInfosWidget(Qt.QWidget):
@@ -188,17 +197,14 @@ class QEpisodeInfosWidget(QInfosWidget):
     _UI_PATH = resource_filename(__name__, 'dat/ui/episode_infos_widget.ui')
     _fetch_thumb_required = QtCore.pyqtSignal(object)
 
-    def __init__(self):
+    def __init__(self, thumb_fetcher):
         super(QEpisodeInfosWidget, self).__init__()
 
         self._episode = None
+        self._thumb_fetcher = thumb_fetcher
 
         self._setup_ui(QEpisodeInfosWidget._UI_PATH)
         self._setup_thumb_fetching();
-
-    def exit(self):
-        self._fetch_thumb_thread.quit()
-        self._fetch_thumb_thread.wait()
 
     def _setup_ui(self, ui_path):
         super(QEpisodeInfosWidget, self)._setup_ui(ui_path)
@@ -207,19 +213,13 @@ class QEpisodeInfosWidget(QInfosWidget):
         self.thumb_value_label.setMinimumHeight(min_height)
 
     def _setup_thumb_fetching(self):
-        # Setup fetch thread and signal connections
-        self._fetch_thumb_thread = Qt.QThread()
-        self._fetch_thumb_thread.start()
-
-        self._thumb_fetcher = QEpisodeThumbFetcher()
-        self._thumb_fetcher.moveToThread(self._fetch_thumb_thread)
+        # Setup signal connections with thumb fetcher
         self._fetch_thumb_required.connect(self._thumb_fetcher.fetch_thumb)
         self._thumb_fetcher.fetch_done.connect(self._thumb_fetched)
 
     def _thumb_fetched(self, episode):
         if episode is not self._episode:
-            # Ignore; next time will be faster anyway
-            self._set_no_thumb()
+            # Not us, or too late. Ignore; next time will be faster anyway.
             return
 
         self._set_thumb()
@@ -322,11 +322,11 @@ class QEpisodeInfosWidget(QInfosWidget):
             print('single bitrate: {}'.format(bitrate[0]))
 
 
-class QEpisodeThumbFetcher(Qt.QObject):
+class QThumbFetcher(Qt.QObject):
     fetch_done = QtCore.pyqtSignal(object)
 
     def __init__(self):
-        super(QEpisodeThumbFetcher, self).__init__()
+        super(QThumbFetcher, self).__init__()
 
     def fetch_thumb(self, episode):
         episode.get_medium_thumb_data()
