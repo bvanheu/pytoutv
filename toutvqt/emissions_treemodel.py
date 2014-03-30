@@ -53,12 +53,12 @@ class EmissionsTreeModelEmission:
                 return self.bo.get_title()
             elif column == 1:
                 network = self.bo.get_network()
-                if network is not None:
-                    return network
+                if network is None:
+                    network = ''
 
-                return ''
+                return network
 
-            return '?'
+            return ''
 
     def rowCount(self):
         if self.fetched == FetchState.DONE:
@@ -96,9 +96,13 @@ class EmissionsTreeModelSeason:
             if column == 0:
                 return 'Season {}'.format(self.number)
             elif column == 1:
-                return ''
+                network = self.emission.bo.get_network()
+                if network is None:
+                    network = ''
 
-            return '?'
+                return network
+
+            return ''
 
     def rowCount(self):
         return len(self.episodes)
@@ -125,6 +129,13 @@ class EmissionsTreeModelEpisode:
             if column == 0:
                 return self.bo.get_title()
             elif column == 1:
+                emission = self.bo.get_emission()
+                network = emission.get_network()
+                if network is None:
+                    network = ''
+
+                return network
+            elif column == 2:
                 episode_number = self.bo.get_episode_number()
                 if episode_number is not None:
                     return episode_number
@@ -149,7 +160,8 @@ class EmissionsTreeModelEpisode:
 class EmissionsTreeModel(Qt.QAbstractItemModel):
     _HEADER = [
         'Title',
-        'Infos',
+        'Network',
+        'Episode number',
     ]
     fetch_required = QtCore.pyqtSignal(object)
 
@@ -202,7 +214,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             return parent.internalPointer().rowCount()
 
     def columnCount(self, parent=Qt.QModelIndex()):
-        return 2
+        return 3
 
     def fetch_done(self, parent, children_list):
         """A fetch work is complete."""
