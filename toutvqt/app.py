@@ -6,13 +6,12 @@ from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
 from toutvqt.config import QTouTvConfig
-from toutv import client
-from toutv import transport
+import toutv.client
 
 
-class QTouTvApp(Qt.QApplication):
+class _QTouTvApp(Qt.QApplication):
     def __init__(self, args):
-        super(QTouTvApp, self).__init__(args)
+        super(_QTouTvApp, self).__init__(args)
 
         self.setOrganizationName("pytoutv")
         self.setApplicationName("qtoutv")
@@ -29,7 +28,7 @@ class QTouTvApp(Qt.QApplication):
         self.main_window = QTouTvMainWindow(self, self._client)
 
     def _setup_client(self):
-        self._client = client.Client()
+        self._client = toutv.client.Client()
 
     def _setup_config(self):
         # Create a default config
@@ -45,17 +44,23 @@ class QTouTvApp(Qt.QApplication):
         # Read the settings from disk
         self._config.read_settings()
 
+    def _on_config_http_proxy_changed(self, value):
+        self._client.transport.set_http_proxy(value)
+
+    def _on_config_dl_dir_changed(self, value):
+        # Create output directory if it doesn't exist
+        if not os.path.exists(value):
+            try:
+                os.makedirs(value)
+            except:
+                # Ignore; should fail later
+                pass
+
     def _config_item_changed(self, key, value):
         if key == 'network/http_proxy':
-            self._client.transport.set_http_proxy(value)
-        if key == 'files/download_directory':
-            # Create output directory if it doesn't exist
-            if not os.path.exists(value):
-                try:
-                    os.makedirs(value)
-                except:
-                    # Ignore; should fail later
-                    pass
+            self._on_config_http_proxy_changed(value)
+        elif key == 'files/download_directory':
+            self._on_config_dl_dir_changed(value)
 
 
 def _register_sigint():
@@ -65,7 +70,7 @@ def _register_sigint():
 
 
 def run():
-    app = QTouTvApp(sys.argv)
+    app = _QTouTvApp(sys.argv)
     _register_sigint()
 
     return app.exec_()
