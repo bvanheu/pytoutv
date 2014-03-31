@@ -74,10 +74,19 @@ class Client:
         return episodes
 
     def get_page_repertoire(self):
+        # Get repertoire emissions
         page_repertoire = self.cache.get_page_repertoire()
         if page_repertoire is None:
             page_repertoire = self.transport.get_page_repertoire()
             self.cache.set_page_repertoire(page_repertoire)
+        rep_em = page_repertoire.get_emissions()
+
+        # Get all emissions (contain more infos) to match them
+        all_em = self.get_emissions()
+
+        # Get more infos for repertoire emissions
+        emissions = {k: all_em[k] for k in all_em if k in rep_em}
+        page_repertoire.set_emissions(emissions)
 
         return page_repertoire
 

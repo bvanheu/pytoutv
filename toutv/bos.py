@@ -474,5 +474,8 @@ class Repertoire:
         self.Genres = None
         self.Pays = None
 
+    def set_emissions(self, emissions):
+        self.Emissions = emissions
+
     def get_emissions(self):
         return self.Emissions

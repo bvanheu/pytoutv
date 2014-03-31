@@ -294,9 +294,7 @@ class EmissionsTreeModelFetcher(Qt.QObject):
 
             return emission_title.lower()
 
-        emissions_rep = self.client.get_page_repertoire().get_emissions()
-        emissions_all = self.client.get_emissions()
-        emissions = {k : emissions_all[k] for k in emissions_all if k in emissions_rep}
+        emissions = self.client.get_page_repertoire().get_emissions()
 
         # Sort
         emissions_keys = list(emissions.keys())
