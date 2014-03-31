@@ -110,7 +110,7 @@ class ShelveCache(Cache):
         emission_episodes = self._get('emission_episodes')
         if emission_episodes is None:
             return None
-        if not emid in emission_episodes:
+        if emid not in emission_episodes:
             return None
 
         return emission_episodes[emid]

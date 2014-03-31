@@ -47,7 +47,7 @@ class _QTouTvApp(Qt.QApplication):
         self._settings.read_settings()
 
     def _on_setting_http_proxy_changed(self, value):
-        self._client.transport.set_http_proxy(value)
+        self._client.set_transport_http_proxy(value)
 
     def _on_setting_dl_dir_changed(self, value):
         # Create output directory if it doesn't exist

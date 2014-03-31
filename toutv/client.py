@@ -54,31 +54,34 @@ class ClientError(RuntimeError):
 class Client:
     def __init__(self, transport=toutv.transport.JsonTransport(),
                  cache=toutv.cache.EmptyCache()):
-        self.transport = transport
-        self.cache = cache
+        self._transport = transport
+        self._cache = cache
+
+    def set_transport_http_proxy(self, proxy_url):
+        self._transport.set_http_proxy(proxy_url)
 
     def get_emissions(self):
-        emissions = self.cache.get_emissions()
+        emissions = self._cache.get_emissions()
         if emissions is None:
-            emissions = self.transport.get_emissions()
-            self.cache.set_emissions(emissions)
+            emissions = self._transport.get_emissions()
+            self._cache.set_emissions(emissions)
 
         return emissions
 
     def get_emission_episodes(self, emission):
-        episodes = self.cache.get_emission_episodes(emission)
+        episodes = self._cache.get_emission_episodes(emission)
         if episodes is None:
-            episodes = self.transport.get_emission_episodes(emission)
-            self.cache.set_emission_episodes(emission, episodes)
+            episodes = self._transport.get_emission_episodes(emission)
+            self._cache.set_emission_episodes(emission, episodes)
 
         return episodes
 
     def get_page_repertoire(self):
         # Get repertoire emissions
-        page_repertoire = self.cache.get_page_repertoire()
+        page_repertoire = self._cache.get_page_repertoire()
         if page_repertoire is None:
-            page_repertoire = self.transport.get_page_repertoire()
-            self.cache.set_page_repertoire(page_repertoire)
+            page_repertoire = self._transport.get_page_repertoire()
+            self._cache.set_page_repertoire(page_repertoire)
         rep_em = page_repertoire.get_emissions()
 
         # Get all emissions (contain more infos) to match them
@@ -91,7 +94,7 @@ class Client:
         return page_repertoire
 
     def search(self, query):
-        return self.transport.search(query)
+        return self._transport.search(query)
 
     def get_emission_by_name(self, emission_name):
         emissions = self.get_emissions()

@@ -35,6 +35,9 @@ class Transport:
     def __init__(self):
         pass
 
+    def set_http_proxy(self, proxy_url):
+        pass
+
     def get_emissions(self):
         pass
 
@@ -49,26 +52,27 @@ class Transport:
 
 
 class JsonTransport(Transport):
-    def __init__(self, http_proxy = None):
-        self.mapper = toutv.mapper.JsonMapper()
-        self.proxies = None
+    def __init__(self, proxy_url=None):
+        self._mapper = toutv.mapper.JsonMapper()
+        self._proxies = None
 
-        self.set_http_proxy(http_proxy)
+        self.set_http_proxy(proxy_url)
 
-    def set_http_proxy(self, http_proxy):
-        if http_proxy:
-            self.proxies = {
-                "http": http_proxy,
-                "https": http_proxy,
+    def set_http_proxy(self, proxy_url):
+        if proxy_url:
+            self._proxies = {
+                'http': proxy_url,
+                'https': proxy_url,
             }
         else:
-            self.proxies = None
+            self._proxies = None
 
     def _do_query(self, endpoint, params={}):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
 
         try:
-            r = requests.get(url, params=params, headers=toutv.config.HEADERS, proxies=self.proxies)
+            r = requests.get(url, params=params, headers=toutv.config.HEADERS,
+                             proxies=self._proxies)
             response_obj = r.json()
 
             return response_obj['d']
@@ -80,7 +84,7 @@ class JsonTransport(Transport):
 
         emissions_dto = self._do_query('GetEmissions')
         for emission_dto in emissions_dto:
-            emission = self.mapper.dto_to_bo(emission_dto, bos.Emission)
+            emission = self._mapper.dto_to_bo(emission_dto, bos.Emission)
             emissions[emission.Id] = emission
 
         return emissions
@@ -95,7 +99,7 @@ class JsonTransport(Transport):
         episodes_dto = self._do_query('GetEpisodesForEmission', params)
         if episodes_dto is not None:
             for episode_dto in episodes_dto:
-                episode = self.mapper.dto_to_bo(episode_dto, bos.Episode)
+                episode = self._mapper.dto_to_bo(episode_dto, bos.Episode)
                 episode.set_emission(emission)
                 episodes[episode.Id] = episode
 
@@ -111,8 +115,8 @@ class JsonTransport(Transport):
                 repertoire.Emissions = {}
                 emissionrepertoires_dto = repertoire_dto['Emissions']
                 for emissionrepertoire_dto in emissionrepertoires_dto:
-                    er = self.mapper.dto_to_bo(emissionrepertoire_dto,
-                                               bos.EmissionRepertoire)
+                    er = self._mapper.dto_to_bo(emissionrepertoire_dto,
+                                                bos.EmissionRepertoire)
                     repertoire.Emissions[er.Id] = er
 
             # Genre
@@ -138,12 +142,12 @@ class JsonTransport(Transport):
 
         searchresults_dto = self._do_query('SearchTerms', params)
         if searchresults_dto is not None:
-            searchresults = self.mapper.dto_to_bo(searchresults_dto,
-                                                  bos.SearchResults)
+            searchresults = self._mapper.dto_to_bo(searchresults_dto,
+                                                   bos.SearchResults)
             if searchresults.Results is not None:
                 for searchresultdata_dto in searchresults.Results:
-                    sr_bo = self.mapper.dto_to_bo(searchresultdata_dto,
-                                                  bos.SearchResultData)
+                    sr_bo = self._mapper.dto_to_bo(searchresultdata_dto,
+                                                   bos.SearchResultData)
                     searchresultdatas.append(sr_bo)
             searchresults.Results = searchresultdatas
 
