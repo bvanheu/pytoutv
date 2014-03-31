@@ -187,6 +187,9 @@ class Emission(_AbstractEmission, _ThumbnailProvider):
         return _clean_description(self.Description)
 
     def get_network(self):
+        if self.Network is None:
+            return 'SRC'
+
         return self.Network
 
     def get_tags(self):
