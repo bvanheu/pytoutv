@@ -35,8 +35,8 @@ import toutv.dl
 import toutv.client
 import toutv.cache
 import toutv.config
-from toutv import __version__
 from toutv import m3u8
+from toutvcli import __version__
 from toutvcli.progressbar import ProgressBar
 
 
