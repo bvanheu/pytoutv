@@ -87,7 +87,15 @@ class _QThumbFetcher(Qt.QObject):
     def __init__(self):
         super().__init__()
 
+        self._last = None
+
+    def set_last(self, bo):
+        self._last = bo
+
     def fetch_thumb(self, bo):
+        if bo is not self._last:
+            return
+
         bo.get_medium_thumb_data()
         self.fetch_done.emit(bo)
 
@@ -150,6 +158,7 @@ class _QInfosWidget(Qt.QWidget, utils.QtUiLoad):
             self._set_thumb()
         else:
             self._set_no_thumb()
+            self._thumb_fetcher.set_last(self._bo)
             self._fetch_thumb_required.emit(self._bo)
 
     def _thumb_fetched(self, bo):
