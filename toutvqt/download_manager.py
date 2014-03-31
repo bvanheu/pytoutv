@@ -1,13 +1,15 @@
 import time
 import queue
+import logging
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4.Qt import QEvent
 
 class QDownloadStartEvent(QEvent):
     """Event sent to download workers to make them initiate a download."""
-    def __init__(self, type):
+    def __init__(self, type, work):
         super(QEvent, self).__init__(type)
+        self.work = work
 
 class QDownloadManager(Qt.QObject):
     def __init__(self, nb_threads=5):
@@ -47,12 +49,13 @@ class QDownloadManager(Qt.QObject):
         except queue.Empty:
             return
 
-        ev = QDownloadStartEvent(self.download_event_type)
-        QCoreApplication.postEvent(worker, ev)
+        ev = QDownloadStartEvent(self._download_event_type, work)
+        Qt.QCoreApplication.postEvent(worker, ev)
 
         # TODO: asynchronously call worker.do_work(work) here
 
-    def download(self, work):
+    def download(self, episode, bitrate):
+        work = (episode, bitrate)
         print('queueing work {}'.format(work))
         self._works.put(work)
         self._do_next_work()
@@ -73,16 +76,18 @@ class QDownloadWorker(Qt.QObject):
         self.i = i
 
     def do_work(self, work):
-        print('worker {} starting work {}'.format(self, work))
+        episode = work[0]
+        bitrate = work[1]
+        print('worker {} "downloading" episode {} at {}'.format(self, episode.Title, work))
         time.sleep(4)
-        print('worker {} done with work {}'.format(self, work))
+        print('worker {} done "downloading" episode {} at {}'.format(self, episode.Title, work))
         self.finished.emit(work)
 
     def handle_download_event(self, ev):
-        self.do_work(None)
+        self.do_work(ev.work)
 
     def customEvent(self, ev):
-        if ev.type == self._download_event_type:
+        if ev.type() == self._download_event_type:
             self.handle_download_event(ev)
         else:
             logging.error("Shouldn't be here")

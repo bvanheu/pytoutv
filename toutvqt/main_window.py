@@ -33,8 +33,8 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self.emissions_tab.layout().addWidget(self.emissions_treeview)
 
     def _add_tableview(self):
-        download_manager = QDownloadManager()
-        self._downloads_tableview_model = QDownloadsTableModel(download_manager)
+        self._download_manager = QDownloadManager()
+        self._downloads_tableview_model = QDownloadsTableModel(self._download_manager)
         self.downloads_tableview = QDownloadsTableView(self._downloads_tableview_model)
         self.downloads_tab.layout().addWidget(self.downloads_tableview)
 
@@ -123,7 +123,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
         bitrates = episode.get_available_bitrates()
         self.setCursor(cursor)
         if len(bitrates) > 1:
-            dialog = QChooseBitrateDialog(bitrates)
+            dialog = QChooseBitrateDialog(episode, bitrates)
             dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
             pos.setX(pos.x() - dialog.width())
             pos.setY(pos.y() - dialog.height())
@@ -132,5 +132,6 @@ class QTouTvMainWindow(Qt.QMainWindow):
             print('single bitrate: {}'.format(bitrate[0]))
             self._on_bitrate_chosen(bitrate[0])
 
-    def _on_bitrate_chosen(self, bitrate):
+    def _on_bitrate_chosen(self, bitrate, episode):
         print('chose {} bps'.format(bitrate))
+        self._download_manager.download(episode, bitrate)

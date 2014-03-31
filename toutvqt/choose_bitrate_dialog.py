@@ -6,11 +6,12 @@ from PyQt4 import QtCore
 
 class QChooseBitrateDialog(Qt.QDialog):
     _UI_PATH = resource_filename(__name__, 'dat/ui/choose_bitrate_dialog.ui')
-    bitrate_chosen = QtCore.pyqtSignal(int)
+    bitrate_chosen = QtCore.pyqtSignal(int, object)
 
-    def __init__(self, bitrates):
+    def __init__(self, episode, bitrates):
         super(QChooseBitrateDialog, self).__init__()
 
+        self._episode = episode
         self._bitrates = bitrates
         self._setup_ui()
 
@@ -27,7 +28,7 @@ class QChooseBitrateDialog(Qt.QDialog):
 
     def _on_bitrate_btn_clicked(self):
         btn = self.sender()
-        self.bitrate_chosen.emit(btn.get_bitrate())
+        self.bitrate_chosen.emit(btn.get_bitrate(), self._episode)
         self.close()
 
     def show_move(self, pos):
