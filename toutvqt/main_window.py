@@ -36,13 +36,14 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _add_tableview(self):
         self._download_manager = QDownloadManager()
-        self._downloads_tableview_model = QDownloadsTableModel(self._download_manager)
-        self.downloads_tableview = QDownloadsTableView(self._downloads_tableview_model)
+        model = QDownloadsTableModel(self._download_manager)
+        self._downloads_tableview_model = model
+        self.downloads_tableview = QDownloadsTableView(model)
         self.downloads_tab.layout().addWidget(self.downloads_tableview)
 
     def _add_infos(self):
         self.infos_frame = QInfosFrame()
-        self.infos_frame.select_download.connect(self.on_select_download)
+        self.infos_frame.select_download.connect(self._on_select_download)
         self.emissions_tab.layout().addWidget(self.infos_frame)
         treeview = self.emissions_treeview
         treeview.emission_selected.connect(self.infos_frame.show_emission)
@@ -67,21 +68,13 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self._setup_edit_menu()
         self._setup_help_menu()
 
-    @staticmethod
-    def _get_icon(name):
-        filename = '{}.png'.format(name)
-        rel_path = os.path.join(config.ICONS_DIR, filename)
-        path = resource_filename(__name__, rel_path)
-
-        return Qt.QIcon(path)
-
     def _setup_action_icon(self, action_name):
         action = getattr(self, action_name)
-        icon = QTouTvMainWindow._get_icon(action_name)
+        icon = utils.get_qicon(action_name)
         action.setIcon(icon)
 
     def _setup_icons(self):
-        self.setWindowIcon(QTouTvMainWindow._get_icon('toutv'))
+        self.setWindowIcon(utils.get_qicon('toutv'))
         self._setup_action_icon('refresh_emissions_action')
         self._setup_action_icon('preferences_action')
         self._setup_action_icon('about_action')
@@ -103,7 +96,6 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self.emissions_treeview.set_default_columns_widths()
 
     def start(self):
-        # Let's start downloading the root elements
         self.emissions_treeview.model().init_fetch()
         self.show()
         self._setup_ui_post_show()
@@ -120,7 +112,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         pos.setY(pos.y() + 60)
         self.preferences_dialog.show_move(pos)
 
-    def on_select_download(self, episode):
+    def _on_select_download(self, episode):
         pos = QtGui.QCursor().pos()
         cursor = self.cursor()
         self.setCursor(QtCore.Qt.WaitCursor)

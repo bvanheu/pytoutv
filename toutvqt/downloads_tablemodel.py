@@ -42,12 +42,11 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         return None
 
     def sort(self, Ncol, order):
-        """Sort table by given column number.
-        """
+        """Sort table by given column number."""
         pass
 
-        self.emit(SIGNAL("layoutAboutToBeChanged()"))
+        self.emit(SIGNAL('layoutAboutToBeChanged()'))
         self.arraydata = sorted(self.arraydata, key=operator.itemgetter(Ncol))
         if order == Qt.DescendingOrder:
             self.arraydata.reverse()
-        self.emit(SIGNAL("layoutChanged()"))
+        self.emit(SIGNAL('layoutChanged()'))

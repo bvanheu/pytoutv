@@ -19,3 +19,11 @@ class QtUiLoad:
         ui_rel_path = os.path.join(config.UI_DIR, '{}.ui'.format(ui_name))
         ui_path = resource_filename(__name__, ui_rel_path)
         uic.loadUi(ui_path, baseinstance=self)
+
+
+def get_qicon(name):
+    filename = '{}.png'.format(name)
+    rel_path = os.path.join(config.ICONS_DIR, filename)
+    path = resource_filename(__name__, rel_path)
+
+    return Qt.QIcon(path)
