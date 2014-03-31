@@ -5,7 +5,7 @@ from pkg_resources import resource_filename
 from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
-from toutvqt.config import QTouTvConfig
+from toutvqt.settings import QTouTvSettings
 import toutv.client
 
 
@@ -18,7 +18,7 @@ class _QTouTvApp(Qt.QApplication):
 
         self._setup_client()
         self._setup_ui()
-        self._setup_config()
+        self._setup_settings()
         self._start()
 
     def _start(self):
@@ -30,24 +30,24 @@ class _QTouTvApp(Qt.QApplication):
     def _setup_client(self):
         self._client = toutv.client.Client()
 
-    def _setup_config(self):
-        # Create a default config
-        self._config = QTouTvConfig()
+    def _setup_settings(self):
+        # Create a default settings
+        self._settings = QTouTvSettings()
 
-        # Connect the signals between the config and preferences dialog
+        # Connect the signals between the settings and preferences dialog
         preferences_dialog = self.main_window.preferences_dialog
-        config_item_changed = self._config.config_item_changed
-        preferences_dialog.config_accepted.connect(self._config.apply_config)
-        config_item_changed.connect(preferences_dialog.update_config_item)
-        self._config.config_item_changed.connect(self._config_item_changed)
+        setting_item_changed = self._settings.setting_item_changed
+        preferences_dialog.settings_accepted.connect(self._settings.apply_settings)
+        setting_item_changed.connect(preferences_dialog.update_settings_item)
+        self._settings.setting_item_changed.connect(self._setting_item_changed)
 
         # Read the settings from disk
-        self._config.read_settings()
+        self._settings.read_settings()
 
-    def _on_config_http_proxy_changed(self, value):
+    def _on_setting_http_proxy_changed(self, value):
         self._client.transport.set_http_proxy(value)
 
-    def _on_config_dl_dir_changed(self, value):
+    def _on_setting_dl_dir_changed(self, value):
         # Create output directory if it doesn't exist
         if not os.path.exists(value):
             try:
@@ -56,11 +56,11 @@ class _QTouTvApp(Qt.QApplication):
                 # Ignore; should fail later
                 pass
 
-    def _config_item_changed(self, key, value):
+    def _setting_item_changed(self, key, value):
         if key == 'network/http_proxy':
-            self._on_config_http_proxy_changed(value)
+            self._on_setting_http_proxy_changed(value)
         elif key == 'files/download_directory':
-            self._on_config_dl_dir_changed(value)
+            self._on_setting_dl_dir_changed(value)
 
 
 def _register_sigint():
