@@ -279,18 +279,22 @@ class EmissionsTreeModelFetcher(Qt.QObject):
         def key_func(ekey):
             # Cheap and easy way to sort latin titles (which is the case here)
             emission_title = emissions[ekey].get_title()
-            emission_title = re.sub('[àáâä]', 'a', emission_title)
-            emission_title = re.sub('[ÀÁÂÄ]', 'A', emission_title)
-            emission_title = re.sub('[éèêë]', 'e', emission_title)
-            emission_title = re.sub('[ÉÈÊË]', 'E', emission_title)
-            emission_title = re.sub('[íìîï]', 'i', emission_title)
-            emission_title = re.sub('[ÍÌÎÏ]', 'I', emission_title)
-            emission_title = re.sub('[óòôö]', 'o', emission_title)
-            emission_title = re.sub('[ÓÒÔÖ]', 'O', emission_title)
-            emission_title = re.sub('[úùûü]', 'u', emission_title)
-            emission_title = re.sub('[ÚÙÛÜ]', 'U', emission_title)
-            emission_title = re.sub('ç', 'c', emission_title)
-            emission_title = re.sub('Ç', 'C', emission_title)
+            reps = [
+                ('[àáâä]', 'a'),
+                ('[ÀÁÂÄ]', 'A'),
+                ('[éèêë]', 'e'),
+                ('[ÉÈÊË]', 'E'),
+                ('[íìîï]', 'i'),
+                ('[ÍÌÎÏ]', 'I'),
+                ('[óòôö]', 'o'),
+                ('[ÓÒÔÖ]', 'O'),
+                ('[úùûü]', 'u'),
+                ('[ÚÙÛÜ]', 'U'),
+                ('ç', 'c'),
+                ('Ç', 'C'),
+            ]
+            for regex, rep in reps:
+                emission_title = re.sub(regex, rep, emission_title)
 
             return emission_title.lower()
 
