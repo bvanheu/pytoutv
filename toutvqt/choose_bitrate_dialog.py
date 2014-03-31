@@ -3,7 +3,7 @@ from PyQt4 import QtCore
 from toutvqt import utils
 
 
-class QChooseBitrateDialog(Qt.QDialog, utils.QtUiLoad):
+class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
     _UI_NAME = 'choose_bitrate_dialog'
     bitrate_chosen = QtCore.pyqtSignal(int, object)
 
@@ -12,12 +12,13 @@ class QChooseBitrateDialog(Qt.QDialog, utils.QtUiLoad):
 
         self._episode = episode
         self._bitrates = bitrates
+
         self._setup_ui()
 
     def _setup_ui(self):
         self._load_ui(QChooseBitrateDialog._UI_NAME)
 
-    def _populateBitrateButtons(self):
+    def _populate_bitrate_buttons(self):
         for bitrate in self._bitrates:
             btn = QBitrateButton(bitrate)
             text = '{} kbps'.format(bitrate // 1000)
@@ -31,9 +32,8 @@ class QChooseBitrateDialog(Qt.QDialog, utils.QtUiLoad):
         self.close()
 
     def show_move(self, pos):
-        self.move(pos)
-        self._populateBitrateButtons()
-        self.exec()
+        self._populate_bitrate_buttons()
+        super(QChooseBitrateDialog, self).show_move(pos)
 
 
 class QBitrateButton(Qt.QPushButton):

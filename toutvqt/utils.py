@@ -1,6 +1,16 @@
 import os.path
 from pkg_resources import resource_filename
+from PyQt4 import Qt
 from PyQt4 import uic
+
+
+class QCommonDialog(Qt.QDialog):
+    def __init__(self):
+        super(QCommonDialog, self).__init__()
+
+    def show_move(self, pos):
+        self.move(pos)
+        self.exec()
 
 
 class QtUiLoad:

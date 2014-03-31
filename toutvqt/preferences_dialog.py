@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 from toutvqt import utils
 
 
-class QTouTvPreferencesDialog(Qt.QDialog, utils.QtUiLoad):
+class QTouTvPreferencesDialog(utils.QCommonDialog, utils.QtUiLoad):
     _UI_NAME = 'preferences_dialog'
     config_accepted = QtCore.pyqtSignal(dict)
 
@@ -26,10 +26,6 @@ class QTouTvPreferencesDialog(Qt.QDialog, utils.QtUiLoad):
         msg = 'Select download directory'
         dl_dir = QtGui.QFileDialog.getExistingDirectory(self, msg)
         self.download_directory_value.setText(dl_dir)
-
-    def show_move(self, pos):
-        self.move(pos)
-        self.exec()
 
     def _send_config_accepted(self):
         config = {}
