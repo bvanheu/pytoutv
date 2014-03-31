@@ -92,7 +92,7 @@ class EmissionsTreeModelSeason:
         column = index.column()
         if role == QtCore.Qt.DisplayRole:
             if column == 0:
-                return 'Season {}'.format(self.number)
+                return 'S{:02}'.format(self.number)
             elif column == 1:
                 network = self.emission.bo.get_network()
                 if network is None:
