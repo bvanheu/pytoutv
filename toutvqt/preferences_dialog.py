@@ -9,7 +9,7 @@ class QTouTvPreferencesDialog(utils.QCommonDialog, utils.QtUiLoad):
     settings_accepted = QtCore.pyqtSignal(dict)
 
     def __init__(self):
-        super(QTouTvPreferencesDialog, self).__init__()
+        super().__init__()
 
         self._setup_ui()
         self._setup_signals()

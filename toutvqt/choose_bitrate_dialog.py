@@ -5,7 +5,7 @@ from toutvqt import utils
 
 class _QBitrateButton(Qt.QPushButton):
     def __init__(self, bitrate):
-        super(_QBitrateButton, self).__init__()
+        super().__init__()
 
         self._bitrate = bitrate
 
@@ -18,7 +18,7 @@ class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
     bitrate_chosen = QtCore.pyqtSignal(int, object)
 
     def __init__(self, episode, bitrates):
-        super(QChooseBitrateDialog, self).__init__()
+        super().__init__()
 
         self._episode = episode
         self._bitrates = bitrates
@@ -43,4 +43,4 @@ class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
 
     def show_move(self, pos):
         self._populate_bitrate_buttons()
-        super(QChooseBitrateDialog, self).show_move(pos)
+        super().show_move(pos)

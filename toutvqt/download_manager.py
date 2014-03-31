@@ -20,7 +20,7 @@ class _DownloadWork:
 class _QDownloadStartEvent(Qt.QEvent):
     """Event sent to download workers to make them initiate a download."""
     def __init__(self, type, work):
-        super(Qt.QEvent, self).__init__(type)
+        super().__init__(type)
 
         self._work = work
 
@@ -32,7 +32,7 @@ class _QDownloadWorker(Qt.QObject):
     finished = QtCore.pyqtSignal(object)
 
     def __init__(self, download_event_type, i):
-        super(_QDownloadWorker, self).__init__()
+        super().__init__()
         self._download_event_type = download_event_type
         self._i = i
 
@@ -59,7 +59,7 @@ class _QDownloadWorker(Qt.QObject):
 
 class QDownloadManager(Qt.QObject):
     def __init__(self, nb_threads=5):
-        super(QDownloadManager, self).__init__()
+        super().__init__()
 
         self._download_event_type = Qt.QEvent.registerEventType()
         self._setup_threads(nb_threads)

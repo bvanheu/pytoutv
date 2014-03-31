@@ -9,7 +9,7 @@ class QInfosFrame(Qt.QFrame):
     select_download = QtCore.pyqtSignal(object)
 
     def __init__(self):
-        super(QInfosFrame, self).__init__()
+        super().__init__()
 
         self._setup_thumb_fetching()
         self._setup_ui()
@@ -85,7 +85,7 @@ class _QThumbFetcher(Qt.QObject):
     fetch_done = QtCore.pyqtSignal(object)
 
     def __init__(self):
-        super(_QThumbFetcher, self).__init__()
+        super().__init__()
 
     def fetch_thumb(self, bo):
         bo.get_medium_thumb_data()
@@ -96,7 +96,7 @@ class _QInfosWidget(Qt.QWidget, utils.QtUiLoad):
     _fetch_thumb_required = QtCore.pyqtSignal(object)
 
     def __init__(self, thumb_fetcher):
-        super(_QInfosWidget, self).__init__()
+        super().__init__()
 
         self._thumb_fetcher = thumb_fetcher
         self._bo = None
@@ -201,13 +201,13 @@ class _QEmissionInfosWidget(_QInfosWidget, _QEmissionCommonInfosWidget):
     _fetch_thumb_required = QtCore.pyqtSignal(object)
 
     def __init__(self, thumb_fetcher):
-        super(_QEmissionInfosWidget, self).__init__(thumb_fetcher)
+        super().__init__(thumb_fetcher)
 
         self._setup_ui(_QEmissionInfosWidget._UI_NAME)
         self._setup_thumb_fetching()
 
     def _setup_ui(self, ui_name):
-        super(_QEmissionInfosWidget, self)._setup_ui(ui_name)
+        super()._setup_ui(ui_name)
         width = self.thumb_value_label.width()
         min_height = round(width * 9 / 16) + 1
         self.thumb_value_label.setMinimumHeight(min_height)
@@ -235,7 +235,7 @@ class _QSeasonInfosWidget(_QInfosWidget, _QEmissionCommonInfosWidget):
     _UI_NAME = 'season_infos_widget'
 
     def __init__(self):
-        super(_QSeasonInfosWidget, self).__init__(None)
+        super().__init__(None)
 
         self._setup_ui(_QSeasonInfosWidget._UI_NAME)
 
@@ -261,13 +261,13 @@ class _QEpisodeInfosWidget(_QInfosWidget):
     select_download = QtCore.pyqtSignal(object)
 
     def __init__(self, thumb_fetcher):
-        super(_QEpisodeInfosWidget, self).__init__(thumb_fetcher)
+        super().__init__(thumb_fetcher)
 
         self._setup_ui(_QEpisodeInfosWidget._UI_NAME)
         self._setup_thumb_fetching()
 
     def _setup_ui(self, ui_name):
-        super(_QEpisodeInfosWidget, self)._setup_ui(ui_name)
+        super()._setup_ui(ui_name)
         width = self.thumb_value_label.width()
         min_height = round(width * 9 / 16) + 1
         self.thumb_value_label.setMinimumHeight(min_height)

@@ -7,7 +7,7 @@ from toutvqt import config
 
 class QCommonDialog(Qt.QDialog):
     def __init__(self):
-        super(QCommonDialog, self).__init__()
+        super().__init__()
 
     def show_move(self, pos):
         self.move(pos)

@@ -6,7 +6,7 @@ from toutvqt.downloads_itemdelegate import QDownloadsItemDeletate
 class QDownloadsTableView(Qt.QTreeView):
 
     def __init__(self, model):
-        super(QDownloadsTableView, self).__init__()
+        super().__init__()
 
         self.setRootIsDecorated(False)
         self.setItemDelegate(QDownloadsItemDeletate())

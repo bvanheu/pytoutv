@@ -164,7 +164,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
     fetch_required = QtCore.pyqtSignal(object)
 
     def __init__(self, client):
-        super(EmissionsTreeModel, self).__init__()
+        super().__init__()
         self.emissions = []
         self.loading_item = LoadingItem(None)
 
@@ -262,7 +262,7 @@ class EmissionsTreeModelFetcher(Qt.QObject):
     fetch_done = QtCore.pyqtSignal(object, list)
 
     def __init__(self, client):
-        super(EmissionsTreeModelFetcher, self).__init__()
+        super().__init__()
         self.client = client
 
     def new_work_piece(self, parent):

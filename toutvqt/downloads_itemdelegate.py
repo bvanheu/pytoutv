@@ -6,13 +6,13 @@ class QDownloadsItemDeletate(Qt.QItemDelegate):
     PROGRESS_COL_NUM = 6
 
     def __init__(self, parent=None):
-        super(QDownloadsItemDeletate, self).__init__(parent)
+        super().__init__(parent)
 
     def paint(self, painter, option, index):
         # Mostly taken from:
         # http://qt-project.org/doc/qt-4.8/network-torrent-mainwindow-cpp.html
         if index.column() != self.PROGRESS_COL_NUM:
-            super(QDownloadsItemDeletate, self).paint(painter, option, index)
+            super().paint(painter, option, index)
             return
 
         p = Qt.QStyleOptionProgressBarV2()

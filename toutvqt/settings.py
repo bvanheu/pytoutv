@@ -10,7 +10,7 @@ class QTouTvSettings(Qt.QObject):
     setting_item_changed = QtCore.pyqtSignal(str, object)
 
     def __init__(self):
-        super(QTouTvSettings, self).__init__()
+        super().__init__()
         self._fill_defaults()
         self._settings_dict = {}
         self.setting_item_changed.connect(self.tmp)

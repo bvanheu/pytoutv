@@ -8,7 +8,7 @@ from toutvqt.emissions_treemodel import LoadingItem
 
 class QEmissionsTreeViewStyleDelegate(Qt.QStyledItemDelegate):
     def __init__(self):
-        super(QEmissionsTreeViewStyleDelegate, self).__init__()
+        super().__init__()
 
     def paint(self, painter, option, index):
         if type(index.internalPointer()) is LoadingItem:
@@ -23,7 +23,7 @@ class QEmissionsTreeView(Qt.QTreeView):
     none_selected = QtCore.pyqtSignal()
 
     def __init__(self, model):
-        super(QEmissionsTreeView, self).__init__()
+        super().__init__()
 
         self._setup(model)
 

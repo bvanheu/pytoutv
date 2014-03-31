@@ -6,7 +6,7 @@ class QTouTvAboutDialog(utils.QCommonDialog, utils.QtUiLoad):
     _UI_NAME = 'about_dialog'
 
     def __init__(self):
-        super(QTouTvAboutDialog, self).__init__()
+        super().__init__()
 
         self._setup_ui()
 

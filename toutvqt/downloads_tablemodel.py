@@ -15,7 +15,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
     ]
 
     def __init__(self, download_manager, parent=None):
-        super(QDownloadsTableModel, self).__init__(parent)
+        super().__init__(parent)
         self._download_manager = download_manager
 
     def exit(self):

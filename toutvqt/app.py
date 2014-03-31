@@ -13,7 +13,7 @@ import toutv.client
 
 class _QTouTvApp(Qt.QApplication):
     def __init__(self, args):
-        super(_QTouTvApp, self).__init__(args)
+        super().__init__(args)
 
         self.setOrganizationName(config.ORG_NAME)
         self.setApplicationName(config.APP_NAME)

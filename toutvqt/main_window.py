@@ -21,7 +21,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     _UI_NAME = 'main_window'
 
     def __init__(self, app, client):
-        super(QTouTvMainWindow, self).__init__()
+        super().__init__()
 
         self._app = app
         self._client = client
