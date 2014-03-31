@@ -344,7 +344,7 @@ Special thanks to:
   * Alexandre Vézina
   * [Alexis Dorais-Joncas](https://github.com/balexis)
   * [Israel Halle](https://github.com/isra17)
-  * [Marc-Etienne M. Leveillé](https://github.com/marc-etienne)
+  * [Marc-Étienne M. Leveillé](https://github.com/marc-etienne)
   * [Simon Marchi](https://github.com/simark)
   * [Simon Carpentier](https://github.com/scarpentier)
   * [Philippe Proulx](https://github.com/eepp)

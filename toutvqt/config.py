@@ -15,6 +15,6 @@ CONTRIBUTORS = [
     'Alexandre Vézina',
     'Alexis Dorais-Joncas',
     'Israel Halle',
-    'Marc-Etienne M. Leveillé',
+    'Marc-Étienne M. Leveillé',
     'Simon Carpentier',
 ]
