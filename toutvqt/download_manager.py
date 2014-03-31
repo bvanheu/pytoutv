@@ -63,9 +63,7 @@ class QDownloadManager(Qt.QObject):
         worker = self.sender()
         print('slot: worker {} finished work {}'.format(worker, work))
         self._available_workers.put(worker)
-        print(self._available_workers.qsize())
         self._do_next_work()
-        print(self._available_workers.qsize())
 
 
 class QDownloadWorker(Qt.QObject):
