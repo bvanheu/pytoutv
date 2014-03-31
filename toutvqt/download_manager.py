@@ -28,6 +28,35 @@ class _QDownloadStartEvent(Qt.QEvent):
         return self._work
 
 
+class _QDownloadWorker(Qt.QObject):
+    finished = QtCore.pyqtSignal(object)
+
+    def __init__(self, download_event_type, i):
+        super(_QDownloadWorker, self).__init__()
+        self._download_event_type = download_event_type
+        self._i = i
+
+    def do_work(self, work):
+        episode = work.get_episode()
+        bitrate = work.get_bitrate()
+        print('worker {} "downloading" episode {} at {}'.format(self, episode.Title, work))
+        time.sleep(10)
+        print('worker {} done "downloading" episode {} at {}'.format(self, episode.Title, work))
+        self.finished.emit(work)
+
+    def _handle_download_event(self, ev):
+        self.do_work(ev.get_work())
+
+    def customEvent(self, ev):
+        if ev.type() == self._download_event_type:
+            self._handle_download_event(ev)
+        else:
+            logging.error("Shouldn't be here")
+
+    def __str__(self):
+        return '<QDownloadWorker #{}>'.format(self._i)
+
+
 class QDownloadManager(Qt.QObject):
     def __init__(self, nb_threads=5):
         super(QDownloadManager, self).__init__()
@@ -81,32 +110,3 @@ class QDownloadManager(Qt.QObject):
         print('slot: worker {} finished work {}'.format(worker, work))
         self._available_workers.put(worker)
         self._do_next_work()
-
-
-class _QDownloadWorker(Qt.QObject):
-    finished = QtCore.pyqtSignal(object)
-
-    def __init__(self, download_event_type, i):
-        super(_QDownloadWorker, self).__init__()
-        self._download_event_type = download_event_type
-        self._i = i
-
-    def do_work(self, work):
-        episode = work.get_episode()
-        bitrate = work.get_bitrate()
-        print('worker {} "downloading" episode {} at {}'.format(self, episode.Title, work))
-        time.sleep(10)
-        print('worker {} done "downloading" episode {} at {}'.format(self, episode.Title, work))
-        self.finished.emit(work)
-
-    def _handle_download_event(self, ev):
-        self.do_work(ev.get_work())
-
-    def customEvent(self, ev):
-        if ev.type() == self._download_event_type:
-            self._handle_download_event(ev)
-        else:
-            logging.error("Shouldn't be here")
-
-    def __str__(self):
-        return '<QDownloadWorker #{}>'.format(self._i)
