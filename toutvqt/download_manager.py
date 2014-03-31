@@ -47,12 +47,11 @@ class QDownloadManager(Qt.QObject):
         try:
             work = self._works.get_nowait()
         except queue.Empty:
+            self._available_workers.put(worker)
             return
 
         ev = QDownloadStartEvent(self._download_event_type, work)
         Qt.QCoreApplication.postEvent(worker, ev)
-
-        # TODO: asynchronously call worker.do_work(work) here
 
     def download(self, episode, bitrate):
         work = (episode, bitrate)
@@ -64,7 +63,9 @@ class QDownloadManager(Qt.QObject):
         worker = self.sender()
         print('slot: worker {} finished work {}'.format(worker, work))
         self._available_workers.put(worker)
+        print(self._available_workers.qsize())
         self._do_next_work()
+        print(self._available_workers.qsize())
 
 
 class QDownloadWorker(Qt.QObject):
@@ -79,7 +80,7 @@ class QDownloadWorker(Qt.QObject):
         episode = work[0]
         bitrate = work[1]
         print('worker {} "downloading" episode {} at {}'.format(self, episode.Title, work))
-        time.sleep(4)
+        time.sleep(10)
         print('worker {} done "downloading" episode {} at {}'.format(self, episode.Title, work))
         self.finished.emit(work)
 
