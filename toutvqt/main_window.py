@@ -1,3 +1,4 @@
+import os.path
 from pkg_resources import resource_filename
 from PyQt4 import Qt
 from PyQt4 import QtCore
@@ -12,6 +13,7 @@ from toutvqt.preferences_dialog import QTouTvPreferencesDialog
 from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
 from toutvqt.infos_frame import QInfosFrame
 from toutvqt import utils
+from toutvqt import config
 from toutv import client
 
 
@@ -67,7 +69,9 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     @staticmethod
     def _get_icon(name):
-        path = resource_filename(__name__, 'dat/icons/{}.png'.format(name))
+        filename = '{}.png'.format(name)
+        rel_path = os.path.join(config.ICONS_DIR, filename)
+        path = resource_filename(__name__, rel_path)
 
         return Qt.QIcon(path)
 

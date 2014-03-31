@@ -6,15 +6,17 @@ from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
 from toutvqt.settings import QTouTvSettings
+from toutvqt import config
 import toutv.client
+
 
 
 class _QTouTvApp(Qt.QApplication):
     def __init__(self, args):
         super(_QTouTvApp, self).__init__(args)
 
-        self.setOrganizationName("pytoutv")
-        self.setApplicationName("qtoutv")
+        self.setOrganizationName(config.ORG_NAME)
+        self.setApplicationName(config.APP_NAME)
 
         self._setup_client()
         self._setup_ui()
