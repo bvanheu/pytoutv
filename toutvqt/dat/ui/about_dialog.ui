@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>about_dialog</class>
  <widget class="QDialog" name="about_dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>350</width>
+    <height>380</height>
+   </rect>
+  </property>
   <property name="minimumSize">
    <size>
     <width>350</width>
@@ -112,10 +120,6 @@
      <property name="readOnly">
       <bool>true</bool>
      </property>
-     <property name="plainText">
-      <string>Simon Marchi
-Philippe Proulx</string>
-     </property>
     </widget>
    </item>
    <item>
@@ -160,14 +164,6 @@ Philippe Proulx</string>
      </property>
      <property name="readOnly">
       <bool>true</bool>
-     </property>
-     <property name="plainText">
-      <string>Benjamin Vanheuverzwijn
-Alexandre Vézina
-Alexis Dorais-Joncas
-Israel Halle
-Marc-Etienne M. Leveillé
-Simon Carpentier</string>
      </property>
     </widget>
    </item>
