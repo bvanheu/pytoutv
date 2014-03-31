@@ -81,14 +81,14 @@ class QInfosFrame(Qt.QFrame):
         self._thumb_fetcher.moveToThread(self._fetch_thumb_thread)
 
 
-class QInfosWidget(Qt.QWidget):
+class QInfosWidget(Qt.QWidget, utils.QtUiLoad):
     def __init__(self):
         super(QInfosWidget, self).__init__()
 
         self._url = None
 
     def _setup_ui(self, ui_name):
-        utils.load_qt_ui(ui_name, self)
+        self._load_ui(ui_name)
         self.goto_toutv_btn.clicked.connect(self._on_goto_toutv_btn_clicked)
         self.dl_btn.clicked.connect(self._on_dl_btn_clicked)
 

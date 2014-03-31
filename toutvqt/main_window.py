@@ -15,7 +15,7 @@ from toutvqt import utils
 from toutv import client
 
 
-class QTouTvMainWindow(Qt.QMainWindow):
+class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     _UI_NAME = 'main_window'
 
     def __init__(self, app, client):
@@ -83,7 +83,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._setup_action_icon('about_action')
 
     def _setup_ui(self):
-        utils.load_qt_ui(QTouTvMainWindow._UI_NAME, self)
+        self._load_ui(QTouTvMainWindow._UI_NAME)
         self._setup_icons()
         self._add_treeview()
         self._add_infos()

@@ -3,7 +3,7 @@ from PyQt4 import QtCore
 from toutvqt import utils
 
 
-class QChooseBitrateDialog(Qt.QDialog):
+class QChooseBitrateDialog(Qt.QDialog, utils.QtUiLoad):
     _UI_NAME = 'choose_bitrate_dialog'
     bitrate_chosen = QtCore.pyqtSignal(int, object)
 
@@ -15,7 +15,7 @@ class QChooseBitrateDialog(Qt.QDialog):
         self._setup_ui()
 
     def _setup_ui(self):
-        utils.load_qt_ui(QChooseBitrateDialog._UI_NAME, self)
+        self._load_ui(QChooseBitrateDialog._UI_NAME)
 
     def _populateBitrateButtons(self):
         for bitrate in self._bitrates:
