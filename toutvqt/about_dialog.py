@@ -1,10 +1,9 @@
-from pkg_resources import resource_filename
-from PyQt4 import uic
 from PyQt4 import Qt
+from toutvqt import utils
 
 
 class QTouTvAboutDialog(Qt.QDialog):
-    _UI_PATH = resource_filename(__name__, 'dat/ui/about_dialog.ui')
+    _UI_NAME = 'about_dialog'
 
     def __init__(self):
         super(QTouTvAboutDialog, self).__init__()
@@ -12,7 +11,7 @@ class QTouTvAboutDialog(Qt.QDialog):
         self._setup_ui()
 
     def _setup_ui(self):
-        uic.loadUi(QTouTvAboutDialog._UI_PATH, baseinstance=self)
+        utils.load_qt_ui(QTouTvAboutDialog._UI_NAME, self)
 
     def show_move(self, pos):
         self.move(pos)

@@ -1,5 +1,4 @@
 from pkg_resources import resource_filename
-from PyQt4 import uic
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -12,11 +11,12 @@ from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.preferences_dialog import QTouTvPreferencesDialog
 from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
 from toutvqt.infos_frame import QInfosFrame
+from toutvqt import utils
 from toutv import client
 
 
 class QTouTvMainWindow(Qt.QMainWindow):
-    _UI_PATH = resource_filename(__name__, 'dat/ui/main_window.ui')
+    _UI_NAME = 'main_window'
 
     def __init__(self, app, client):
         super(QTouTvMainWindow, self).__init__()
@@ -83,7 +83,7 @@ class QTouTvMainWindow(Qt.QMainWindow):
         self._setup_action_icon('about_action')
 
     def _setup_ui(self):
-        uic.loadUi(QTouTvMainWindow._UI_PATH, baseinstance=self)
+        utils.load_qt_ui(QTouTvMainWindow._UI_NAME, self)
         self._setup_icons()
         self._add_treeview()
         self._add_infos()

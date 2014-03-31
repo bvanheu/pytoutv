@@ -1,9 +1,8 @@
-from pkg_resources import resource_filename
-from PyQt4 import uic
 from PyQt4 import Qt
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import webbrowser
+from toutvqt import utils
 
 
 class QInfosFrame(Qt.QFrame):
@@ -88,8 +87,8 @@ class QInfosWidget(Qt.QWidget):
 
         self._url = None
 
-    def _setup_ui(self, ui_path):
-        uic.loadUi(ui_path, baseinstance=self)
+    def _setup_ui(self, ui_name):
+        utils.load_qt_ui(ui_name, self)
         self.goto_toutv_btn.clicked.connect(self._on_goto_toutv_btn_clicked)
         self.dl_btn.clicked.connect(self._on_dl_btn_clicked)
 
@@ -145,7 +144,7 @@ class QEmissionCommonInfosWidget:
 
 
 class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
-    _UI_PATH = resource_filename(__name__, 'dat/ui/emission_infos_widget.ui')
+    _UI_NAME = 'emission_infos_widget'
     _fetch_thumb_required = QtCore.pyqtSignal(object)
 
     def __init__(self, thumb_fetcher):
@@ -153,11 +152,11 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
         self._thumb_fetcher = thumb_fetcher
         self._emission = None
 
-        self._setup_ui(QEmissionInfosWidget._UI_PATH)
+        self._setup_ui(QEmissionInfosWidget._UI_NAME)
         self._setup_thumb_fetching()
 
-    def _setup_ui(self, ui_path):
-        super(QEmissionInfosWidget, self)._setup_ui(ui_path)
+    def _setup_ui(self, ui_name):
+        super(QEmissionInfosWidget, self)._setup_ui(ui_name)
         width = self.thumb_value_label.width()
         min_height = round(width * 9 / 16) + 1
         self.thumb_value_label.setMinimumHeight(min_height)
@@ -220,12 +219,12 @@ class QEmissionInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 
 
 class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
-    _UI_PATH = resource_filename(__name__, 'dat/ui/season_infos_widget.ui')
+    _UI_NAME = 'season_infos_widget'
 
     def __init__(self):
         super(QSeasonInfosWidget, self).__init__()
 
-        self._setup_ui(QSeasonInfosWidget._UI_PATH)
+        self._setup_ui(QSeasonInfosWidget._UI_NAME)
 
     def _set_season_number(self):
         self.season_number_value_label.setText(str(self._season_number))
@@ -245,7 +244,7 @@ class QSeasonInfosWidget(QInfosWidget, QEmissionCommonInfosWidget):
 
 
 class QEpisodeInfosWidget(QInfosWidget):
-    _UI_PATH = resource_filename(__name__, 'dat/ui/episode_infos_widget.ui')
+    _UI_NAME = 'episode_infos_widget'
     _fetch_thumb_required = QtCore.pyqtSignal(object)
     select_download = QtCore.pyqtSignal(object)
 
@@ -255,11 +254,11 @@ class QEpisodeInfosWidget(QInfosWidget):
         self._episode = None
         self._thumb_fetcher = thumb_fetcher
 
-        self._setup_ui(QEpisodeInfosWidget._UI_PATH)
+        self._setup_ui(QEpisodeInfosWidget._UI_NAME)
         self._setup_thumb_fetching()
 
-    def _setup_ui(self, ui_path):
-        super(QEpisodeInfosWidget, self)._setup_ui(ui_path)
+    def _setup_ui(self, ui_name):
+        super(QEpisodeInfosWidget, self)._setup_ui(ui_name)
         width = self.thumb_value_label.width()
         min_height = round(width * 9 / 16) + 1
         self.thumb_value_label.setMinimumHeight(min_height)

@@ -1,12 +1,11 @@
-from pkg_resources import resource_filename
-from PyQt4 import uic
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+from toutvqt import utils
 
 
 class QTouTvPreferencesDialog(Qt.QDialog):
-    _UI_PATH = resource_filename(__name__, 'dat/ui/preferences_dialog.ui')
+    _UI_NAME = 'preferences_dialog'
     config_accepted = QtCore.pyqtSignal(dict)
 
     def __init__(self):
@@ -19,7 +18,7 @@ class QTouTvPreferencesDialog(Qt.QDialog):
         self.accepted.connect(self._send_config_accepted)
 
     def _setup_ui(self):
-        uic.loadUi(QTouTvPreferencesDialog._UI_PATH, baseinstance=self)
+        utils.load_qt_ui(QTouTvPreferencesDialog._UI_NAME, self)
         open_dl_dir_slot = self._open_download_directory_browser
         self.download_directory_browse.clicked.connect(open_dl_dir_slot)
 
