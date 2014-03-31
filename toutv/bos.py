@@ -43,7 +43,7 @@ def _clean_description(desc):
     return desc.strip()
 
 
-class ThumbnailProvider:
+class _ThumbnailProvider:
     def cache_medium_thumb(self):
         if self.has_medium_thumb_data():
             # No need to download again
@@ -55,14 +55,15 @@ class ThumbnailProvider:
                 continue
 
             try:
-                logging.debug("HTTP-getting %s" % url)
+                logging.debug('HTTP-getting "{}"'.format(url))
                 r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
             except Exception as e:
                 logging.warning(e)
                 continue
 
             if r.status_code != 200:
-                logging.warning("Thumbnail fetch HTTP ret code = %d for url = %s" % (r.status_code, url))
+                tmpl = 'HTTP status code {} for URL "{}"'
+                logging.warning(tmpl.format(r.status_code, url))
                 continue
 
             self._medium_thumb_data = r.content
@@ -80,10 +81,11 @@ class ThumbnailProvider:
         return (self._medium_thumb_data is not None)
 
     def get_medium_thumb_urls(self):
-        """ Returns a list of possible thumbnail urls in order of preference. """
-        raise NotImplementedError("get_medium_thumb_urls needs to be implemented in derived classes.")
+        """Returns a list of possible thumbnail urls in order of preference."""
+        raise NotImplementedError()
 
-class AbstractEmission:
+
+class _AbstractEmission:
     def get_id(self):
         return self.Id
 
@@ -116,7 +118,7 @@ class AbstractEmission:
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class Emission(AbstractEmission, ThumbnailProvider):
+class Emission(_AbstractEmission, _ThumbnailProvider):
     def __init__(self):
         self.CategoryURL = None
         self.ClassCategory = None
@@ -197,10 +199,9 @@ class Emission(AbstractEmission, ThumbnailProvider):
         return tags
 
     def get_medium_thumb_urls(self):
-        # TODO put that somewhere else ?
-        THUMB_URL_FORMAT = "http://images.tou.tv/w_400,c_scale,r_5/v1/emissions/16x9/%s.jpg"
-        name = self.Url.replace("-", "")
-        url = THUMB_URL_FORMAT % name
+        name = self.Url.replace('-', '')
+        url = toutv.config.EMISSION_THUMB_URL_TMPL.format(name)
+
         return [url, self.ImagePromoNormalK]
 
 
@@ -225,7 +226,7 @@ class Genre:
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class Episode(ThumbnailProvider):
+class Episode(_ThumbnailProvider):
     def __init__(self):
         self.AdPattern = None
         self.AirDateFormated = None
@@ -415,7 +416,7 @@ class Episode(ThumbnailProvider):
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class EmissionRepertoire(AbstractEmission):
+class EmissionRepertoire(_AbstractEmission):
     def __init__(self):
         self.AnneeProduction = None
         self.CategorieDuree = None
@@ -446,6 +447,7 @@ class EmissionRepertoire(AbstractEmission):
     def get_year(self):
         return self.AnneeProduction
 
+
 class SearchResults:
     def __init__(self):
         self.ModifiedQuery = None
@@ -457,6 +459,7 @@ class SearchResults:
     def get_results(self):
         return self.Results
 
+
 class SearchResultData:
     def __init__(self):
         self.Emission = None
@@ -467,6 +470,7 @@ class SearchResultData:
 
     def get_episode(self):
         return self.Episode
+
 
 class Repertoire:
     def __init__(self):
