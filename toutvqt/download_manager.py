@@ -16,6 +16,9 @@ class _DownloadWork:
     def get_bitrate(self):
         return self._bitrate
 
+    def __str__(self):
+        return "<_DownloadWork of {} at {}>".format(self._episode.Title, self._bitrate)
+
 
 class _QDownloadStartEvent(Qt.QEvent):
     """Event sent to download workers to make them initiate a download."""
@@ -39,9 +42,9 @@ class _QDownloadWorker(Qt.QObject):
     def do_work(self, work):
         episode = work.get_episode()
         bitrate = work.get_bitrate()
-        print('worker {} "downloading" episode {} at {}'.format(self, episode.Title, work))
+        print('worker {} "downloading" {}'.format(self, work))
         time.sleep(10)
-        print('worker {} done "downloading" episode {} at {}'.format(self, episode.Title, work))
+        print('worker {} done "downloading" {}'.format(self, work))
         self.finished.emit(work)
 
     def _handle_download_event(self, ev):
