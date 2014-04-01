@@ -152,3 +152,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 return QDownloadsTableModel._HEADER[col]
 
         return None
+
+    def get_download_at_row(self, row):
+        episode_id = list(self._download_list.keys())[row]
+        return self._download_list[episode_id]

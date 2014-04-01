@@ -9,7 +9,7 @@ class QDownloadsTableView(Qt.QTreeView):
         super().__init__()
 
         self.setRootIsDecorated(False)
-        self.setItemDelegate(QDownloadsItemDeletate())
+        self.setItemDelegate(QDownloadsItemDeletate(model))
         self._setup(model)
 
     def _setup(self, model):

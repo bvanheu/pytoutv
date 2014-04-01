@@ -5,8 +5,9 @@ from PyQt4 import QtCore
 class QDownloadsItemDeletate(Qt.QItemDelegate):
     PROGRESS_COL_NUM = 6
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
+    def __init__(self, model):
+        super().__init__(model)
+        self._model = model
 
     def paint(self, painter, option, index):
         # Mostly taken from:
@@ -14,6 +15,10 @@ class QDownloadsItemDeletate(Qt.QItemDelegate):
         if index.column() != self.PROGRESS_COL_NUM:
             super().paint(painter, option, index)
             return
+
+        (work, progress) = self._model.get_download_at_row(index.row())
+        segments_done = progress.get_done_segments_count()
+        segments_total = progress.get_total_segments_count()
 
         p = Qt.QStyleOptionProgressBarV2()
 
@@ -26,10 +31,10 @@ class QDownloadsItemDeletate(Qt.QItemDelegate):
         p.textAlignment = QtCore.Qt.AlignCenter
         p.textVisible = True
 
-        progress = 43
+        percentage = 100 * segments_done // segments_total
 
-        p.progress = progress
-        p.text = "43 %"
+        p.progress = percentage
+        p.text = "{} %".format(percentage)
 
         Qt.QApplication.style().drawControl(
             Qt.QStyle.CE_ProgressBar, p, painter)
