@@ -4,8 +4,11 @@ import logging
 from PyQt4 import Qt
 from PyQt4 import QtCore
 
+from toutv import dl
+
 
 class _DownloadWork:
+
     def __init__(self, episode, bitrate):
         self._episode = episode
         self._bitrate = bitrate
@@ -17,11 +20,14 @@ class _DownloadWork:
         return self._bitrate
 
     def __str__(self):
-        return "<_DownloadWork of {} at {}>".format(self._episode.Title, self._bitrate)
+        return "<_DownloadWork of {} at {}>".format(self._episode.Title,
+                                                    self._bitrate)
 
 
 class _QDownloadStartEvent(Qt.QEvent):
+
     """Event sent to download workers to make them initiate a download."""
+
     def __init__(self, type, work):
         super().__init__(type)
 
@@ -43,9 +49,23 @@ class _QDownloadWorker(Qt.QObject):
         episode = work.get_episode()
         bitrate = work.get_bitrate()
         print('worker {} "downloading" {}'.format(self, work))
-        time.sleep(10)
+
+        downloader = dl.Downloader(episode, bitrate=bitrate,
+                                   output_dir="/tmp",
+                                   on_dl_start=self._on_dl_start,
+                                   on_progress_update=self._on_progress_update,
+                                   overwrite=True).download()
+
         print('worker {} done "downloading" {}'.format(self, work))
         self.finished.emit(work)
+
+    def _on_dl_start(self, filename, segments_count_total):
+        print("Started downloading {} with {} segments".format(
+            filename, segments_count_total))
+
+    def _on_progress_update(self, segments_count, bytes_count):
+        print("Now at {} bytes, {} segments".format(
+            bytes_count, segments_count))
 
     def _handle_download_event(self, ev):
         self.do_work(ev.get_work())
@@ -61,6 +81,7 @@ class _QDownloadWorker(Qt.QObject):
 
 
 class QDownloadManager(Qt.QObject):
+
     def __init__(self, nb_threads=5):
         super().__init__()
 
