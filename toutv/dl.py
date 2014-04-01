@@ -163,7 +163,7 @@ class Downloader:
 
     def _notify_progress_update(self):
         if self._on_progress_update:
-            self._on_progress_update(self._total_segments, self._total_bytes)
+            self._on_progress_update(self._total_segments, self._segments_count, self._total_bytes)
 
     def _download_segment(self, segindex):
         segment = self._segments[segindex]
