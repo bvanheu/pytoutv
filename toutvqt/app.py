@@ -10,8 +10,8 @@ from toutvqt import config
 import toutv.client
 
 
-
 class _QTouTvApp(Qt.QApplication):
+
     def __init__(self, args):
         super().__init__(args)
 
@@ -39,7 +39,8 @@ class _QTouTvApp(Qt.QApplication):
         # Connect the signals between the settings and preferences dialog
         preferences_dialog = self.main_window.preferences_dialog
         setting_item_changed = self._settings.setting_item_changed
-        preferences_dialog.settings_accepted.connect(self._settings.apply_settings)
+        preferences_dialog.settings_accepted.connect(
+            self._settings.apply_settings)
         setting_item_changed.connect(preferences_dialog.update_settings_item)
         self._settings.setting_item_changed.connect(self._setting_item_changed)
 

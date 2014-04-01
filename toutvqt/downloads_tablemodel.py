@@ -3,12 +3,15 @@ from PyQt4 import QtCore
 
 from collections import OrderedDict
 
+
 class Internal:
+
     def __init__(self, episode_id):
         self._episode_id = episode_id
 
     def get_episode_id(self):
         return self._episode_id
+
 
 class QDownloadsTableModel(Qt.QAbstractTableModel):
     _HEADER = [
@@ -31,10 +34,14 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._setup_signals()
 
     def _setup_signals(self):
-        self._download_manager.download_created.connect(self._on_download_created)
-        self._download_manager.download_started.connect(self._on_download_started)
-        self._download_manager.download_progress.connect(self._on_download_progress)
-        self._download_manager.download_finished.connect(self._on_download_finished)
+        self._download_manager.download_created.connect(
+            self._on_download_created)
+        self._download_manager.download_started.connect(
+            self._on_download_started)
+        self._download_manager.download_progress.connect(
+            self._on_download_progress)
+        self._download_manager.download_finished.connect(
+            self._on_download_finished)
 
     def _on_download_created(self, work):
         episode_id = work.get_episode().Id
@@ -97,7 +104,8 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         col = index.column()
         if role == QtCore.Qt.DisplayRole:
 
-            # I don't know why, calling index.internalPointer() seems to segfault
+            # I don't know why, calling index.internalPointer() seems to
+            # segfault
             row = index.row()
             episode_id = list(self._download_list.keys())[row]
             (work, progress) = self._download_list[episode_id]
@@ -122,7 +130,8 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 elif progress == "tourlou":
                     return 'finished'
                 else:
-                    return '{}/{}'.format(progress.get_done_segments_count(), progress.get_total_segments_count())
+                    return '{}/{}'.format(progress.get_done_segments_count(),
+                                          progress.get_total_segments_count())
             elif col == 5:
                 return '{}'.format(progress.get_done_bytes_count())
             elif col == 6:

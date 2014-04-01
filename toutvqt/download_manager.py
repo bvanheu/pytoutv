@@ -23,9 +23,11 @@ class _DownloadWork:
         return '<_DownloadWork of {} at {}>'.format(self._episode.Title,
                                                     self._bitrate)
 
+
 class _DownloadWorkProgress:
 
-    def __init__(self, done_segments_count, total_segments_count, done_bytes_count):
+    def __init__(self, done_segments_count, total_segments_count,
+                 done_bytes_count):
         self._done_segments_count = done_segments_count
         self._total_segments_count = total_segments_count
         self._done_bytes_count = done_bytes_count
@@ -93,10 +95,12 @@ class _QDownloadWorker(Qt.QObject):
         progress = _DownloadWorkProgress(0, total_segments_count, 0)
         self.download_started.emit(self._current_work, progress)
 
-    def _on_progress_update(self, segments_count, segments_count_total, bytes_count):
+    def _on_progress_update(self, segments_count, segments_count_total,
+                            bytes_count):
         print("Now at {} bytes, {} segments".format(
             bytes_count, segments_count))
-        progress = _DownloadWorkProgress(segments_count, segments_count_total, bytes_count)
+        progress = _DownloadWorkProgress(
+            segments_count, segments_count_total, bytes_count)
         self.download_progress.emit(self._current_work, progress)
 
     def _handle_download_event(self, ev):
@@ -196,4 +200,3 @@ class QDownloadManager(Qt.QObject):
 
     def test_finished(self, work):
         print('* test_finished {}'.format(work))
-
