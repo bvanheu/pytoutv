@@ -65,7 +65,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._download_list[episode_id] = (work, progress)
         self._signal_episode_data_changed(episode_id)
 
-    def _on_download_finished(self, work, progress):
+    def _on_download_finished(self, work):
         episode_id = work.get_episode().Id
         self._download_list[episode_id] = (work, 'tourlou')
         self._signal_episode_data_changed(episode_id)
@@ -133,7 +133,12 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                     return '{}/{}'.format(progress.get_done_segments_count(),
                                           progress.get_total_segments_count())
             elif col == 5:
-                return '{}'.format(progress.get_done_bytes_count())
+                if progress == "tourlou":
+                    return "FENI"
+                elif progress is None:
+                    return "PAS PARTI"
+                else:
+                    return '{}'.format(progress.get_done_bytes_count())
             elif col == 6:
                 'Progress'
                 return 'bleh'
