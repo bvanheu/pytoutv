@@ -1,7 +1,7 @@
+import datetime
+from collections import OrderedDict
 from PyQt4 import Qt
 from PyQt4 import QtCore
-
-from collections import OrderedDict
 
 
 class _Internal:
@@ -20,17 +20,22 @@ class _DownloadItem:
         self._filename = None
         self._is_done = False
         self._is_started = False
+        self._added_dt = datetime.datetime.now()
+        self._started_dt = None
+        self._done_elapsed = None
 
     def is_started(self):
         return self._is_started
 
     def set_started(self, is_started):
         self._is_started = is_started
+        self._started_dt = datetime.datetime.now()
 
     def is_done(self):
         return self._is_done
 
-    def set_finished(self, is_done):
+    def set_done(self, is_done):
+        self._done_elapsed = self.get_elapsed()
         self._is_done = is_done
 
     def get_dl_progress(self):
@@ -68,6 +73,20 @@ class _DownloadItem:
 
         return round(num / denom * 100)
 
+    def get_added_dt(self):
+        return self._added_dt
+
+    def get_started_dt(self):
+        return self._started_dt
+
+    def get_elapsed(self):
+        if not self.is_started():
+            return datetime.timedelta()
+        if self.is_done():
+            return self._done_elapsed
+
+        return datetime.datetime.now() - self.get_started_dt()
+
 
 class QDownloadsTableModel(Qt.QAbstractTableModel):
     _HEADER = [
@@ -77,6 +96,8 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Filename',
         'Sections',
         'Downloaded',
+        'Added',
+        'Elapsed',
         'Progress',
         'Status',
     ]
@@ -90,7 +111,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._setup_signals()
 
     def get_progress_col(self):
-        return 6
+        return 8
 
     def get_download_item_at_row(self, row):
         episode_id = list(self._download_list.keys())[row]
@@ -147,7 +168,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_finished(True)
+        item.set_done(True)
 
         self._signal_episode_data_changed(episode)
 
@@ -244,9 +265,19 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
                 return dl
             elif col == 6:
+                # Added date
+                return dl_item.get_added_dt().strftime('%Y-%m-%d %H:%M:%S')
+            elif col == 7:
+                # Elapsed time
+                total_seconds = dl_item.get_elapsed().seconds
+                minutes = total_seconds // 60
+                seconds = total_seconds - (minutes * 60)
+
+                return '{}:{:02}'.format(minutes, seconds)
+            elif col == 8:
                 # Progress bar
                 return None
-            elif col == 7:
+            elif col == 9:
                 # Status
                 if dl_item.is_done():
                     return 'Done'
