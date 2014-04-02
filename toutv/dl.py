@@ -141,8 +141,8 @@ class Downloader:
         self._playlist = pl
         self._cookies = cookies
 
-        self._total_bytes = 0
-        self._total_segments = 0
+        self._done_bytes = 0
+        self._done_segments = 0
         self._do_cancel = False
 
     def get_filename(self):
@@ -159,12 +159,12 @@ class Downloader:
 
     def _notify_dl_start(self):
         if self._on_dl_start:
-            self._on_dl_start(self._filename, self._segments_count)
+            self._on_dl_start(self._filename, self._total_segments)
 
     def _notify_progress_update(self):
         if self._on_progress_update:
-            self._on_progress_update(self._total_segments,
-                                     self._total_bytes)
+            self._on_progress_update(self._done_segments,
+                                     self._done_bytes)
 
     def _download_segment(self, segindex):
         segment = self._segments[segindex]
@@ -178,7 +178,7 @@ class Downloader:
         ts_segment = aes.decrypt(encrypted_ts_segment)
 
         self._of.write(ts_segment)
-        self._total_bytes += len(ts_segment)
+        self._done_bytes += len(ts_segment)
 
     def _get_video_stream(self):
         for stream in self._playlist.streams:
@@ -200,7 +200,7 @@ class Downloader:
         self._video_playlist = m3u8.parse(m3u8_file,
                                           os.path.dirname(stream.uri))
         self._segments = self._video_playlist.segments
-        self._segments_count = len(self._segments)
+        self._total_segments = len(self._segments)
 
         # Get decryption key
         uri = self._segments[0].key.uri
@@ -216,5 +216,5 @@ class Downloader:
                 if self._do_cancel:
                     raise CancelledException()
                 self._download_segment(segindex)
-                self._total_segments += 1
+                self._done_segments += 1
                 self._notify_progress_update()

@@ -1,6 +1,6 @@
 from pkg_resources import resource_filename
 from PyQt4 import Qt, QtCore
-from toutvqt.downloads_itemdelegate import QDownloadsItemDeletate
+from toutvqt.downloads_itemdelegate import QDlItemDelegate
 
 
 class QDownloadsTableView(Qt.QTreeView):
@@ -9,7 +9,7 @@ class QDownloadsTableView(Qt.QTreeView):
         super().__init__()
 
         self.setRootIsDecorated(False)
-        self.setItemDelegate(QDownloadsItemDeletate(model))
+        self.setItemDelegate(QDlItemDelegate(model))
         self._setup(model)
 
     def _setup(self, model):

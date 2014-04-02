@@ -439,19 +439,19 @@ class App:
 
         return closest
 
-    def _print_cur_pb(self, total_segments, total_bytes):
-        bar = self._cur_pb.get_bar(total_segments, total_bytes)
+    def _print_cur_pb(self, done_segments, done_bytes):
+        bar = self._cur_pb.get_bar(done_segments, done_bytes)
         sys.stdout.write('\r{}'.format(bar))
         sys.stdout.flush()
 
-    def _on_dl_start(self, filename, segments_count):
+    def _on_dl_start(self, filename, total_segments):
         self._cur_filename = filename
-        self._cur_segments_count = segments_count
-        self._cur_pb = ProgressBar(filename, segments_count)
+        self._cur_segments_count = total_segments
+        self._cur_pb = ProgressBar(filename, total_segments)
         self._print_cur_pb(0, 0)
 
-    def _on_dl_progress_update(self, total_segments, total_bytes):
-        self._print_cur_pb(total_segments, total_bytes)
+    def _on_dl_progress_update(self, done_segments, done_bytes):
+        self._print_cur_pb(done_segments, done_bytes)
 
     def _fetch_episode(self, episode, output_dir, bitrate, quality, overwrite):
         # Get available bitrates for episode

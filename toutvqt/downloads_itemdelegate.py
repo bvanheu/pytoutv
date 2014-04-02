@@ -2,23 +2,13 @@ from PyQt4 import Qt
 from PyQt4 import QtCore
 
 
-class QDownloadsItemDeletate(Qt.QItemDelegate):
+class QDlItemDelegate(Qt.QItemDelegate):
     def __init__(self, model):
         super().__init__(model)
         self._model = model
 
-    def paint(self, painter, option, index):
-        # Mostly taken from:
-        # http://qt-project.org/doc/qt-4.8/network-torrent-mainwindow-cpp.html
-
-        if index.column() != self._model.get_progress_col():
-            super().paint(painter, option, index)
-            return
-
-        work, progress = self._model.get_download_at_row(index.row())
-        segments_done = progress.get_done_segments_count()
-        segments_total = progress.get_total_segments_count()
-
+    @staticmethod
+    def _get_progress_bar(option, percent):
         p = Qt.QStyleOptionProgressBarV2()
 
         p.state = Qt.QStyle.State_Enabled
@@ -29,11 +19,23 @@ class QDownloadsItemDeletate(Qt.QItemDelegate):
         p.maximum = 100
         p.textAlignment = QtCore.Qt.AlignCenter
         p.textVisible = True
+        p.progress = percent
+        p.text = '{}%'.format(percent)
 
-        percentage = 100 * segments_done // segments_total
+        return p
 
-        p.progress = percentage
-        p.text = '{} %'.format(percentage)
+    def paint(self, painter, option, index):
+        # Mostly taken from:
+        # http://qt-project.org/doc/qt-4.8/network-torrent-mainwindow-cpp.html
+
+        if index.column() != self._model.get_progress_col():
+            super().paint(painter, option, index)
+            return
+
+        dl_item = self._model.get_download_item_at_row(index.row())
+        percent = dl_item.get_progress_percent()
+
+        progress_bar = QDlItemDelegate._get_progress_bar(option, percent)
 
         style = Qt.QApplication.style()
-        style.drawControl(Qt.QStyle.CE_ProgressBar, p, painter)
+        style.drawControl(Qt.QStyle.CE_ProgressBar, progress_bar, painter)
