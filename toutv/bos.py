@@ -187,8 +187,12 @@ class Emission(_AbstractEmission, _ThumbnailProvider):
         return _clean_description(self.Description)
 
     def get_network(self):
+        if self.Network == '(not specified)':
+            return None
+
         if self.Network is None:
-            return 'SRC'
+            # We observed CBFT (SRC) is the default network when not specified
+            return 'CBFT'
 
         return self.Network
 
