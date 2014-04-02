@@ -18,7 +18,7 @@ class _DownloadItem:
         self._dl_progress = None
         self._total_segments = None
         self._filename = None
-        self._is_finished = False
+        self._is_done = False
         self._is_started = False
 
     def is_started(self):
@@ -27,11 +27,11 @@ class _DownloadItem:
     def set_started(self, is_started):
         self._is_started = is_started
 
-    def is_finished(self):
-        return self._is_finished
+    def is_done(self):
+        return self._is_done
 
-    def set_finished(self, is_finished):
-        self._is_finished = is_finished
+    def set_finished(self, is_done):
+        self._is_done = is_done
 
     def get_dl_progress(self):
         return self._dl_progress
@@ -60,7 +60,7 @@ class _DownloadItem:
     def get_progress_percent(self):
         if not self._is_started or self.get_dl_progress() is None:
             return 0
-        if self._is_finished:
+        if self._is_done:
             return 100
 
         num = self.get_dl_progress().get_done_segments()
@@ -78,7 +78,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Sections',
         'Downloaded',
         'Progress',
-        '%',
+        'Status',
     ]
 
     def __init__(self, download_manager, parent=None):
@@ -244,8 +244,13 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 # Progress bar
                 return None
             elif col == 7:
-                # Percentage
-                return '{}%'.format(dl_item.get_progress_percent())
+                # Status
+                if dl_item.is_done():
+                    return 'Done'
+                if dl_item.is_started():
+                    return 'Started'
+
+                return 'Queued'
 
     def headerData(self, col, ori, role):
         if ori == QtCore.Qt.Horizontal:
