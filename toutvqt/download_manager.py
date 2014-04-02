@@ -8,15 +8,19 @@ from toutv import dl
 
 
 class _DownloadWork:
-    def __init__(self, episode, bitrate):
+    def __init__(self, episode, bitrate, output_dir):
         self._episode = episode
         self._bitrate = bitrate
+        self._output_dir = output_dir
 
     def get_episode(self):
         return self._episode
 
     def get_bitrate(self):
         return self._bitrate
+
+    def get_output_dir(self):
+        return self._output_dir
 
 
 class _DownloadWorkProgress:
@@ -58,12 +62,14 @@ class _QDownloadWorker(Qt.QObject):
 
         episode = work.get_episode()
         bitrate = work.get_bitrate()
+        output_dir = work.get_output_dir()
 
         downloader = dl.Downloader(episode, bitrate=bitrate,
-                                   output_dir="/tmp",
+                                   output_dir=output_dir,
                                    on_dl_start=self._on_dl_start,
                                    on_progress_update=self._on_progress_update,
-                                   overwrite=True).download()
+                                   overwrite=True)
+        downloader.download()
 
         self.download_finished.emit(work)
 
@@ -139,8 +145,8 @@ class QDownloadManager(Qt.QObject):
         ev = _QDownloadStartEvent(self._download_event_type, work)
         Qt.QCoreApplication.postEvent(worker, ev)
 
-    def download(self, episode, bitrate):
-        work = _DownloadWork(episode, bitrate)
+    def download(self, episode, bitrate, output_dir):
+        work = _DownloadWork(episode, bitrate, output_dir)
 
         self.download_created.emit(work)
         self._works.put(work)

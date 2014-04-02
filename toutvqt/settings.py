@@ -1,8 +1,14 @@
+import os.path
 from PyQt4.Qt import QDir
 from PyQt4.Qt import QSettings
 from PyQt4 import QtCore
 from PyQt4 import Qt
 import logging
+
+
+class SettingsKeys:
+    FILES_DOWNLOAD_DIR = 'files/download_directory'
+    NETWORK_HTTP_PROXY = 'network/http_proxy'
 
 
 class QTouTvSettings(Qt.QObject):
@@ -19,8 +25,8 @@ class QTouTvSettings(Qt.QObject):
         """Fills defaults with sensible default values."""
         self.defaults = {}
         def_dl_dir = QTouTvSettings._DEFAULT_DOWNLOAD_DIRECTORY
-        self.defaults['files/download_directory'] = def_dl_dir
-        self.defaults['network/http_proxy'] = None
+        self.defaults[SettingsKeys.FILES_DOWNLOAD_DIR] = def_dl_dir
+        self.defaults[SettingsKeys.NETWORK_HTTP_PROXY] = None
 
     def write_settings(self):
         settings = QSettings()
@@ -45,19 +51,37 @@ class QTouTvSettings(Qt.QObject):
 
         self.apply_settings(read_settings)
 
+    def _change_setting(self, key, value):
+        if key == SettingsKeys.FILES_DOWNLOAD_DIR:
+            new_value = os.path.abspath(value)
+            if new_value == value:
+                return False
+
+            self._settings_dict[key] = new_value
+
+        return True
+
     def apply_settings(self, new_settings):
         for key in new_settings:
             new_value = new_settings[key]
             if key in self._settings_dict:
                 if new_value != self._settings_dict[key]:
                     # Value changed
-                    self.setting_item_changed.emit(key, new_value)
+                    if self._change_setting(key, new_value):
+                        value = self._settings_dict[key]
+                        self.setting_item_changed.emit(key, value)
             else:
                 # New setting key
                 self.setting_item_changed.emit(key, new_value)
             self._settings_dict[key] = new_settings[key]
 
         self.write_settings()
+
+    def get_download_directory(self):
+        return self._settings_dict[SettingsKeys.FILES_DOWNLOAD_DIR]
+
+    def get_http_proxy(self):
+        return self._settings_dict[SettingsKeys.NETWORK_HTTP_PROXY]
 
     def debug_print_settings(self):
         print(self._settings_dict)

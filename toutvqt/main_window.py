@@ -1,4 +1,5 @@
 import os.path
+import logging
 from pkg_resources import resource_filename
 from PyQt4 import Qt
 from PyQt4 import QtCore
@@ -132,4 +133,9 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         if self._tableview_model.download_item_exists(episode):
             return
 
-        self._download_manager.download(episode, bitrate)
+        settings = self._app.get_settings()
+        output_dir = settings.get_download_directory()
+        if not os.path.isdir(output_dir):
+            logging.error('output directory "{}" does not exist'.format(output_dir))
+
+        self._download_manager.download(episode, bitrate, output_dir)

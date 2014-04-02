@@ -6,6 +6,7 @@ from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
 from toutvqt.settings import QTouTvSettings
+from toutvqt.settings import SettingsKeys
 from toutvqt import config
 import toutv.client
 
@@ -23,6 +24,9 @@ class _QTouTvApp(Qt.QApplication):
         self._setup_settings()
         self._start()
 
+    def get_settings(self):
+        return self._settings
+
     def _start(self):
         self.main_window.start()
 
@@ -39,8 +43,8 @@ class _QTouTvApp(Qt.QApplication):
         # Connect the signals between the settings and preferences dialog
         preferences_dialog = self.main_window.preferences_dialog
         setting_item_changed = self._settings.setting_item_changed
-        preferences_dialog.settings_accepted.connect(
-            self._settings.apply_settings)
+        settings_accepted = preferences_dialog.settings_accepted
+        settings_accepted.connect(self._settings.apply_settings)
         setting_item_changed.connect(preferences_dialog.update_settings_item)
         self._settings.setting_item_changed.connect(self._setting_item_changed)
 
@@ -60,9 +64,9 @@ class _QTouTvApp(Qt.QApplication):
                 pass
 
     def _setting_item_changed(self, key, value):
-        if key == 'network/http_proxy':
+        if key == SettingsKeys.NETWORK_HTTP_PROXY:
             self._on_setting_http_proxy_changed(value)
-        elif key == 'files/download_directory':
+        elif key == SettingsKeys.FILES_DOWNLOAD_DIR:
             self._on_setting_dl_dir_changed(value)
 
 
