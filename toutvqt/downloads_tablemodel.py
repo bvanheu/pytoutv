@@ -33,6 +33,9 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
         self._setup_signals()
 
+    def get_progress_col(self):
+        return 6
+
     def _setup_signals(self):
         self._download_manager.download_created.connect(
             self._on_download_created)

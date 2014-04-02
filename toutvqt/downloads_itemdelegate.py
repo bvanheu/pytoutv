@@ -3,8 +3,6 @@ from PyQt4 import QtCore
 
 
 class QDownloadsItemDeletate(Qt.QItemDelegate):
-    PROGRESS_COL_NUM = 6
-
     def __init__(self, model):
         super().__init__(model)
         self._model = model
@@ -12,11 +10,12 @@ class QDownloadsItemDeletate(Qt.QItemDelegate):
     def paint(self, painter, option, index):
         # Mostly taken from:
         # http://qt-project.org/doc/qt-4.8/network-torrent-mainwindow-cpp.html
-        if index.column() != self.PROGRESS_COL_NUM:
+
+        if index.column() != self._model.get_progress_col():
             super().paint(painter, option, index)
             return
 
-        (work, progress) = self._model.get_download_at_row(index.row())
+        work, progress = self._model.get_download_at_row(index.row())
         segments_done = progress.get_done_segments_count()
         segments_total = progress.get_total_segments_count()
 
@@ -34,7 +33,7 @@ class QDownloadsItemDeletate(Qt.QItemDelegate):
         percentage = 100 * segments_done // segments_total
 
         p.progress = percentage
-        p.text = "{} %".format(percentage)
+        p.text = '{} %'.format(percentage)
 
-        Qt.QApplication.style().drawControl(
-            Qt.QStyle.CE_ProgressBar, p, painter)
+        style = Qt.QApplication.style()
+        style.drawControl(Qt.QStyle.CE_ProgressBar, p, painter)
