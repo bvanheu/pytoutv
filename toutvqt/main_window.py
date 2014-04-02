@@ -37,6 +37,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     def _add_tableview(self):
         self._download_manager = QDownloadManager()
         model = QDownloadsTableModel(self._download_manager)
+        self._tableview_model = model
         self._downloads_tableview_model = model
         self.downloads_tableview = QDownloadsTableView(model)
         self.downloads_tab.layout().addWidget(self.downloads_tableview)
@@ -128,4 +129,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             self._on_bitrate_chosen(bitrate[0], episode)
 
     def _on_bitrate_chosen(self, bitrate, episode):
+        if self._tableview_model.download_item_exists(episode):
+            return
+
         self._download_manager.download(episode, bitrate)

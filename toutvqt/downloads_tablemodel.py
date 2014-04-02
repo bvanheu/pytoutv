@@ -97,6 +97,9 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
         return self._download_list[episode_id]
 
+    def download_item_exists(self, episode):
+        return episode.get_id() in self._download_list
+
     def _setup_signals(self):
         dl_manager = self._download_manager
 
