@@ -125,9 +125,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             pos.setY(pos.y() - dialog.height())
             dialog.show_move(pos)
         else:
-            print('single bitrate: {}'.format(bitrate[0]))
-            self._on_bitrate_chosen(bitrate[0])
+            self._on_bitrate_chosen(bitrate[0], episode)
 
     def _on_bitrate_chosen(self, bitrate, episode):
-        print('chose {} bps'.format(bitrate))
         self._download_manager.download(episode, bitrate)
