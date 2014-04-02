@@ -6,11 +6,9 @@ APP_NAME = 'qtoutv'
 DAT_DIR = 'dat'
 UI_DIR = os.path.join(DAT_DIR, 'ui')
 ICONS_DIR = os.path.join(DAT_DIR, 'icons')
-AUTHORS = [
+CONTRIBUTORS = [
     'Simon Marchi',
     'Philippe Proulx',
-]
-CONTRIBUTORS = [
     'Benjamin Vanheuverzwijn',
     'Alexandre Vézina',
     'Alexis Dorais-Joncas',

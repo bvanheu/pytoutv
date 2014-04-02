@@ -19,17 +19,12 @@ class QTouTvAboutDialog(utils.QCommonDialog, utils.QtUiLoad):
     def _create_list(alist):
         return '\n'.join(alist)
 
-    def _set_authors(self):
-        authors = QTouTvAboutDialog._create_list(config.AUTHORS)
-        self.authors_edit.setPlainText(authors)
-
     def _set_contributors(self):
         contributors = QTouTvAboutDialog._create_list(config.CONTRIBUTORS)
         self.contributors_edit.setPlainText(contributors)
 
     def _set_contents(self):
         self._set_version()
-        self._set_authors()
         self._set_contributors()
 
     def _setup_ui(self):
