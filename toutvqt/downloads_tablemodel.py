@@ -12,6 +12,12 @@ class _Internal:
         return self._episode_id
 
 
+class _DownloadStat:
+    def __init__(self):
+        self.done_bytes = 0
+        self.dt = datetime.datetime.now()
+
+
 class _DownloadItem:
     def __init__(self, work):
         self._work = work
@@ -21,6 +27,8 @@ class _DownloadItem:
         self._added_dt = datetime.datetime.now()
         self._started_dt = None
         self._done_elapsed = None
+        self._last_dl_stat = _DownloadStat()
+        self._avg_speed = 0
 
         # TODO: replace those variable by a single state variable
         self._is_done = False
@@ -38,13 +46,33 @@ class _DownloadItem:
 
     def set_done(self, is_done):
         self._done_elapsed = self.get_elapsed()
+        self._avg_speed = 0
         self._is_done = is_done
 
     def get_dl_progress(self):
         return self._dl_progress
 
+    def get_avg_download_speed(self):
+        return self._avg_speed
+
+    def _compute_avg_speed(self):
+        done_bytes = self.get_dl_progress().get_done_bytes()
+        now = datetime.datetime.now()
+
+        if self.get_elapsed().seconds >= 3:
+            time_delta = now - self._last_dl_stat.dt
+            time_delta = time_delta.total_seconds()
+            bytes_delta = done_bytes - self._last_dl_stat.done_bytes
+            self._avg_speed = bytes_delta / time_delta
+
+        self._last_dl_stat.done_bytes = done_bytes
+        self._last_dl_stat.dt = datetime.datetime.now()
+
     def set_dl_progress(self, dl_progress):
         self._dl_progress = dl_progress
+
+        if not self.is_done() and self.is_started():
+            self._compute_avg_speed()
 
     def get_work(self):
         return self._work
@@ -100,6 +128,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Downloaded',
         'Added',
         'Elapsed',
+        'Speed',
         'Progress',
         'Status',
     ]
@@ -113,7 +142,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._setup_signals()
 
     def get_progress_col(self):
-        return 8
+        return 9
 
     def get_download_item_at_row(self, row):
         episode_id = list(self._download_list.keys())[row]
@@ -277,9 +306,12 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
                 return '{}:{:02}'.format(minutes, seconds)
             elif col == 8:
+                # Average download speed
+                return '{:.2f}'.format(dl_item.get_avg_download_speed() / 1024)
+            elif col == 9:
                 # Progress bar
                 return None
-            elif col == 9:
+            elif col == 10:
                 # Status
                 if dl_item.is_done():
                     return 'Done'
