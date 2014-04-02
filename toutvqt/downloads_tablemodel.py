@@ -18,11 +18,13 @@ class _DownloadItem:
         self._dl_progress = None
         self._total_segments = None
         self._filename = None
-        self._is_done = False
-        self._is_started = False
         self._added_dt = datetime.datetime.now()
         self._started_dt = None
         self._done_elapsed = None
+
+        # TODO: replace those variable by a single state variable
+        self._is_done = False
+        self._is_started = False
 
     def is_started(self):
         return self._is_started
