@@ -61,6 +61,10 @@ Sur Debian et Ubuntu, voici comment faire :
 
     $ sudo aptitude install python3-crypto python3-requests python3-setuptools
 
+Sur Fedora:
+
+    $ sudo yum install python3-crypto python3-requests python3-setuptools
+
 Sur Arch Linux :
 
     $ sudo pacman -Sy python-crypto python-requests python-setuptools
