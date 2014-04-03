@@ -3,8 +3,7 @@
 ***pytoutv*** est une librairie écrite en Python 3 qui implémente un client
 pour [TOU.TV](http://tou.tv/).
 
-Ce dépôt contient aussi une interface en ligne de commande (et bientôt une
-interface graphique).
+Ce dépôt contient aussi une interface en ligne de commande.
 
 pytoutv, grâce à l'API publique de TOU.TV (voir
 [`toutv/config.py`](toutv/config.py) pour les URL publiques), est en
@@ -14,6 +13,10 @@ fichier vidéo distribué publiquement par le service TOU.TV. Les informations
 téléchargées, incluant les fichiers vidéo, sont destinées à un usage personnel
 et ne devraient pas être redistribuées, à moins d'une autorisation préalable
 fournie par les propriétaires de TOU.TV.
+
+Le projet pytoutv n'est pas affilié, connecté ou associé à la Société Radio-Canada
+ou à CBFT-DT. La Société Radio-Canada ou CBFT-DT ne parrainent pas, n'approuvent
+pas ou n'endossent pas le projet pytoutv.
 
 _Note_ : bien qu'on parle de pytoutv 2, il n'existe pas de version 1 de
 pytoutv. Ce projet était auparavant connu sous le nom

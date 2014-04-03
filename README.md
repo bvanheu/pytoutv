@@ -3,8 +3,7 @@
 ***pytoutv*** is a [TOU.TV](http://tou.tv/) client library written in
 Python 3.
 
-This repository also holds a command line interface (and a graphical interface
-soon).
+This repository also holds a command line interface.
 
 pytoutv, thanks to TOU.TV's public API (see
 [`toutv/config.py`](toutv/config.py) for public URLs), is able to
@@ -13,6 +12,10 @@ informations and fetch any video file publicly distributed by the TOU.TV
 service. Informations, including video files, downloaded using pytoutv are
 for personal use only and should not be redistributed unless otherwise
 authorized by TOU.TV owners.
+
+The pytoutv project is not affiliated, connected or associated with the Canadian
+Broadcasting Corporation or CBFT-DT. The Canadian Broadcasting Corporation or
+CBFT-DT do not sponsor, approve of, or endorse pytoutv.
 
 _Note_: although this is pytoutv 2, there's no such thing as pytoutv 1. This
 project was previously known as _Tou.tv-console-application_ and targeted
