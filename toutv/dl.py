@@ -98,7 +98,7 @@ class Downloader:
     def _do_proxies_requests(self, url, params=None, timeout=None,
                              cookies=None):
         return Downloader._do_request(url, params=params, timeout=timeout,
-                                       cookies=cookies, proxies=self._proxies)
+                                      cookies=cookies, proxies=self._proxies)
 
     @staticmethod
     def get_episode_playlist_url(episode):

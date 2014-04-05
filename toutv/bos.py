@@ -31,7 +31,6 @@ import logging
 import os
 import re
 import requests
-
 import toutv.dl
 import toutv.config
 
