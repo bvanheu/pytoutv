@@ -134,6 +134,7 @@ class _QInfosWidget(Qt.QWidget, utils.QtUiLoad):
 
     def _on_goto_toutv_btn_clicked(self):
         if self._url is not None:
+            logging.debug('Going to TOU.TV @ "{}"'.format(self._url))
             webbrowser.open(self._url)
 
     def _on_dl_btn_clicked(self):
