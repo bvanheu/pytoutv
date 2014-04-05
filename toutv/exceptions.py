@@ -24,7 +24,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-class Timeout(Exception):
+class RequestTimeout(Exception):
     def __init__(self, url, timeout):
         self._url = url
         self._timeout = timeout
@@ -34,6 +34,10 @@ class Timeout(Exception):
 
     def get_timeout(self):
         return self._timeout
+
+    def __str__(self):
+        tmpl = 'Request timeout ({} s for "{}")'
+        return tmpl.format(self._timeout, self._url)
 
 
 class UnexpectedHttpStatusCode(Exception):
@@ -46,3 +50,7 @@ class UnexpectedHttpStatusCode(Exception):
 
     def get_status_code(self):
         return self._status_code
+
+    def __str__(self):
+        tmpl = 'Unexpected HTTP response code {} for "{}"'
+        return tmpl.format(self._status_code, self._url)

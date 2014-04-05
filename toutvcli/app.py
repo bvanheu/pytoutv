@@ -84,7 +84,7 @@ class App:
         except toutv.dl.FileExists as e:
             sys.stderr.write('Destination file exists (use -f to force)\n')
             return 4
-        except toutv.exceptions.Timeout as e:
+        except toutv.exceptions.RequestTimeout as e:
             timeout = e.get_timeout()
             url = e.get_url()
             tmpl = '\nTimeout error ({} s for "{}")\n'
@@ -539,7 +539,7 @@ class App:
             except toutv.dl.CancelledByNetworkErrorException:
                 tmpl = 'Error: cannot fetch "{}": network error\n'
                 sys.stderr.write(tmpl.format(title))
-            except toutv.exceptions.Timeout:
+            except toutv.exceptions.RequestTimeout:
                 tmpl = 'Error: cannot fetch "{}": request timeout\n'
                 sys.stderr.write(tmpl.format(title))
             except toutv.exceptions.UnexpectedHttpStatusCode:

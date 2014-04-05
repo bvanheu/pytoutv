@@ -26,6 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import requests
+import toutv.exceptions
 import toutv.mapper
 import toutv.config
 import toutv.bos as bos
@@ -35,7 +36,7 @@ class Transport:
     def __init__(self):
         pass
 
-    def set_http_proxy(self, proxy_url):
+    def set_proxies(self, proxies):
         pass
 
     def get_emissions(self):
@@ -52,32 +53,29 @@ class Transport:
 
 
 class JsonTransport(Transport):
-    def __init__(self, proxy_url=None):
+    def __init__(self, proxies=None):
         self._mapper = toutv.mapper.JsonMapper()
-        self._proxies = None
 
-        self.set_http_proxy(proxy_url)
+        self.set_proxies(proxies)
 
-    def set_http_proxy(self, proxy_url):
-        if proxy_url:
-            self._proxies = {
-                'http': proxy_url,
-                'https': proxy_url,
-            }
-        else:
-            self._proxies = None
+    def set_proxies(self, proxies):
+        self._proxies = proxies
 
     def _do_query(self, endpoint, params={}):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
 
         try:
             r = requests.get(url, params=params, headers=toutv.config.HEADERS,
-                             proxies=self._proxies)
-            response_obj = r.json()
+                             proxies=self._proxies, timeout=10)
+            if r.status_code != 200:
+                code = r.status_code
+                raise toutv.exceptions.UnexpectedHttpStatusCode(url, code)
+        except requests.exceptions.Timeout:
+            raise toutv.exceptions.RequestTimeout(url, timeout)
 
-            return response_obj['d']
-        except Exception as e:
-            return None
+        response_obj = r.json()
+
+        return response_obj['d']
 
     def get_emissions(self):
         emissions = {}
@@ -97,41 +95,38 @@ class JsonTransport(Transport):
         }
 
         episodes_dto = self._do_query('GetEpisodesForEmission', params)
-        if episodes_dto is not None:
-            for episode_dto in episodes_dto:
-                episode = self._mapper.dto_to_bo(episode_dto, bos.Episode)
-                episode.set_emission(emission)
-                episodes[episode.Id] = episode
+        for episode_dto in episodes_dto:
+            episode = self._mapper.dto_to_bo(episode_dto, bos.Episode)
+            episode.set_emission(emission)
+            episodes[episode.Id] = episode
 
         return episodes
 
     def get_page_repertoire(self):
         repertoire_dto = self._do_query('GetPageRepertoire')
-        if repertoire_dto is not None:
-            repertoire = bos.Repertoire()
 
-            # Emissions
-            if 'Emissions' in repertoire_dto:
-                repertoire.Emissions = {}
-                emissionrepertoires_dto = repertoire_dto['Emissions']
-                for emissionrepertoire_dto in emissionrepertoires_dto:
-                    er = self._mapper.dto_to_bo(emissionrepertoire_dto,
-                                                bos.EmissionRepertoire)
-                    repertoire.Emissions[er.Id] = er
+        repertoire = bos.Repertoire()
 
-            # Genre
-            if 'Genres' in repertoire_dto:
-                # TODO: implement
-                pass
+        # Emissions
+        if 'Emissions' in repertoire_dto:
+            repertoire.Emissions = {}
+            emissionrepertoires_dto = repertoire_dto['Emissions']
+            for emissionrepertoire_dto in emissionrepertoires_dto:
+                er = self._mapper.dto_to_bo(emissionrepertoire_dto,
+                                            bos.EmissionRepertoire)
+                repertoire.Emissions[er.Id] = er
 
-            # Country
-            if 'Pays' in repertoire_dto:
-                # TODO: implement
-                pass
+        # Genre
+        if 'Genres' in repertoire_dto:
+            # TODO: implement
+            pass
 
-            return repertoire
+        # Country
+        if 'Pays' in repertoire_dto:
+            # TODO: implement
+            pass
 
-        return None
+        return repertoire
 
     def search(self, query):
         searchresults = None
@@ -141,14 +136,14 @@ class JsonTransport(Transport):
         }
 
         searchresults_dto = self._do_query('SearchTerms', params)
-        if searchresults_dto is not None:
-            searchresults = self._mapper.dto_to_bo(searchresults_dto,
-                                                   bos.SearchResults)
-            if searchresults.Results is not None:
-                for searchresultdata_dto in searchresults.Results:
-                    sr_bo = self._mapper.dto_to_bo(searchresultdata_dto,
-                                                   bos.SearchResultData)
-                    searchresultdatas.append(sr_bo)
-            searchresults.Results = searchresultdatas
+
+        searchresults = self._mapper.dto_to_bo(searchresults_dto,
+                                               bos.SearchResults)
+        if searchresults.Results is not None:
+            for searchresultdata_dto in searchresults.Results:
+                sr_bo = self._mapper.dto_to_bo(searchresultdata_dto,
+                                               bos.SearchResultData)
+                searchresultdatas.append(sr_bo)
+        searchresults.Results = searchresultdatas
 
         return searchresults

@@ -91,7 +91,7 @@ class Downloader:
                 raise toutv.exceptions.UnexpectedHttpStatusCode(url,
                                                                 r.status_code)
         except requests.exceptions.Timeout:
-            raise toutv.exceptions.Timeout(url, timeout)
+            raise toutv.exceptions.RequestTimeout(url, timeout)
 
         return r
 
@@ -101,12 +101,13 @@ class Downloader:
                                       cookies=cookies, proxies=self._proxies)
 
     @staticmethod
-    def get_episode_playlist_url(episode):
+    def get_episode_playlist_url(episode, proxies=None):
         url = toutv.config.TOUTV_PLAYLIST_URL
         params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
         params['idMedia'] = episode.PID
 
-        r = Downloader._do_request(url, params=params, timeout=15)
+        r = Downloader._do_request(url, params=params, proxies=proxies,
+                                   timeout=15)
         response_obj = r.json()
 
         if response_obj['errorCode']:
@@ -115,10 +116,10 @@ class Downloader:
         return response_obj['url']
 
     @staticmethod
-    def get_episode_playlist_cookies(episode):
+    def get_episode_playlist_cookies(episode, proxies=None):
         url = Downloader.get_episode_playlist_url(episode)
 
-        r = Downloader._do_request(url, timeout=15)
+        r = Downloader._do_request(url, proxies=proxies, timeout=15)
 
         # Parse M3U8 file
         m3u8_file = r.text

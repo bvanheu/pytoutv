@@ -42,34 +42,59 @@ def _clean_description(desc):
     return desc.strip()
 
 
+class _Bo:
+    def set_proxies(self, proxies):
+        self._proxies = proxies
+
+    def get_proxies(self):
+        if hasattr(self, '_proxies'):
+            return self._proxies
+
+        self._proxies = None
+
+        return self._proxies
+
+    def _do_request(self, url, timeout=None):
+        proxies = self.get_proxies()
+
+        try:
+            r = requests.get(url, headers=toutv.config.HEADERS,
+                             proxies=proxies, timeout=timeout)
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
+                                                                r.status_code)
+        except requests.exceptions.Timeout:
+            raise toutv.exceptions.RequestTimeout(url, timeout)
+
+        return r
+
+
 class _ThumbnailProvider:
-    def cache_medium_thumb(self):
+    def _cache_medium_thumb(self):
         if self.has_medium_thumb_data():
             # No need to download again
             return
 
         urls = self.get_medium_thumb_urls()
+
         for url in urls:
-            if url is None or len(url) == 0:
+            if url is None or not url:
                 continue
+
+            logging.debug('HTTP-getting "{}"'.format(url))
 
             try:
-                logging.debug('HTTP-getting "{}"'.format(url))
-                r = requests.get(url, headers=toutv.config.HEADERS, timeout=2)
+                r = self._do_request(url, timeout=2)
             except Exception as e:
+                # Ignore any network error
                 logging.warning(e)
-                continue
-
-            if r.status_code != 200:
-                tmpl = 'HTTP status code {} for URL "{}"'
-                logging.warning(tmpl.format(r.status_code, url))
                 continue
 
             self._medium_thumb_data = r.content
             break
 
     def get_medium_thumb_data(self):
-        self.cache_medium_thumb()
+        self._cache_medium_thumb()
 
         return self._medium_thumb_data
 
@@ -84,7 +109,7 @@ class _ThumbnailProvider:
         raise NotImplementedError()
 
 
-class _AbstractEmission:
+class _AbstractEmission(_Bo):
     def get_id(self):
         return self.Id
 
@@ -211,7 +236,7 @@ class Emission(_AbstractEmission, _ThumbnailProvider):
         return [url, self.ImagePromoNormalK]
 
 
-class Genre:
+class Genre(_Bo):
     def __init__(self):
         self.CategoryURL = None
         self.ClassCategory = None
@@ -232,7 +257,7 @@ class Genre:
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class Episode(_ThumbnailProvider):
+class Episode(_Bo, _ThumbnailProvider):
     def __init__(self):
         self.AdPattern = None
         self.AirDateFormated = None
@@ -454,7 +479,7 @@ class EmissionRepertoire(_AbstractEmission):
         return self.AnneeProduction
 
 
-class SearchResults:
+class SearchResults(_Bo):
     def __init__(self):
         self.ModifiedQuery = None
         self.Results = None
@@ -466,7 +491,7 @@ class SearchResults:
         return self.Results
 
 
-class SearchResultData:
+class SearchResultData(_Bo):
     def __init__(self):
         self.Emission = None
         self.Episode = None
@@ -478,7 +503,7 @@ class SearchResultData:
         return self.Episode
 
 
-class Repertoire:
+class Repertoire(_Bo):
     def __init__(self):
         self.Emissions = None
         self.Genres = None
