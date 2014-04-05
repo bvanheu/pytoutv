@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 import platform
 from pkg_resources import resource_filename
 from PyQt4 import uic
@@ -89,8 +90,13 @@ def _register_sigint():
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 
+def _configure_logging():
+    logging.basicConfig(level=logging.DEBUG)
+
+
 def run():
-    app = _QTouTvApp(sys.argv)
+    _configure_logging()
     _register_sigint()
+    app = _QTouTvApp(sys.argv)
 
     return app.exec_()

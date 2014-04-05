@@ -4,7 +4,6 @@ import logging
 import datetime
 from PyQt4 import Qt
 from PyQt4 import QtCore
-
 from toutv import dl
 
 
@@ -62,8 +61,18 @@ class _QDownloadWorker(Qt.QObject):
         super().__init__()
         self._download_event_type = download_event_type
         self._current_work = None
+        self._downloader = None
+        self._cancelled = False
+
+    def cancel_works(self):
+        self._cancelled = True
+        if self._downloader is not None:
+            self._downloader.cancel()
 
     def do_work(self, work):
+        if self._cancelled:
+            return
+
         self._current_work = work
 
         episode = work.get_episode()
@@ -76,14 +85,22 @@ class _QDownloadWorker(Qt.QObject):
                                    on_dl_start=self._on_dl_start,
                                    on_progress_update=self._on_progress_update,
                                    overwrite=True, proxies=proxies)
+        self._downloader = downloader
+
         try:
             downloader.download()
+        except dl.CancelledByUserException as e:
+            if self._cancelled:
+                return
+            else:
+                raise e
         except Exception as e:
             title = episode.get_title()
             logging.error('Cannot download "{}": {}'.format(title, e))
             self.download_error.emit(work, e)
             return
 
+        self._downloader = None
         self.download_finished.emit(work)
 
     def _on_dl_start(self, filename, total_segments):
@@ -119,8 +136,21 @@ class QDownloadManager(Qt.QObject):
         self._setup_threads(nb_threads)
 
     def exit(self):
-        # TODO: kill n wait threads
-        pass
+        # Cancel all workers
+        logging.debug('Cancelling all download workers')
+        for worker in self._workers:
+            worker.cancel_works()
+
+        # Clear works
+        logging.debug('Clearing remaining download works')
+        while not self._works.empty():
+            self._works.get()
+
+        # Join threads
+        for thread in self._threads:
+            logging.debug('Joining one download thread')
+            thread.quit()
+            thread.wait()
 
     def _setup_threads(self, nb_threads):
         self._available_workers = queue.Queue()
