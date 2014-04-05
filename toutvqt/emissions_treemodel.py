@@ -2,6 +2,7 @@ from PyQt4 import Qt
 from PyQt4 import QtCore
 import logging
 import re
+import toutv.client
 
 
 class FetchState:
@@ -183,6 +184,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.fetcher.moveToThread(self.fetch_thread)
         self.fetch_required.connect(self.fetcher.new_work_piece)
         self.fetcher.fetch_done.connect(self.fetch_done)
+        self.fetcher.fetch_error.connect(self.fetch_error)
 
     def exit(self):
         self.fetch_thread.quit()
@@ -237,6 +239,12 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             self.emissions = children_list
         self.endInsertRows()
 
+    def fetch_error(self, parent, ex):
+        if type(ex) is toutv.client.ClientError:
+            msg = 'Client error: {}'.format(ex)
+        else:
+            logging.error(ex)
+
     def init_fetch(self, parent=Qt.QModelIndex()):
         if parent.isValid():
             parent.internalPointer().fetched = FetchState.STARTED
@@ -264,6 +272,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
 class EmissionsTreeModelFetcher(Qt.QObject):
     fetch_done = QtCore.pyqtSignal(object, list)
+    fetch_error = QtCore.pyqtSignal(object, object)
 
     def __init__(self, client):
         super().__init__()
@@ -302,7 +311,11 @@ class EmissionsTreeModelFetcher(Qt.QObject):
 
             return emission_title.lower()
 
-        emissions = self.client.get_page_repertoire().get_emissions()
+        try:
+            emissions = self.client.get_page_repertoire().get_emissions()
+        except Exception as e:
+            self.fetch_error.emit(parent, e)
+            return
 
         # Sort
         emissions_keys = list(emissions.keys())
@@ -318,10 +331,15 @@ class EmissionsTreeModelFetcher(Qt.QObject):
 
     def fetch_seasons(self, parent):
         emission = parent.internalPointer()
-        episodes = self.client.get_emission_episodes(emission.bo)
         seasons_set = set()
         seasons_list = []
         seasons_dict = {}
+
+        try:
+            episodes = self.client.get_emission_episodes(emission.bo)
+        except Exception as e:
+            self.fetch_error.emit(parent, e)
+            return
 
         # Sort
         key_func = lambda ekey: int(episodes[ekey].get_episode_number())
