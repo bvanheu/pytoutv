@@ -28,10 +28,12 @@
 
 import re
 import os
+import errno
 import struct
 import requests
 from Crypto.Cipher import AES
 import toutv.config
+import toutv.exceptions
 from toutv import m3u8
 
 
@@ -47,14 +49,26 @@ class CancelledException(Exception):
     pass
 
 
+class CancelledByNetworkErrorException(CancelledException):
+    pass
+
+
+class CancelledByUserException(CancelledException):
+    pass
+
+
 class FileExists(Exception):
+    pass
+
+
+class NoSpaceLeft(Exception):
     pass
 
 
 class Downloader:
     def __init__(self, episode, bitrate, output_dir=os.getcwd(),
                  filename=None, on_progress_update=None,
-                 on_dl_start=None, overwrite=False):
+                 on_dl_start=None, overwrite=False, proxies=None):
         self._episode = episode
         self._bitrate = bitrate
         self._output_dir = output_dir
@@ -62,8 +76,29 @@ class Downloader:
         self._on_progress_update = on_progress_update
         self._on_dl_start = on_dl_start
         self._overwrite = overwrite
+        self._proxies = proxies
 
         self._set_output_path()
+
+    @staticmethod
+    def _do_request(url, params=None, proxies=None, timeout=None,
+                    cookies=None):
+        try:
+            r = requests.get(url, params=params, headers=toutv.config.HEADERS,
+                             proxies=proxies, cookies=cookies,
+                             timeout=15)
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
+                                                                r.status_code)
+        except requests.exceptions.Timeout:
+            raise toutv.exceptions.Timeout(url, timeout)
+
+        return r
+
+    def _do_proxies_requests(self, url, params=None, timeout=None,
+                             cookies=None):
+        return Downloader._do_request(url, params=params, timeout=timeout,
+                                       cookies=cookies, proxies=self._proxies)
 
     @staticmethod
     def get_episode_playlist_url(episode):
@@ -71,7 +106,7 @@ class Downloader:
         params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
         params['idMedia'] = episode.PID
 
-        r = requests.get(url, params=params, headers=toutv.config.HEADERS)
+        r = Downloader._do_request(url, params=params, timeout=15)
         response_obj = r.json()
 
         if response_obj['errorCode']:
@@ -83,8 +118,7 @@ class Downloader:
     def get_episode_playlist_cookies(episode):
         url = Downloader.get_episode_playlist_url(episode)
 
-        # Do requests
-        r = requests.get(url, headers=toutv.config.HEADERS)
+        r = Downloader._do_request(url, timeout=15)
 
         # Parse M3U8 file
         m3u8_file = r.text
@@ -170,14 +204,20 @@ class Downloader:
         segment = self._segments[segindex]
         count = segindex + 1
 
-        r = requests.get(segment.uri, headers=toutv.config.HEADERS,
-                         cookies=self._cookies)
+        r = self._do_proxies_requests(segment.uri, cookies=self._cookies,
+                                      timeout=15)
         encrypted_ts_segment = r.content
         aes_iv = struct.pack('>IIII', 0, 0, 0, count)
         aes = AES.new(self._key, AES.MODE_CBC, aes_iv)
         ts_segment = aes.decrypt(encrypted_ts_segment)
 
-        self._of.write(ts_segment)
+        try:
+            self._of.write(ts_segment)
+        except OSError as e:
+            if e.errno == errno.ENOSPC:
+                raise NoSpaceLeft()
+            raise e
+
         self._done_bytes += len(ts_segment)
 
     def _get_video_stream(self):
@@ -194,8 +234,7 @@ class Downloader:
         stream = self._get_video_stream()
 
         # Get video playlist
-        r = requests.get(stream.uri, headers=toutv.config.HEADERS,
-                         cookies=self._cookies)
+        r = self._do_proxies_requests(stream.uri, cookies=self._cookies)
         m3u8_file = r.text
         self._video_playlist = m3u8.parse(m3u8_file,
                                           os.path.dirname(stream.uri))
@@ -204,8 +243,7 @@ class Downloader:
 
         # Get decryption key
         uri = self._segments[0].key.uri
-        r = requests.get(uri, headers=toutv.config.HEADERS,
-                         cookies=self._cookies)
+        r = self._do_proxies_requests(uri, cookies=self._cookies)
         self._key = r.content
 
         # Download segments
@@ -214,7 +252,8 @@ class Downloader:
             self._notify_progress_update()
             for segindex in range(len(self._segments)):
                 if self._do_cancel:
-                    raise CancelledException()
+                    raise CancelledByUserException()
+
                 self._download_segment(segindex)
                 self._done_segments += 1
                 self._notify_progress_update()

@@ -75,15 +75,33 @@ class App:
         except toutv.dl.DownloaderError as e:
             sys.stderr.write('Download error: {}\n'.format(e))
             return 2
-        except toutv.dl.CancelledException as e:
-            sys.stderr.write('\nDownload cancelled by user\n'.format(e))
+        except toutv.dl.CancelledByUserException as e:
+            sys.stderr.write('\nDownload cancelled by user\n')
+            return 3
+        except toutv.dl.CancelledByNetworkErrorException as e:
+            sys.stderr.write('\nDownload cancelled due to network error\n')
             return 3
         except toutv.dl.FileExists as e:
-            sys.stderr.write('Destination file exists (use -f to force)\n'.format(e))
+            sys.stderr.write('Destination file exists (use -f to force)\n')
             return 4
+        except toutv.exceptions.Timeout as e:
+            timeout = e.get_timeout()
+            url = e.get_url()
+            tmpl = '\nTimeout error ({} s for "{}")\n'
+            sys.stderr.write(tmpl.format(timeout, url))
+            return 5
+        except toutv.exceptions.UnexpectedHttpStatusCode as e:
+            status_code = e.get_status_code()
+            url = e.get_url()
+            tmpl = '\nHTTP status code {} for "{}"\n'
+            sys.stderr.write(tmpl.format(status_code, url))
+            return 5
+        except toutv.dl.NoSpaceLeft:
+            sys.stderr.write('\nNo space left on device while downloading\n')
+            return 6
         except Exception as e:
             sys.stderr.write('Unknown error: {}\n'.format(e))
-            return 5
+            return 100
 
         return 0
 
@@ -510,16 +528,26 @@ class App:
         for episode in episodes.values():
             title = episode.get_title()
             if self._stop:
-                raise toutv.dl.CancelledException()
+                raise toutv.dl.CancelledByUserException()
             try:
                 self._fetch_episode(episode, output_dir, bitrate, quality,
                                     overwrite)
                 sys.stdout.write('\n')
                 sys.stdout.flush()
-            except toutv.dl.CancelledException as e:
+            except toutv.dl.CancelledByUserException as e:
                 raise e
+            except toutv.dl.CancelledByNetworkErrorException:
+                tmpl = 'Error: cannot fetch "{}": network error\n'
+                sys.stderr.write(tmpl.format(title))
+            except toutv.exceptions.Timeout:
+                tmpl = 'Error: cannot fetch "{}": request timeout\n'
+                sys.stderr.write(tmpl.format(title))
+            except toutv.exceptions.UnexpectedHttpStatusCode:
+                tmpl = 'Error: cannot fetch "{}": unexpected HTTP status code\n'
+                sys.stderr.write(tmpl.format(title))
             except toutv.dl.FileExists as e:
-                sys.stderr.write('Error: cannot fetch "{}": destination file exists\n'.format(title))
+                tmpl = 'Error: cannot fetch "{}": destination file exists\n'
+                sys.stderr.write(tmpl.format(title))
             except:
                 sys.stderr.write('Error: cannot fetch "{}"\n'.format(title))
 
