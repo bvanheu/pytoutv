@@ -129,8 +129,8 @@ class Downloader:
         return playlist, r.cookies
 
     @staticmethod
-    def get_episode_playlist(episode):
-        pl, cookies = Downloader.get_episode_playlist_cookies(episode)
+    def get_episode_playlist(episode, proxies):
+        pl, cookies = Downloader.get_episode_playlist_cookies(episode, proxies)
 
         return pl
 

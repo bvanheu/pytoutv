@@ -16,6 +16,8 @@ class _QTouTvApp(Qt.QApplication):
     def __init__(self, args):
         super().__init__(args)
 
+        self._proxies = None
+
         self.setOrganizationName(config.ORG_NAME)
         self.setApplicationName(config.APP_NAME)
 
@@ -26,6 +28,9 @@ class _QTouTvApp(Qt.QApplication):
 
     def get_settings(self):
         return self._settings
+
+    def get_proxies(self):
+        return self._proxies
 
     def _start(self):
         self.main_window.start()
@@ -60,6 +65,7 @@ class _QTouTvApp(Qt.QApplication):
                 'https': value
             }
 
+        self._proxies = proxies
         self._client.set_proxies(proxies)
 
     def _on_setting_dl_dir_changed(self, value):

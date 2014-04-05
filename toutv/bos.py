@@ -433,7 +433,8 @@ class Episode(_Bo, _ThumbnailProvider):
 
     def get_available_bitrates(self):
         # Get playlist
-        playlist = toutv.dl.Downloader.get_episode_playlist(self)
+        proxies = self.get_proxies()
+        playlist = toutv.dl.Downloader.get_episode_playlist(self, proxies)
 
         # Get video bitrates
         bitrates = Episode._get_video_bitrates(playlist)
