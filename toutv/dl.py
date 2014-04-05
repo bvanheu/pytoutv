@@ -132,10 +132,6 @@ class Downloader:
 
         return pl
 
-    @staticmethod
-    def _replace_accents(filename):
-        filename = filename.replace('é', 'E')
-
     def _gen_filename(self):
         # Remove illegal characters from filename
         emission_title = self._episode.get_emission().Title
