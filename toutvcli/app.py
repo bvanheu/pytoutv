@@ -76,10 +76,10 @@ class App:
             sys.stderr.write('Download error: {}\n'.format(e))
             return 2
         except toutv.dl.CancelledByUserException as e:
-            sys.stderr.write('\nDownload cancelled by user\n')
+            sys.stderr.write('Download cancelled by user\n')
             return 3
         except toutv.dl.CancelledByNetworkErrorException as e:
-            sys.stderr.write('\nDownload cancelled due to network error\n')
+            sys.stderr.write('Download cancelled due to network error\n')
             return 3
         except toutv.dl.FileExists as e:
             sys.stderr.write('Destination file exists (use -f to force)\n')
@@ -87,17 +87,17 @@ class App:
         except toutv.exceptions.RequestTimeout as e:
             timeout = e.get_timeout()
             url = e.get_url()
-            tmpl = '\nTimeout error ({} s for "{}")\n'
+            tmpl = 'Timeout error ({} s for "{}")\n'
             sys.stderr.write(tmpl.format(timeout, url))
             return 5
         except toutv.exceptions.UnexpectedHttpStatusCode as e:
             status_code = e.get_status_code()
             url = e.get_url()
-            tmpl = '\nHTTP status code {} for "{}"\n'
+            tmpl = 'HTTP status code {} for "{}"\n'
             sys.stderr.write(tmpl.format(status_code, url))
             return 5
         except toutv.dl.NoSpaceLeft:
-            sys.stderr.write('\nNo space left on device while downloading\n')
+            sys.stderr.write('No space left on device while downloading\n')
             return 6
         except Exception as e:
             sys.stderr.write('Unknown error: {}\n'.format(e))
@@ -106,6 +106,8 @@ class App:
         return 0
 
     def stop(self):
+        print('\nStopping...')
+
         if self._dl is not None:
             self._dl.cancel()
         self._stop = True
@@ -469,6 +471,8 @@ class App:
         self._print_cur_pb(0, 0)
 
     def _on_dl_progress_update(self, done_segments, done_bytes):
+        if self._stop:
+            return
         self._print_cur_pb(done_segments, done_bytes)
 
     def _fetch_episode(self, episode, output_dir, bitrate, quality, overwrite):
