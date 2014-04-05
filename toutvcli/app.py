@@ -65,43 +65,46 @@ class App:
         try:
             self._toutvclient = self._build_toutv_client(no_cache)
         except Exception as e:
-            sys.stderr.write('Cannot create client: try disabling the cache using -n\n')
+            msg = 'Cannot create client: try disabling the cache using -n\n'
+            print(msg, file=sys.stderr)
             return 15
 
         try:
             args.func(args)
         except toutv.client.ClientError as e:
-            sys.stderr.write('Error: {}\n'.format(e))
+            print('Error: {}'.format(e), file=sys.stderr)
             return 1
         except toutv.dl.DownloaderError as e:
-            sys.stderr.write('Download error: {}\n'.format(e))
+            print('Download error: {}'.format(e), file=sys.stderr)
             return 2
         except toutv.dl.CancelledByUserException as e:
-            sys.stderr.write('Download cancelled by user\n')
+            print('Download cancelled by user', file=sys.stderr)
             return 3
         except toutv.dl.CancelledByNetworkErrorException as e:
-            sys.stderr.write('Download cancelled due to network error\n')
+            msg = 'Download cancelled due to network error'
+            print(msg, file=sys.stderr)
             return 3
         except toutv.dl.FileExistsException as e:
-            sys.stderr.write('Destination file exists (use -f to force)\n')
+            msg = 'Destination file exists (use -f to force)'
+            print(msg, file=sys.stderr)
             return 4
         except toutv.exceptions.RequestTimeout as e:
             timeout = e.get_timeout()
             url = e.get_url()
-            tmpl = 'Timeout error ({} s for "{}")\n'
-            sys.stderr.write(tmpl.format(timeout, url))
+            tmpl = 'Timeout error ({} s for "{}")'
+            print(tmpl.format(timeout, url), file=sys.stderr)
             return 5
         except toutv.exceptions.UnexpectedHttpStatusCode as e:
             status_code = e.get_status_code()
             url = e.get_url()
-            tmpl = 'HTTP status code {} for "{}"\n'
-            sys.stderr.write(tmpl.format(status_code, url))
+            tmpl = 'HTTP status code {} for "{}"'
+            print(tmpl.format(status_code, url), file=sys.stderr)
             return 5
         except toutv.dl.NoSpaceLeftException:
-            sys.stderr.write('No space left on device while downloading\n')
+            print('No space left on device while downloading', file=sys.stderr)
             return 6
         except Exception as e:
-            sys.stderr.write('Unknown error: {}\n'.format(e))
+            print('Unknown error: {}\n', file=sys.stderr)
             return 100
 
         return 0
@@ -542,19 +545,20 @@ class App:
             except toutv.dl.CancelledByUserException as e:
                 raise e
             except toutv.dl.CancelledByNetworkErrorException:
-                tmpl = 'Error: cannot fetch "{}": network error\n'
-                sys.stderr.write(tmpl.format(title))
+                tmpl = 'Error: cannot fetch "{}": network error'
+                print(tmpl.format(title), file=sys.stderr)
             except toutv.exceptions.RequestTimeout:
-                tmpl = 'Error: cannot fetch "{}": request timeout\n'
-                sys.stderr.write(tmpl.format(title))
+                tmpl = 'Error: cannot fetch "{}": request timeout'
+                print(tmpl.format(title), file=sys.stderr)
             except toutv.exceptions.UnexpectedHttpStatusCode:
-                tmpl = 'Error: cannot fetch "{}": unexpected HTTP status code\n'
-                sys.stderr.write(tmpl.format(title))
+                tmpl = 'Error: cannot fetch "{}": unexpected HTTP status code'
+                print(tmpl.format(title), file=sys.stderr)
             except toutv.dl.FileExistsException as e:
-                tmpl = 'Error: cannot fetch "{}": destination file exists\n'
-                sys.stderr.write(tmpl.format(title))
+                tmpl = 'Error: cannot fetch "{}": destination file exists'
+                print(tmpl.format(title), file=sys.stderr)
             except:
-                sys.stderr.write('Error: cannot fetch "{}"\n'.format(title))
+                tmpl = 'Error: cannot fetch "{}"'
+                print(tmpl.format(title), file=sys.stderr)
 
     def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
                                       quality, overwrite):
