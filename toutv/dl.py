@@ -88,11 +88,11 @@ class Downloader:
 
     @staticmethod
     def _do_request(url, params=None, proxies=None, timeout=None,
-                    cookies=None):
+                    cookies=None, stream=False):
         try:
             r = requests.get(url, params=params, headers=toutv.config.HEADERS,
                              proxies=proxies, cookies=cookies,
-                             timeout=15)
+                             timeout=15, stream=stream)
             if r.status_code != 200:
                 raise toutv.exceptions.UnexpectedHttpStatusCode(url,
                                                                 r.status_code)
@@ -102,9 +102,10 @@ class Downloader:
         return r
 
     def _do_proxies_requests(self, url, params=None, timeout=None,
-                             cookies=None):
+                             cookies=None, stream=False):
         return Downloader._do_request(url, params=params, timeout=timeout,
-                                      cookies=cookies, proxies=self._proxies)
+                                      cookies=cookies, proxies=self._proxies,
+                                      stream=stream)
 
     @staticmethod
     def get_episode_playlist_url(episode, proxies=None):
@@ -208,11 +209,22 @@ class Downloader:
         count = segindex + 1
 
         r = self._do_proxies_requests(segment.uri, cookies=self._cookies,
-                                      timeout=15)
-        encrypted_ts_segment = r.content
+                                      timeout=10, stream=True)
+
+        encrypted_ts_segment = bytearray()
+        chunks_count = 0
+        for chunk in r.iter_content(8192):
+            if self._do_cancel:
+                raise CancelledByUserException()
+            encrypted_ts_segment += chunk
+            self._done_bytes += len(chunk)
+            if chunks_count % 32 == 0:
+                self._notify_progress_update()
+            chunks_count += 1
+
         aes_iv = struct.pack('>IIII', 0, 0, 0, count)
         aes = AES.new(self._key, AES.MODE_CBC, aes_iv)
-        ts_segment = aes.decrypt(encrypted_ts_segment)
+        ts_segment = aes.decrypt(bytes(encrypted_ts_segment))
 
         try:
             self._of.write(ts_segment)
@@ -220,8 +232,6 @@ class Downloader:
             if e.errno == errno.ENOSPC:
                 raise NoSpaceLeft()
             raise e
-
-        self._done_bytes += len(ts_segment)
 
     def _get_video_stream(self):
         for stream in self._playlist.streams:
@@ -254,9 +264,6 @@ class Downloader:
             self._notify_dl_start()
             self._notify_progress_update()
             for segindex in range(len(self._segments)):
-                if self._do_cancel:
-                    raise CancelledByUserException()
-
                 self._download_segment(segindex)
                 self._done_segments += 1
                 self._notify_progress_update()
