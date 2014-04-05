@@ -78,7 +78,7 @@ class _ThumbnailProvider:
         urls = self.get_medium_thumb_urls()
 
         for url in urls:
-            if url is None or not url:
+            if not url:
                 continue
 
             logging.debug('HTTP-getting "{}"'.format(url))
