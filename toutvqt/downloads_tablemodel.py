@@ -135,6 +135,14 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Progress',
         'Status',
     ]
+    _status_msg_handlers = {
+        _DownloadItemState.QUEUED: lambda i: 'Queued',
+        _DownloadItemState.RUNNING: lambda i: 'Running',
+        _DownloadItemState.PAUSED: lambda i: 'Paused',
+        _DownloadItemState.CANCELLED: lambda i: 'Cancelled',
+        _DownloadItemState.ERROR: lambda i: 'Error: {}'.format(i.get_error()),
+        _DownloadItemState.DONE: lambda i: 'Done'
+    }
 
     def __init__(self, download_manager, parent=None):
         super().__init__(parent)
@@ -326,14 +334,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 return None
             elif col == 10:
                 # Status
-                handlers = {
-                    _DownloadItemState.QUEUED: lambda i: 'Queued',
-                    _DownloadItemState.RUNNING: lambda i: 'Running',
-                    _DownloadItemState.PAUSED: lambda i: 'Paused',
-                    _DownloadItemState.CANCELLED: lambda i: 'Cancelled',
-                    _DownloadItemState.ERROR: lambda i: 'Error: {}'.format(i.get_error()),
-                    _DownloadItemState.DONE: lambda i: 'Done'
-                }
+                handlers = QDownloadsTableModel._status_msg_handlers
 
                 return handlers[dl_item.get_state()](dl_item)
 
