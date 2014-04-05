@@ -170,6 +170,7 @@ class _QInfosWidget(Qt.QWidget, utils.QtUiLoad):
 
 
 class _QEmissionCommonInfosWidget:
+
     def _set_removal_date(self):
         removal_date = self._bo.get_removal_date()
         if removal_date is None:

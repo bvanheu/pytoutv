@@ -4,6 +4,7 @@ from PyQt4 import QtGui
 from toutvqt import utils
 from toutvqt.settings import SettingsKeys
 
+
 class QTouTvPreferencesDialog(utils.QCommonDialog, utils.QtUiLoad):
     _UI_NAME = 'preferences_dialog'
     settings_accepted = QtCore.pyqtSignal(dict)
@@ -17,7 +18,8 @@ class QTouTvPreferencesDialog(utils.QCommonDialog, utils.QtUiLoad):
 
     def _setup_fields(self, settings):
         self.http_proxy_value.setText(settings.get_http_proxy())
-        self.download_directory_value.setText(settings.get_download_directory())
+        self.download_directory_value.setText(
+            settings.get_download_directory())
 
     def _setup_signals(self):
         self.accepted.connect(self._send_settings_accepted)

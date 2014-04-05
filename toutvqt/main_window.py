@@ -58,7 +58,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
 
     def _setup_edit_menu(self):
-        self.preferences_action.triggered.connect(self._show_preferences_dialog)
+        self.preferences_action.triggered.connect(
+            self._show_preferences_dialog)
 
     def _setup_help_menu(self):
         self.about_dialog = QTouTvAboutDialog()
@@ -137,6 +138,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         settings = self._app.get_settings()
         output_dir = settings.get_download_directory()
         if not os.path.isdir(output_dir):
-            logging.error('output directory "{}" does not exist'.format(output_dir))
+            logging.error(
+                'output directory "{}" does not exist'.format(output_dir))
 
         self._download_manager.download(episode, bitrate, output_dir)

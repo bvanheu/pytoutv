@@ -3,6 +3,7 @@ from PyQt4 import QtCore
 
 
 class QDlItemDelegate(Qt.QItemDelegate):
+
     def __init__(self, model):
         super().__init__(model)
         self._model = model

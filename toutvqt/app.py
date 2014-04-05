@@ -41,7 +41,8 @@ class _QTouTvApp(Qt.QApplication):
         self._settings = QTouTvSettings()
 
         # Connect the signal between main window and the settings
-        self.main_window.settings_accepted.connect(self._settings.apply_settings)
+        self.main_window.settings_accepted.connect(
+            self._settings.apply_settings)
 
         # Connect the signal between settings and us
         self._settings.setting_item_changed.connect(self._setting_item_changed)

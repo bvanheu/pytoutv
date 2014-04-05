@@ -7,6 +7,7 @@ from toutvqt.emissions_treemodel import LoadingItem
 
 
 class QEmissionsTreeViewStyleDelegate(Qt.QStyledItemDelegate):
+
     def __init__(self):
         super().__init__()
 
