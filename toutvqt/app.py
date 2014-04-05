@@ -40,12 +40,10 @@ class _QTouTvApp(Qt.QApplication):
         # Create a default settings
         self._settings = QTouTvSettings()
 
-        # Connect the signals between the settings and preferences dialog
-        preferences_dialog = self.main_window.preferences_dialog
-        setting_item_changed = self._settings.setting_item_changed
-        settings_accepted = preferences_dialog.settings_accepted
-        settings_accepted.connect(self._settings.apply_settings)
-        setting_item_changed.connect(preferences_dialog.update_settings_item)
+        # Connect the signal between main window and the settings
+        self.main_window.settings_accepted.connect(self._settings.apply_settings)
+
+        # Connect the signal between settings and us
         self._settings.setting_item_changed.connect(self._setting_item_changed)
 
         # Read the settings from disk

@@ -51,29 +51,27 @@ class QTouTvSettings(Qt.QObject):
 
         self.apply_settings(read_settings)
 
-    def _change_setting(self, key, value):
-        if key == SettingsKeys.FILES_DOWNLOAD_DIR:
-            new_value = os.path.abspath(value)
-            if new_value == value:
-                return False
+    def _apply_settings(self, key, new_value):
+        """Apply the new value. Return whether the value changed."""
 
+        # If the key did not exist, it "changed".
+        if key not in self._settings_dict:
             self._settings_dict[key] = new_value
+            return True
+
+        cur_value = self._settings_dict[key]
+        if cur_value == new_value:
+            return False
+
+        self._settings_dict[key] = new_value
 
         return True
 
     def apply_settings(self, new_settings):
         for key in new_settings:
             new_value = new_settings[key]
-            if key in self._settings_dict:
-                if new_value != self._settings_dict[key]:
-                    # Value changed
-                    if self._change_setting(key, new_value):
-                        value = self._settings_dict[key]
-                        self.setting_item_changed.emit(key, value)
-            else:
-                # New setting key
+            if self._apply_settings(key, new_value):
                 self.setting_item_changed.emit(key, new_value)
-            self._settings_dict[key] = new_settings[key]
 
         self.write_settings()
 

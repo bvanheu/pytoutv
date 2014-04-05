@@ -20,6 +20,7 @@ from toutv import client
 
 class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     _UI_NAME = 'main_window'
+    settings_accepted = QtCore.pyqtSignal(dict)
 
     def __init__(self, app, client):
         super().__init__()
@@ -57,9 +58,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
 
     def _setup_edit_menu(self):
-        self.preferences_dialog = QTouTvPreferencesDialog()
-        _show_prefs_cb = self._show_preferences_dialog
-        self.preferences_action.triggered.connect(_show_prefs_cb)
+        self.preferences_action.triggered.connect(self._show_preferences_dialog)
 
     def _setup_help_menu(self):
         self.about_dialog = QTouTvAboutDialog()
@@ -109,10 +108,12 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self.about_dialog.show_move(pos)
 
     def _show_preferences_dialog(self):
+        settings = QTouTvPreferencesDialog(self._app.get_settings())
+        settings.settings_accepted.connect(self.settings_accepted)
         pos = self.pos()
         pos.setX(pos.x() + 60)
         pos.setY(pos.y() + 60)
-        self.preferences_dialog.show_move(pos)
+        settings.show_move(pos)
 
     def _on_select_download(self, episode):
         pos = QtGui.QCursor().pos()

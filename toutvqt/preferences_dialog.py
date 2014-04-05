@@ -2,17 +2,22 @@ from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from toutvqt import utils
-
+from toutvqt.settings import SettingsKeys
 
 class QTouTvPreferencesDialog(utils.QCommonDialog, utils.QtUiLoad):
     _UI_NAME = 'preferences_dialog'
     settings_accepted = QtCore.pyqtSignal(dict)
 
-    def __init__(self):
+    def __init__(self, settings):
         super().__init__()
 
         self._setup_ui()
         self._setup_signals()
+        self._setup_fields(settings)
+
+    def _setup_fields(self, settings):
+        self.http_proxy_value.setText(settings.get_http_proxy())
+        self.download_directory_value.setText(settings.get_download_directory())
 
     def _setup_signals(self):
         self.accepted.connect(self._send_settings_accepted)
@@ -30,14 +35,8 @@ class QTouTvPreferencesDialog(utils.QCommonDialog, utils.QtUiLoad):
     def _send_settings_accepted(self):
         settings = {}
 
-        settings['network/http_proxy'] = self.http_proxy_value.text()
+        settings[SettingsKeys.NETWORK_HTTP_PROXY] = self.http_proxy_value.text()
         dl_dir_value = self.download_directory_value.text()
-        settings['files/download_directory'] = dl_dir_value
+        settings[SettingsKeys.FILES_DOWNLOAD_DIR] = dl_dir_value
 
         self.settings_accepted.emit(settings)
-
-    def update_settings_item(self, key, value):
-        if key == 'network/http_proxy':
-            self.http_proxy_value.setText(value)
-        elif key == 'files/download_directory':
-            self.download_directory_value.setText(value)
