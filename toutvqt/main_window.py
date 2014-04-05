@@ -81,6 +81,10 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self._setup_action_icon('preferences_action')
         self._setup_action_icon('about_action')
 
+    def _setup_statusbar(self):
+        # Hide status bar until implemented
+        self.statusbar.hide()
+
     def _setup_ui(self):
         self._load_ui(QTouTvMainWindow._UI_NAME)
         self._setup_icons()
@@ -88,6 +92,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self._add_infos()
         self._add_tableview()
         self._setup_menus()
+        self._setup_statusbar()
 
     def closeEvent(self, close_event):
         self.infos_frame.exit()
