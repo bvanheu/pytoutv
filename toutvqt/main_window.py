@@ -97,6 +97,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self._setup_statusbar()
 
     def closeEvent(self, close_event):
+        logging.debug('Closing main window')
         self.infos_frame.exit()
         self._downloads_tableview_model.exit()
         self._treeview_model.exit()
@@ -105,6 +106,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self.emissions_treeview.set_default_columns_widths()
 
     def start(self):
+        logging.debug('Starting main window')
         self.emissions_treeview.model().init_fetch()
         self.show()
         self._setup_ui_post_show()
@@ -124,6 +126,9 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         settings.show_move(pos)
 
     def _on_select_download(self, episode):
+        title = episode.get_title()
+        logging.debug('Episode "{}" selected for download'.format(title))
+
         pos = QtGui.QCursor().pos()
         cursor = self.cursor()
         self.setCursor(QtCore.Qt.WaitCursor)
@@ -140,14 +145,19 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             self._on_bitrate_chosen(bitrate[0], episode)
 
     def _on_bitrate_chosen(self, bitrate, episode):
+        tmpl = 'Bitrate chosen for episode "{}": {} bps'
+        logging.debug(tmpl.format(episode.get_title(), bitrate))
+
         if self._tableview_model.download_item_exists(episode):
+            tmpl = 'Download of episode "{}" @ {} bps already exists'
+            logging.info(tmpl.format(episode.get_title(), bitrate))
             return
 
         settings = self._app.get_settings()
         output_dir = settings.get_download_directory()
         if not os.path.isdir(output_dir):
-            logging.error(
-                'output directory "{}" does not exist'.format(output_dir))
+            msg = 'Output directory "{}" does not exist'.format(output_dir)
+            logging.error(msg)
             return
 
         self._download_manager.download(episode, bitrate, output_dir,

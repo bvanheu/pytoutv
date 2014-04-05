@@ -1,3 +1,4 @@
+import logging
 from pkg_resources import resource_filename
 from PyQt4 import Qt, QtCore
 from toutvqt.emissions_treemodel import EmissionsTreeModelEmission
@@ -43,6 +44,8 @@ class QEmissionsTreeView(Qt.QTreeView):
         self.setColumnWidth(1, 100)
 
     def item_selection_changed(self, selected, deselected):
+        logging.debug('Treeview item selection changed')
+
         indexes = selected.indexes()
 
         if len(indexes) == 0:

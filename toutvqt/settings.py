@@ -19,7 +19,6 @@ class QTouTvSettings(Qt.QObject):
         super().__init__()
         self._fill_defaults()
         self._settings_dict = {}
-        self.setting_item_changed.connect(self.tmp)
 
     def _fill_defaults(self):
         """Fills defaults with sensible default values."""
@@ -29,6 +28,8 @@ class QTouTvSettings(Qt.QObject):
         self.defaults[SettingsKeys.NETWORK_HTTP_PROXY] = None
 
     def write_settings(self):
+        logging.debug('Writing settings')
+
         settings = QSettings()
         settings.clear()
 
@@ -42,6 +43,8 @@ class QTouTvSettings(Qt.QObject):
                 settings.setValue(k, self._settings_dict[k])
 
     def read_settings(self):
+        logging.debug('Reading settings')
+
         settings = QSettings()
         read_settings = self.defaults.copy()
         keys = settings.allKeys()
@@ -68,6 +71,8 @@ class QTouTvSettings(Qt.QObject):
         return True
 
     def apply_settings(self, new_settings):
+        logging.debug('Applying settings')
+
         for key in new_settings:
             new_value = new_settings[key]
             if self._apply_settings(key, new_value):
@@ -83,6 +88,3 @@ class QTouTvSettings(Qt.QObject):
 
     def debug_print_settings(self):
         print(self._settings_dict)
-
-    def tmp(self, k, v):
-        print("%s changed to %s" % (k, v))

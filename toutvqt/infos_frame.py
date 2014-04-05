@@ -1,3 +1,4 @@
+import logging
 from PyQt4 import Qt
 from PyQt4 import QtGui
 from PyQt4 import QtCore
@@ -22,21 +23,26 @@ class QInfosFrame(Qt.QFrame):
         widget.show()
 
     def exit(self):
+        logging.debug('Joining thumb fetcher thread')
         self._fetch_thumb_thread.quit()
         self._fetch_thumb_thread.wait()
 
     def show_infos_none(self):
+        logging.debug('Showing none label')
         self._swap_infos_widget(self.none_label)
 
     def show_emission(self, emission):
+        logging.debug('Showing emission infos')
         self.emission_widget.set_emission(emission)
         self._swap_infos_widget(self.emission_widget)
 
     def show_season(self, emission, season_number, episodes):
+        logging.debug('Showing season infos')
         self.season_widget.set_infos(emission, season_number, episodes)
         self._swap_infos_widget(self.season_widget)
 
     def show_episode(self, episode):
+        logging.debug('Showing episode infos')
         self.episode_widget.set_episode(episode)
         self._swap_infos_widget(self.episode_widget)
 
@@ -94,8 +100,12 @@ class _QThumbFetcher(Qt.QObject):
 
     def fetch_thumb(self, bo):
         if bo is not self._last:
+            tmpl = 'Skipping thumbnail fetching of "{}"'
+            logging.debug(tmpl.format(bo.get_title()))
             return
 
+        tmpl = 'Fetching thumbnail for episode "{}"'
+        logging.debug(tmpl.format(bo.get_title()))
         bo.get_medium_thumb_data()
         self.fetch_done.emit(bo)
 
@@ -127,6 +137,7 @@ class _QInfosWidget(Qt.QWidget, utils.QtUiLoad):
             webbrowser.open(self._url)
 
     def _on_dl_btn_clicked(self):
+        logging.debug('Download button clicked')
         pass
 
     def _setup_thumb_fetching(self):
