@@ -12,6 +12,7 @@ from toutvqt.emissions_treemodel import EmissionsTreeModel
 from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.preferences_dialog import QTouTvPreferencesDialog
 from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
+from toutvqt.choose_bitrate_dialog import QBitrateResQualityButton
 from toutvqt.infos_frame import QInfosFrame
 from toutvqt import utils
 from toutvqt import config
@@ -128,7 +129,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         bitrates = episode.get_available_bitrates()
         self.setCursor(cursor)
         if len(bitrates) > 1:
-            dialog = QChooseBitrateDialog(episode, bitrates)
+            btn_type = QBitrateResQualityButton
+            dialog = QChooseBitrateDialog(episode, bitrates, btn_type)
             dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
             pos.setX(pos.x() - dialog.width())
             pos.setY(pos.y() - dialog.height())
