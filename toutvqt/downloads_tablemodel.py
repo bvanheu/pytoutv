@@ -299,7 +299,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 return '{}:{:02}'.format(minutes, seconds)
             elif col == 8:
                 # Average download speed
-                return '{:.2f}'.format(dl_item.get_avg_download_speed() / 1024)
+                return '{:.2f} kB/s'.format(dl_item.get_avg_download_speed() / 1024)
             elif col == 9:
                 # Progress bar
                 return None
