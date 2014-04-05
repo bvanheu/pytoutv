@@ -47,23 +47,28 @@ class DownloaderError(RuntimeError):
 
 
 class CancelledException(Exception):
-    pass
+    def __str__(self):
+        return 'Download cancelled'
 
 
 class CancelledByNetworkErrorException(CancelledException):
-    pass
+    def __str__(self):
+        return 'Download cancelled due to network error'
 
 
 class CancelledByUserException(CancelledException):
-    pass
+    def __str__(self):
+        return 'Download cancelled by user'
 
 
 class FileExists(Exception):
-    pass
+    def __str__(self):
+        return 'File exists'
 
 
 class NoSpaceLeft(Exception):
-    pass
+    def __str__(self):
+        return 'No space left while downloading'
 
 
 class Downloader:

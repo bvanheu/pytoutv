@@ -59,6 +59,7 @@ class _QDownloadWorker(Qt.QObject):
     download_started = QtCore.pyqtSignal(object, object, str, int)
     download_progress = QtCore.pyqtSignal(object, object)
     download_finished = QtCore.pyqtSignal(object)
+    download_error = QtCore.pyqtSignal(object, object)
 
     def __init__(self, download_event_type, i):
         super().__init__()
@@ -78,7 +79,11 @@ class _QDownloadWorker(Qt.QObject):
                                    on_dl_start=self._on_dl_start,
                                    on_progress_update=self._on_progress_update,
                                    overwrite=True, proxies=proxies)
-        downloader.download()
+        try:
+            downloader.download()
+        except Exception as e:
+            self.download_error.emit(work, e)
+            return
 
         self.download_finished.emit(work)
 
@@ -106,6 +111,7 @@ class QDownloadManager(Qt.QObject):
     download_started = QtCore.pyqtSignal(object, object, str, int)
     download_progress = QtCore.pyqtSignal(object, object)
     download_finished = QtCore.pyqtSignal(object)
+    download_error = QtCore.pyqtSignal(object, object)
 
     def __init__(self, nb_threads=5):
         super().__init__()
@@ -131,8 +137,10 @@ class QDownloadManager(Qt.QObject):
             self._available_workers.put(worker)
             worker.moveToThread(thread)
             worker.download_finished.connect(self._on_worker_finished)
+            worker.download_error.connect(self._on_worker_error)
 
             # Connect worker's signals directly to our signals
+            worker.download_error.connect(self.download_error)
             worker.download_finished.connect(self.download_finished)
             worker.download_started.connect(self.download_started)
             worker.download_progress.connect(self.download_progress)
@@ -166,3 +174,6 @@ class QDownloadManager(Qt.QObject):
 
         self._available_workers.put(worker)
         self._do_next_work()
+
+    def _on_worker_error(self, work, ex):
+        self._on_worker_finished(work)

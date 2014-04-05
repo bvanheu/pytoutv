@@ -11,6 +11,15 @@ class _DownloadStat:
         self.dt = datetime.datetime.now()
 
 
+class _DownloadItemState:
+    QUEUED = 0
+    RUNNING = 1
+    PAUSED = 2
+    CANCELLED = 3
+    ERROR = 4
+    DONE = 5
+
+
 class _DownloadItem:
 
     def __init__(self, work):
@@ -23,25 +32,26 @@ class _DownloadItem:
         self._done_elapsed = None
         self._last_dl_stat = _DownloadStat()
         self._avg_speed = 0
+        self._error = None
+        self._state = _DownloadItemState.QUEUED
 
-        # TODO: replace those variable by a single state variable
-        self._is_done = False
-        self._is_started = False
+    def set_error(self, ex):
+        self._error = ex
 
-    def is_started(self):
-        return self._is_started
+    def get_error(self):
+        return self._error
 
-    def set_started(self, is_started):
-        self._is_started = is_started
-        self._started_dt = datetime.datetime.now()
+    def get_state(self):
+        return self._state
 
-    def is_done(self):
-        return self._is_done
+    def set_state(self, state):
+        if state == _DownloadItemState.RUNNING:
+            self._started_dt = datetime.datetime.now()
+        elif state == _DownloadItemState.DONE:
+            self._done_elapsed = self.get_elapsed()
+            self._avg_speed = 0
 
-    def set_done(self, is_done):
-        self._done_elapsed = self.get_elapsed()
-        self._avg_speed = 0
-        self._is_done = is_done
+        self._state = state
 
     def get_dl_progress(self):
         return self._dl_progress
@@ -65,7 +75,7 @@ class _DownloadItem:
     def set_dl_progress(self, dl_progress):
         self._dl_progress = dl_progress
 
-        if not self.is_done() and self.is_started():
+        if self.get_state() == _DownloadItemState.RUNNING:
             self._compute_avg_speed()
 
     def get_work(self):
@@ -87,9 +97,10 @@ class _DownloadItem:
         self._filename = filename
 
     def get_progress_percent(self):
-        if not self._is_started or self.get_dl_progress() is None:
+        is_init = (self.get_state() == _DownloadItemState.QUEUED)
+        if is_init or self.get_dl_progress() is None:
             return 0
-        if self._is_done:
+        if self.get_state() == _DownloadItemState.DONE:
             return 100
 
         num = self.get_dl_progress().get_done_segments()
@@ -104,9 +115,9 @@ class _DownloadItem:
         return self._started_dt
 
     def get_elapsed(self):
-        if not self.is_started():
+        if self.get_state() == _DownloadItemState.QUEUED:
             return datetime.timedelta()
-        if self.is_done():
+        elif self.get_state() == _DownloadItemState.DONE:
             return self._done_elapsed
 
         return datetime.datetime.now() - self.get_started_dt()
@@ -153,6 +164,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         dl_manager.download_started.connect(self._on_download_started)
         dl_manager.download_progress.connect(self._on_download_progress)
         dl_manager.download_finished.connect(self._on_download_finished)
+        dl_manager.download_error.connect(self._on_download_error)
 
     def _on_download_created(self, work):
         episode_id = work.get_episode().get_id()
@@ -177,7 +189,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         item.set_dl_progress(dl_progress)
         item.set_total_segments(total_segments)
         item.set_filename(filename)
-        item.set_started(True)
+        item.set_state(_DownloadItemState.RUNNING)
 
         self._signal_episode_data_changed(episode)
 
@@ -193,7 +205,16 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_done(True)
+        item.set_state(_DownloadItemState.DONE)
+
+        self._signal_episode_data_changed(episode)
+
+    def _on_download_error(self, work, ex):
+        episode = work.get_episode()
+        item = self._get_download_item(episode)
+
+        item.set_state(_DownloadItemState.ERROR)
+        item.set_error(ex)
 
         self._signal_episode_data_changed(episode)
 
@@ -307,12 +328,16 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 return None
             elif col == 10:
                 # Status
-                if dl_item.is_done():
-                    return 'Done'
-                if dl_item.is_started():
-                    return 'Started'
+                handlers = {
+                    _DownloadItemState.QUEUED: lambda i: 'Queued',
+                    _DownloadItemState.RUNNING: lambda i: 'Running',
+                    _DownloadItemState.PAUSED: lambda i: 'Paused',
+                    _DownloadItemState.CANCELLED: lambda i: 'Cancelled',
+                    _DownloadItemState.ERROR: lambda i: 'Error: {}'.format(i.get_error()),
+                    _DownloadItemState.DONE: lambda i: 'Done'
+                }
 
-                return 'Queued'
+                return handlers[dl_item.get_state()](dl_item)
 
     def headerData(self, col, ori, role):
         if ori == QtCore.Qt.Horizontal:
