@@ -79,6 +79,8 @@ class _QDownloadWorker(Qt.QObject):
         try:
             downloader.download()
         except Exception as e:
+            title = episode.get_title()
+            logging.error('Cannot download "{}": {}'.format(title, e))
             self.download_error.emit(work, e)
             return
 
