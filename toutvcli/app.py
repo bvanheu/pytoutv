@@ -82,7 +82,7 @@ class App:
         except toutv.dl.CancelledByNetworkErrorException as e:
             sys.stderr.write('Download cancelled due to network error\n')
             return 3
-        except toutv.dl.FileExists as e:
+        except toutv.dl.FileExistsException as e:
             sys.stderr.write('Destination file exists (use -f to force)\n')
             return 4
         except toutv.exceptions.RequestTimeout as e:
@@ -97,7 +97,7 @@ class App:
             tmpl = 'HTTP status code {} for "{}"\n'
             sys.stderr.write(tmpl.format(status_code, url))
             return 5
-        except toutv.dl.NoSpaceLeft:
+        except toutv.dl.NoSpaceLeftException:
             sys.stderr.write('No space left on device while downloading\n')
             return 6
         except Exception as e:
@@ -550,7 +550,7 @@ class App:
             except toutv.exceptions.UnexpectedHttpStatusCode:
                 tmpl = 'Error: cannot fetch "{}": unexpected HTTP status code\n'
                 sys.stderr.write(tmpl.format(title))
-            except toutv.dl.FileExists as e:
+            except toutv.dl.FileExistsException as e:
                 tmpl = 'Error: cannot fetch "{}": destination file exists\n'
                 sys.stderr.write(tmpl.format(title))
             except:

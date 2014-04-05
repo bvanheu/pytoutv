@@ -61,12 +61,12 @@ class CancelledByUserException(CancelledException):
         return 'Download cancelled by user'
 
 
-class FileExists(Exception):
+class FileExistsException(Exception):
     def __str__(self):
         return 'File exists'
 
 
-class NoSpaceLeft(Exception):
+class NoSpaceLeftException(Exception):
     def __str__(self):
         return 'No space left while downloading'
 
@@ -173,7 +173,7 @@ class Downloader:
     def _init_download(self):
         # Prevent overwriting
         if not self._overwrite and os.path.exists(self._filename):
-            raise FileExists()
+            raise FileExistsException()
 
         pl, cookies = Downloader.get_episode_playlist_cookies(self._episode)
         self._playlist = pl
@@ -230,7 +230,7 @@ class Downloader:
             self._of.write(ts_segment)
         except OSError as e:
             if e.errno == errno.ENOSPC:
-                raise NoSpaceLeft()
+                raise NoSpaceLeftException()
             raise e
 
     def _get_video_stream(self):
