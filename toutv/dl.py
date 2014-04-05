@@ -238,7 +238,7 @@ class Downloader:
             if stream.bandwidth == self._bitrate:
                 return stream
 
-        raise DownloadError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
+        raise DownloaderError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
 
     def download(self):
         self._init_download()

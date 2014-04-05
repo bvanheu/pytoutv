@@ -104,7 +104,7 @@ class App:
             print('No space left on device while downloading', file=sys.stderr)
             return 6
         except Exception as e:
-            print('Unknown error: {}\n', file=sys.stderr)
+            print('Unknown error: {}'.format(e), file=sys.stderr)
             return 100
 
         return 0
