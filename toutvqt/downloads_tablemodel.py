@@ -4,14 +4,6 @@ from PyQt4 import Qt
 from PyQt4 import QtCore
 
 
-class _Internal:
-    def __init__(self, episode_id):
-        self._episode_id = episode_id
-
-    def get_episode_id(self):
-        return self._episode_id
-
-
 class _DownloadStat:
     def __init__(self):
         self.done_bytes = 0
@@ -218,7 +210,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         dl_item = self._download_list[key]
         work = dl_item.get_work()
         episode_id = work.get_episode().get_id()
-        idx = self.createIndex(row, column, _Internal(episode_id))
+        idx = self.createIndex(row, column, None)
 
         return idx
 
@@ -228,7 +220,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
     def index_from_id(self, episode_id, column):
         row = list(self._download_list.keys()).index(episode_id)
 
-        return self.createIndex(row, column, _Internal(episode_id))
+        return self.createIndex(row, column, None)
 
     def rowCount(self, parent):
         if not parent.isValid():
