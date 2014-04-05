@@ -4,7 +4,6 @@ from toutvqt.downloads_itemdelegate import QDlItemDelegate
 
 
 class QDownloadsTableView(Qt.QTreeView):
-
     def __init__(self, model):
         super().__init__()
 

@@ -12,7 +12,6 @@ import toutv.client
 
 
 class _QTouTvApp(Qt.QApplication):
-
     def __init__(self, args):
         super().__init__(args)
 

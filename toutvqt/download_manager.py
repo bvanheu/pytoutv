@@ -9,7 +9,6 @@ from toutv import dl
 
 
 class _DownloadWork:
-
     def __init__(self, episode, bitrate, output_dir, proxies):
         self._episode = episode
         self._bitrate = bitrate
@@ -30,7 +29,6 @@ class _DownloadWork:
 
 
 class _DownloadWorkProgress:
-
     def __init__(self, done_segments=0, done_bytes=0):
         self._done_segments = done_segments
         self._done_bytes = done_bytes
@@ -43,7 +41,6 @@ class _DownloadWorkProgress:
 
 
 class _QDownloadStartEvent(Qt.QEvent):
-
     """Event sent to download workers to make them initiate a download."""
 
     def __init__(self, type, work):

@@ -12,7 +12,6 @@ class FetchState:
 
 
 class LoadingItem:
-
     def __init__(self, my_parent):
         self.my_parent = my_parent
 
@@ -41,7 +40,6 @@ class LoadingItem:
 
 
 class EmissionsTreeModelEmission:
-
     def __init__(self, emission_bo, row_in_parent):
         self.bo = emission_bo
         self.seasons = []
@@ -86,7 +84,6 @@ class EmissionsTreeModelEmission:
 
 
 class EmissionsTreeModelSeason:
-
     def __init__(self, number, row_in_parent):
         self.number = number
         self.episodes = []
@@ -120,7 +117,6 @@ class EmissionsTreeModelSeason:
 
 
 class EmissionsTreeModelEpisode:
-
     def __init__(self, bo, row_in_parent):
         self.bo = bo
         self.loading_item = LoadingItem(self)

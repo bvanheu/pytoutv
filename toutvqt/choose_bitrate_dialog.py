@@ -4,7 +4,6 @@ from toutvqt import utils
 
 
 class _QBitrateButton(Qt.QPushButton):
-
     def __init__(self, bitrate):
         super().__init__()
 

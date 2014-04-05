@@ -5,7 +5,6 @@ from PyQt4 import QtCore
 
 
 class _DownloadStat:
-
     def __init__(self):
         self.done_bytes = 0
         self.dt = datetime.datetime.now()
@@ -21,7 +20,6 @@ class _DownloadItemState:
 
 
 class _DownloadItem:
-
     def __init__(self, work):
         self._work = work
         self._dl_progress = None
