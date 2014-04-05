@@ -56,8 +56,8 @@ package_data = {
     ]
 }
 install_requires = [
-    'pycrypto>=2.6.0',
-    'requests>=2.2.0',
+    'pycrypto>=2.0.0',
+    'requests>=2.0.0',
     'setuptools>=3.0'
 ]
 
