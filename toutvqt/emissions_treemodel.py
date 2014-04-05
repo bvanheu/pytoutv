@@ -181,6 +181,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.fetch_required.connect(self.fetcher.new_work_piece)
         self.fetcher.fetch_done.connect(self.fetch_done)
         self.fetcher.fetch_error.connect(self.fetch_error)
+        self.modelAboutToBeReset.connect(self._on_about_to_reset)
+        self.modelReset.connect(self._on_model_reset)
 
     def exit(self):
         self.fetch_thread.quit()
@@ -264,6 +266,15 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
     def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
         if role == QtCore.Qt.DisplayRole:
             return EmissionsTreeModel._HEADER[section]
+
+    def _on_about_to_reset(self):
+        if self.fetched == FetchState.DONE:
+            self.emissions = []
+            self.fetched = FetchState.NOPE
+
+    def _on_model_reset(self):
+        if self.fetched == FetchState.NOPE:
+            self.init_fetch()
 
 
 class EmissionsTreeModelFetcher(Qt.QObject):

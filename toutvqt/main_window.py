@@ -57,6 +57,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _setup_file_menu(self):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
+        self.refresh_emissions_action.triggered.connect(self._treeview_model.reset)
 
     def _setup_edit_menu(self):
         self.preferences_action.triggered.connect(
