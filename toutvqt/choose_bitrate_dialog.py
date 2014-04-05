@@ -4,10 +4,17 @@ from toutvqt import utils
 
 
 class _QBitrateButton(Qt.QPushButton):
-    def __init__(self, bitrate):
+    def __init__(self, bitrate, res):
         super().__init__()
 
         self._bitrate = bitrate
+        self._res = res
+
+        self._setup()
+
+    def _setup(self):
+        text = '{} kbps ({}p)'.format(self._bitrate // 1000, self._res)
+        self.setText(text)
 
     def get_bitrate(self):
         return self._bitrate
@@ -15,6 +22,7 @@ class _QBitrateButton(Qt.QPushButton):
 
 class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
     _UI_NAME = 'choose_bitrate_dialog'
+    _resolutions = [270, 288, 360, 480]
     bitrate_chosen = QtCore.pyqtSignal(int, object)
 
     def __init__(self, episode, bitrates):
@@ -29,10 +37,9 @@ class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
         self._load_ui(QChooseBitrateDialog._UI_NAME)
 
     def _populate_bitrate_buttons(self):
-        for bitrate in self._bitrates:
-            btn = _QBitrateButton(bitrate)
-            text = '{} kbps'.format(bitrate // 1000)
-            btn.setText(text)
+        resolutions = QChooseBitrateDialog._resolutions
+        for bitrate, res in zip(self._bitrates, resolutions):
+            btn = _QBitrateButton(bitrate, res)
             btn.clicked.connect(self._on_bitrate_btn_clicked)
             self.buttons_vbox.addWidget(btn)
 
