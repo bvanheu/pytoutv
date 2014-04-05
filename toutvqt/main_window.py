@@ -145,6 +145,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         if not os.path.isdir(output_dir):
             logging.error(
                 'output directory "{}" does not exist'.format(output_dir))
+            return
 
         self._download_manager.download(episode, bitrate, output_dir,
                                         proxies=self._app.get_proxies())
