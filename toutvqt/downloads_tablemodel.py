@@ -437,9 +437,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 if dl_item.get_state() != DownloadItemState.RUNNING:
                     return '0 kiB/s'
 
-                speed = dl_item.get_avg_download_speed() / 1024
+                speed = dl_item.get_avg_download_speed()
+                sz = QDownloadsTableModel._format_size(speed)
 
-                return '{:.2f} kiB/s'.format(speed)
+                return '{}/s'.format(sz)
             elif col == 10:
                 # Progress bar
                 return None
