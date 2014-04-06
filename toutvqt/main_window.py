@@ -34,6 +34,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _add_treeview(self):
         model = EmissionsTreeModel(self._client)
+        model.fetching_start.connect(self._on_treeview_fetch_start)
+        model.fetching_done.connect(self._on_treeview_fetch_done)
         self._treeview_model = model
         treeview = QEmissionsTreeView(model)
         self.emissions_treeview = treeview
@@ -135,6 +137,12 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _set_normal_cursor(self):
         self.setCursor(QtCore.Qt.ArrowCursor)
+
+    def _on_treeview_fetch_start(self):
+        self.refresh_emissions_action.setEnabled(False)
+
+    def _on_treeview_fetch_done(self):
+        self.refresh_emissions_action.setEnabled(True)
 
     def _on_select_download(self, episodes):
         logging.debug('Episodes selected for download')
