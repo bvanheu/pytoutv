@@ -173,6 +173,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         DownloadItemState.ERROR: lambda i: 'Error: {}'.format(i.get_error()),
         DownloadItemState.DONE: lambda i: 'Done'
     }
+    download_finished = QtCore.pyqtSignal(object)
 
     def __init__(self, download_manager, parent=None):
         super().__init__(parent)
@@ -202,6 +203,15 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
         # Ask download manager to cancel its work
         self._download_manager.cancel_work(dl_item.get_work())
+
+    def remove_episode_id_item(self, eid):
+        if eid not in self._download_list:
+            return
+
+        row = list(self._download_list.keys()).index(eid)
+        self.beginRemoveRows(Qt.QModelIndex(), row, row)
+        del self._download_list[eid]
+        self.endRemoveRows()
 
     def remove_item_at_row(self, row):
         # Get download item
@@ -289,6 +299,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         item = self._get_download_item(episode)
 
         item.set_state(DownloadItemState.DONE)
+        self.download_finished.emit(work)
 
     def _on_download_error(self, work, ex):
         episode = work.get_episode()

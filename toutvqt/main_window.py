@@ -48,7 +48,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self._download_manager = QDownloadManager(nb_threads=nb_threads)
 
         model = QDownloadsTableModel(self._download_manager)
-        self._tableview_model = model
+        model.download_finished.connect(self._on_download_finished)
         self._downloads_tableview_model = model
 
         tableview = QDownloadsTableView(model)
@@ -143,6 +143,13 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     def _set_normal_cursor(self):
         self.setCursor(QtCore.Qt.ArrowCursor)
 
+    def _on_download_finished(self, work):
+        settings = self._app.get_settings()
+
+        if settings.get_remove_finished():
+            eid = work.get_episode().get_id()
+            self._downloads_tableview_model.remove_episode_id_item(eid)
+
     def _on_treeview_fetch_start(self):
         self.refresh_emissions_action.setEnabled(False)
 
@@ -177,7 +184,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             dialog.show_move(pos)
 
     def _start_download(self, episode, bitrate, output_dir):
-        if self._tableview_model.download_item_exists(episode):
+        if self._downloads_tableview_model.download_item_exists(episode):
             tmpl = 'Download of episode "{}" @ {} bps already exists'
             logging.info(tmpl.format(episode.get_title(), bitrate))
             return
