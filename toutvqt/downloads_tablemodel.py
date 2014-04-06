@@ -8,7 +8,7 @@ from PyQt4 import QtCore
 class _DownloadStat:
     def __init__(self):
         self.done_bytes = 0
-        self.dt = datetime.datetime.now()
+        self.dt = None
 
 
 class DownloadItemState:
@@ -29,7 +29,7 @@ class _DownloadItem:
         self._added_dt = datetime.datetime.now()
         self._started_dt = None
         self._end_elapsed = None
-        self._last_dl_stat = _DownloadStat()
+        self._last_dl_stat = None
         self._avg_speed = 0
         self._error = None
         self._state = DownloadItemState.QUEUED
@@ -62,24 +62,30 @@ class _DownloadItem:
     def get_avg_download_speed(self):
         return self._avg_speed
 
-    def _compute_avg_speed(self):
+    def _compute_avg_speed(self, dt):
         done_bytes = self.get_dl_progress().get_done_bytes()
-        now = datetime.datetime.now()
+        now = dt
 
-        if self.get_elapsed().seconds >= 3:
-            time_delta = now - self._last_dl_stat.dt
-            time_delta = time_delta.total_seconds()
-            bytes_delta = done_bytes - self._last_dl_stat.done_bytes
-            self._avg_speed = bytes_delta / time_delta
+        if self._last_dl_stat is None:
+            self._last_dl_stat = _DownloadStat()
+            self._last_dl_stat.done_bytes = done_bytes
+            self._last_dl_stat.dt = now
+            return
+
+        time_delta = now - self._last_dl_stat.dt
+        time_delta = time_delta.total_seconds()
+        bytes_delta = done_bytes - self._last_dl_stat.done_bytes
+        last_speed = bytes_delta / time_delta
+        self._avg_speed = 0.1 * last_speed + 0.9 * self._avg_speed
 
         self._last_dl_stat.done_bytes = done_bytes
-        self._last_dl_stat.dt = datetime.datetime.now()
+        self._last_dl_stat.dt = now
 
-    def set_dl_progress(self, dl_progress):
+    def set_dl_progress(self, dl_progress, dt):
         self._dl_progress = dl_progress
 
         if self.get_state() == DownloadItemState.RUNNING:
-            self._compute_avg_speed()
+            self._compute_avg_speed(dt)
 
     def get_work(self):
         return self._work
@@ -227,12 +233,15 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
     def _on_download_started_delayed(self,  work, dl_progress, filename,
                                      total_segments):
+        now = datetime.datetime.now()
         self._delayed_update_calls.append(
-            (self._on_download_started, [work, dl_progress, filename, total_segments]))
+            (self._on_download_started, [work, dl_progress, filename,
+                                         total_segments, now]))
 
     def _on_download_progress_delayed(self, work, dl_progress):
-        self._delayed_update_calls.append(
-            (self._on_download_progress, [work, dl_progress]))
+        now = datetime.datetime.now()
+        self._delayed_update_calls.append((self._on_download_progress,
+                                          [work, dl_progress, now]))
 
     def _on_download_finished_delayed(self, work):
         self._delayed_update_calls.append((self._on_download_finished, [work]))
@@ -260,22 +269,22 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         return self._download_list[episode.get_id()]
 
     def _on_download_started(self, work, dl_progress, filename,
-                             total_segments):
+                             total_segments, now):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_dl_progress(dl_progress)
+        item.set_dl_progress(dl_progress, now)
         item.set_total_segments(total_segments)
         item.set_filename(filename)
         item.set_state(DownloadItemState.RUNNING)
 
         self._signal_episode_data_changed(episode)
 
-    def _on_download_progress(self, work, dl_progress):
+    def _on_download_progress(self, work, dl_progress, now):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_dl_progress(dl_progress)
+        item.set_dl_progress(dl_progress, now)
 
         self._signal_episode_data_changed(episode)
 
@@ -305,7 +314,8 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._signal_episode_data_changed(episode)
 
     def _on_timer_timeout(self):
-        for (func, args) in self._delayed_update_calls:
+        print(len(self._delayed_update_calls))
+        for func, args in self._delayed_update_calls:
             func(*args)
 
         self._delayed_update_calls = []
