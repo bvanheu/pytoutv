@@ -37,11 +37,15 @@ class QDownloadsTableView(Qt.QTreeView):
         action = self._context_menu.exec(Qt.QCursor.pos())
 
         if action is self._open_action:
-            print("open!", index.isValid())
-            pass
+            output_dir = dl_item.get_work().get_output_dir()
+            filename = dl_item.get_filename()
+            url = Qt.QUrl("file://{}/{}".format(output_dir, filename))
+            Qt.QDesktopServices.openUrl(url)
+
         elif action is self._open_dir_action:
-            url = QUrl("file:// " + dl_item.get_output_dir())
-            Qt.QDesktopServices.openUrl(url);
+            output_dir = dl_item.get_work().get_output_dir()
+            url = Qt.QUrl("file://{}".format(output_dir))
+            Qt.QDesktopServices.openUrl(url)
 
         elif action is self._cancel_action:
             print("cancel!", index.isValid())
