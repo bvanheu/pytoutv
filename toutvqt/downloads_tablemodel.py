@@ -151,7 +151,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._download_manager = download_manager
         self._download_list = OrderedDict()
 
+        self._delayed_update_calls = []
+
         self._setup_signals()
+        self._setup_timer()
 
     def get_progress_col(self):
         return 9
@@ -164,14 +167,40 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
     def download_item_exists(self, episode):
         return episode.get_id() in self._download_list
 
+    def _setup_timer(self):
+        self._refresh_timer = Qt.QTimer(self)
+        self._refresh_timer.timeout.connect(self._on_timer_timeout)
+        self._refresh_timer.setInterval(2000)
+        self._refresh_timer.start()
+
     def _setup_signals(self):
         dl_manager = self._download_manager
 
-        dl_manager.download_created.connect(self._on_download_created)
-        dl_manager.download_started.connect(self._on_download_started)
-        dl_manager.download_progress.connect(self._on_download_progress)
-        dl_manager.download_finished.connect(self._on_download_finished)
-        dl_manager.download_error.connect(self._on_download_error)
+        dl_manager.download_created.connect(self._on_download_created_delayed)
+        dl_manager.download_started.connect(self._on_download_started_delayed)
+        dl_manager.download_progress.connect(
+            self._on_download_progress_delayed)
+        dl_manager.download_finished.connect(
+            self._on_download_finished_delayed)
+        dl_manager.download_error.connect(self._on_download_error_delayed)
+
+    def _on_download_created_delayed(self, work):
+        self._delayed_update_calls.append((self._on_download_created, [work]))
+
+    def _on_download_started_delayed(self,  work, dl_progress, filename,
+                                     total_segments):
+        self._delayed_update_calls.append(
+            (self._on_download_started, [work, dl_progress, filename, total_segments]))
+
+    def _on_download_progress_delayed(self, work, dl_progress):
+        self._delayed_update_calls.append(
+            (self._on_download_progress, [work, dl_progress]))
+
+    def _on_download_finished_delayed(self, work):
+        self._delayed_update_calls.append((self._on_download_finished, [work]))
+
+    def _on_download_error_delayed(self, work, ex):
+        self._on_download_error.append((self._on_download_error, [work, ex]))
 
     def _on_download_created(self, work):
         episode_id = work.get_episode().get_id()
@@ -225,6 +254,12 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         item.set_error(ex)
 
         self._signal_episode_data_changed(episode)
+
+    def _on_timer_timeout(self):
+        for (func, args) in self._delayed_update_calls:
+            func(*args)
+
+        self._delayed_update_calls = []
 
     def _signal_episode_data_changed(self, episode):
         episode_id = episode.get_id()
