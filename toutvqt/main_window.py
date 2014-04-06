@@ -130,11 +130,10 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         settings.show_move(pos)
 
     def _set_wait_cursor(self):
-        self._normal_cursor = self.cursor()
         self.setCursor(QtCore.Qt.WaitCursor)
 
     def _set_normal_cursor(self):
-        self.setCursor(self._normal_cursor)
+        self.setCursor(QtCore.Qt.ArrowCursor)
 
     def _on_select_download(self, episodes):
         logging.debug('Episodes selected for download')

@@ -163,6 +163,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         'Episode number',
     ]
     fetch_required = QtCore.pyqtSignal(object)
+    fetching_start = QtCore.pyqtSignal()
+    fetching_done = QtCore.pyqtSignal()
 
     def __init__(self, client):
         super().__init__()
@@ -238,11 +240,15 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
             self.emissions = children_list
         self.endInsertRows()
 
+        self.fetching_done.emit()
+
     def fetch_error(self, parent, ex):
         if type(ex) is toutv.client.ClientError:
             msg = 'Client error: {}'.format(ex)
         else:
             logging.error('Error: {}'.format(ex))
+
+        self.fetching_done.emit()
 
     def init_fetch(self, parent=Qt.QModelIndex()):
         logging.debug('Initializing emissions fetching')
@@ -254,6 +260,7 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
         parent = Qt.QModelIndex(parent)
         self.fetch_required.emit(parent)
+        self.fetching_start.emit()
 
     def item_expanded(self, parent):
         """Slot called when an item in the tree has been expanded."""
