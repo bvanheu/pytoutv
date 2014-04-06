@@ -25,7 +25,7 @@ class QTouTvSettings(Qt.QObject):
         self.defaults = {}
         def_dl_dir = QTouTvSettings._DEFAULT_DOWNLOAD_DIRECTORY
         self.defaults[SettingsKeys.FILES_DOWNLOAD_DIR] = def_dl_dir
-        self.defaults[SettingsKeys.NETWORK_HTTP_PROXY] = None
+        self.defaults[SettingsKeys.NETWORK_HTTP_PROXY] = ""
 
     def write_settings(self):
         logging.debug('Writing settings')
