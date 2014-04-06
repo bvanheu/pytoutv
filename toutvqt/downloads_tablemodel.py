@@ -28,7 +28,7 @@ class _DownloadItem:
         self._filename = None
         self._added_dt = datetime.datetime.now()
         self._started_dt = None
-        self._done_elapsed = None
+        self._end_elapsed = None
         self._last_dl_stat = _DownloadStat()
         self._avg_speed = 0
         self._error = None
@@ -46,8 +46,12 @@ class _DownloadItem:
     def set_state(self, state):
         if state == DownloadItemState.RUNNING:
             self._started_dt = datetime.datetime.now()
-        elif state == DownloadItemState.DONE:
-            self._done_elapsed = self.get_elapsed()
+        elif state in [
+            DownloadItemState.DONE,
+            DownloadItemState.CANCELLED,
+            DownloadItemState.ERROR
+        ]:
+            self._end_elapsed = self.get_elapsed()
             self._avg_speed = 0
 
         self._state = state
@@ -116,8 +120,8 @@ class _DownloadItem:
     def get_elapsed(self):
         if self.get_state() == DownloadItemState.QUEUED:
             return datetime.timedelta()
-        elif self.get_state() == DownloadItemState.DONE:
-            return self._done_elapsed
+        elif self._end_elapsed is not None:
+            return self._end_elapsed
 
         return datetime.datetime.now() - self.get_started_dt()
 
