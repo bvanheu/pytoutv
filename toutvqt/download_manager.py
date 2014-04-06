@@ -13,6 +13,7 @@ class _DownloadWork:
         self._bitrate = bitrate
         self._output_dir = output_dir
         self._proxies = proxies
+        self._cancelled = False
 
     def get_episode(self):
         return self._episode
@@ -25,6 +26,12 @@ class _DownloadWork:
 
     def get_proxies(self):
         return self._proxies
+
+    def cancel(self):
+        self._cancelled = True
+
+    def is_cancelled(self):
+        return self._cancelled
 
 
 class _DownloadWorkProgress:
@@ -79,6 +86,9 @@ class _QDownloadWorker(Qt.QObject):
 
     def do_work(self, work):
         if self._cancelled:
+            return
+
+        if work.is_cancelled():
             return
 
         self._current_work = work
@@ -166,12 +176,11 @@ class QDownloadManager(Qt.QObject):
 
     def cancel_work(self, work):
         if work not in self._works_workers:
-            msg = 'Trying to cancel a work with no associated worker'
-            logging.warning(msg)
-            return
-
-        worker = self._works_workers[work]
-        worker.cancel_current_work()
+            work.cancel()
+            self.download_cancelled.emit(work)
+        else:
+            worker = self._works_workers[work]
+            worker.cancel_current_work()
 
     def _setup_threads(self, nb_threads):
         self._available_workers = queue.Queue()

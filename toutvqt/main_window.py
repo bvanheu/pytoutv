@@ -46,7 +46,6 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         tableview = QDownloadsTableView(model)
         self.downloads_tableview = tableview
         self.downloads_tab.layout().addWidget(tableview)
-        tableview.cancel_download.connect(self._on_cancel_download)
 
     def _add_infos(self):
         self.infos_frame = QInfosFrame()
@@ -165,6 +164,3 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
         self._download_manager.download(episode, bitrate, output_dir,
                                         proxies=self._app.get_proxies())
-
-    def _on_cancel_download(self, row):
-        self._tableview_model.cancel_download_at_row(row)
