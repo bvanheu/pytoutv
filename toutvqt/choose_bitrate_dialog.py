@@ -69,8 +69,8 @@ class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
     def _on_bitrate_btn_clicked(self):
         btn = self.sender()
         res_index = btn.get_res_index()
-        self.bitrate_chosen.emit(res_index, self._episodes)
         self.close()
+        self.bitrate_chosen.emit(res_index, self._episodes)
 
     def show_move(self, pos):
         self._populate_bitrate_buttons()

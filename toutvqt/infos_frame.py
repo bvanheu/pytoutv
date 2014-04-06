@@ -9,8 +9,10 @@ from toutvqt import utils
 class QInfosFrame(Qt.QFrame):
     select_download = QtCore.pyqtSignal(list)
 
-    def __init__(self):
+    def __init__(self, client):
         super().__init__()
+
+        self._client = client
 
         self._setup_thumb_fetching()
         self._setup_ui()
@@ -55,7 +57,9 @@ class QInfosFrame(Qt.QFrame):
 
     def _setup_infos_widget(self):
         self._setup_none_label()
-        self.emission_widget = _QEmissionInfosWidget(self._thumb_fetcher)
+        self.emission_widget = _QEmissionInfosWidget(self._thumb_fetcher,
+                                                     self._client)
+        self.emission_widget.select_download.connect(self.select_download)
         self.season_widget = _QSeasonInfosWidget()
         self.season_widget.select_download.connect(self.select_download)
         self.episode_widget = _QEpisodeInfosWidget(self._thumb_fetcher)
@@ -223,8 +227,10 @@ class _QEmissionInfosWidget(_QInfosWidget, _QEmissionCommonInfosWidget):
     _UI_NAME = 'emission_infos_widget'
     _fetch_thumb_required = QtCore.pyqtSignal(object)
 
-    def __init__(self, thumb_fetcher):
+    def __init__(self, thumb_fetcher, client):
         super().__init__(thumb_fetcher)
+
+        self._client = client
 
         self._setup_ui(_QEmissionInfosWidget._UI_NAME)
         self._setup_thumb_fetching()
@@ -252,6 +258,10 @@ class _QEmissionInfosWidget(_QInfosWidget, _QEmissionCommonInfosWidget):
         self._set_common_infos()
         self._set_toutv_url(emission.get_url())
         self._try_set_thumb()
+
+    def _on_dl_btn_clicked(self):
+        episodes = self._client.get_emission_episodes(self._bo)
+        self.select_download.emit(list(episodes.values()))
 
 
 class _QSeasonInfosWidget(_QInfosWidget, _QEmissionCommonInfosWidget):

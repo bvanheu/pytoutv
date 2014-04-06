@@ -49,7 +49,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self.downloads_tab.layout().addWidget(tableview)
 
     def _add_infos(self):
-        self.infos_frame = QInfosFrame()
+        self.infos_frame = QInfosFrame(self._client)
         self.infos_frame.select_download.connect(self._on_select_download)
         self.emissions_tab.layout().addWidget(self.infos_frame)
         treeview = self.emissions_treeview
