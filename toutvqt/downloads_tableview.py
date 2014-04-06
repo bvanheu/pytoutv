@@ -1,6 +1,7 @@
 from pkg_resources import resource_filename
 from PyQt4 import Qt, QtCore
 from toutvqt.downloads_itemdelegate import QDlItemDelegate
+from toutvqt import utils
 
 
 class QDownloadsTableView(Qt.QTreeView):
@@ -15,9 +16,16 @@ class QDownloadsTableView(Qt.QTreeView):
 
     def _build_context_menu(self):
         self._context_menu = Qt.QMenu(parent=self)
+
+        # Actions
         self._open_action = self._context_menu.addAction('&Open')
         self._open_dir_action = self._context_menu.addAction('&Open directory in file explorer')
         self._cancel_action = self._context_menu.addAction('&Cancel')
+
+        # Icons
+        self._open_action.setIcon(utils.get_qicon('open_action'))
+        self._open_dir_action.setIcon(utils.get_qicon('open_dir_action'))
+        self._cancel_action.setIcon(utils.get_qicon('cancel_action'))
 
     def _setup_context_menu(self):
         self._build_context_menu()
