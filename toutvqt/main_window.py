@@ -13,6 +13,7 @@ from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.preferences_dialog import QTouTvPreferencesDialog
 from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
 from toutvqt.choose_bitrate_dialog import QBitrateResQualityButton
+from toutvqt.choose_bitrate_dialog import QResQualityButton
 from toutvqt.infos_frame import QInfosFrame
 from toutvqt import utils
 from toutvqt import config
@@ -135,32 +136,60 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     def _set_normal_cursor(self):
         self.setCursor(self._normal_cursor)
 
-    def _on_select_download(self, episode):
-        title = episode.get_title()
-        logging.debug('Episode "{}" selected for download'.format(title))
+    def _on_select_download(self, episodes):
+        logging.debug('Episodes selected for download')
+
+        if len(episodes) == 1:
+            self._set_wait_cursor()
+            btn_type = QBitrateResQualityButton
+            bitrates = episodes[0].get_available_bitrates()
+            self._set_normal_cursor()
+        else:
+            btn_type = QResQualityButton
+            bitrates = range(4)
+
+        if len(bitrates) != 4:
+            logging.error('Unsupported list of bitrates')
+            return
 
         pos = QtGui.QCursor().pos()
-        self._set_wait_cursor()
-        bitrates = episode.get_available_bitrates()
-        self._set_normal_cursor()
-        if len(bitrates) > 1:
-            btn_type = QBitrateResQualityButton
-            dialog = QChooseBitrateDialog(episode, bitrates, btn_type)
-            dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
-            pos.setX(pos.x() - dialog.width())
-            pos.setY(pos.y() - dialog.height())
-            dialog.show_move(pos)
-        else:
-            self._on_bitrate_chosen(bitrate[0], episode)
+        dialog = QChooseBitrateDialog(episodes, bitrates, btn_type)
+        dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
+        pos.setX(pos.x() - dialog.width())
+        pos.setY(pos.y() - dialog.height())
+        dialog.show_move(pos)
 
-    def _on_bitrate_chosen(self, bitrate, episode):
-        tmpl = 'Bitrate chosen for episode "{}": {} bps'
-        logging.debug(tmpl.format(episode.get_title(), bitrate))
-
+    def _start_download(self, episode, bitrate, output_dir):
         if self._tableview_model.download_item_exists(episode):
             tmpl = 'Download of episode "{}" @ {} bps already exists'
             logging.info(tmpl.format(episode.get_title(), bitrate))
             return
+
+        self._download_manager.download(episode, bitrate, output_dir,
+                                        proxies=self._app.get_proxies())
+
+    def start_download_episodes(self, res_index, episodes, output_dir):
+        self._set_wait_cursor()
+
+        episodes_bitrates = []
+
+        for episode in episodes:
+            bitrates = episode.get_available_bitrates()
+            if len(bitrates) != 4:
+                tmpl = 'Unsupported bitrate list for episode "{}"'
+                logging.error(tmpl.format(episode.get_title()))
+                continue
+            episodes_bitrates.append((episode, bitrates[res_index]))
+
+        for episode, bitrate in episodes_bitrates:
+            tmpl = 'Queueing download of episode "{}" @ {} bps'
+            logging.debug(tmpl.format(episode.get_title(), bitrate))
+            self._start_download(episode, bitrate, output_dir)
+
+        self._set_normal_cursor()
+
+    def _on_bitrate_chosen(self, res_index, episodes):
+        logging.debug('Bitrate chosen')
 
         settings = self._app.get_settings()
         output_dir = settings.get_download_directory()
@@ -169,5 +198,4 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             logging.error(msg)
             return
 
-        self._download_manager.download(episode, bitrate, output_dir,
-                                        proxies=self._app.get_proxies())
+        self.start_download_episodes(res_index, episodes, output_dir)

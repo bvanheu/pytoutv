@@ -48,7 +48,7 @@ class QEmissionsTreeView(Qt.QTreeView):
 
         indexes = selected.indexes()
 
-        if len(indexes) == 0:
+        if not indexes:
             self.none_selected.emit()
             return
 
