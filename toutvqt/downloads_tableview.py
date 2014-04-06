@@ -4,6 +4,8 @@ from toutvqt.downloads_itemdelegate import QDlItemDelegate
 
 
 class QDownloadsTableView(Qt.QTreeView):
+    cancel_download = QtCore.pyqtSignal(int)
+
     def __init__(self, model):
         super().__init__()
 
@@ -26,9 +28,13 @@ class QDownloadsTableView(Qt.QTreeView):
 
     def _on_context_menu(self, pos):
         index = self.indexAt(pos)
+        if not index.isValid():
+            return
+
         action = self._context_menu.exec(Qt.QCursor.pos())
 
-        # TODO: do something with action and index
+        if action is self._cancel_action:
+            self.cancel_download.emit(index.row())
 
     def set_default_columns_widths(self):
         pass

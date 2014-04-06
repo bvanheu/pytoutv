@@ -34,16 +34,19 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     def _add_treeview(self):
         model = EmissionsTreeModel(self._client)
         self._treeview_model = model
-        self.emissions_treeview = QEmissionsTreeView(model)
-        self.emissions_tab.layout().addWidget(self.emissions_treeview)
+        treeview = QEmissionsTreeView(model)
+        self.emissions_treeview = treeview
+        self.emissions_tab.layout().addWidget(treeview)
 
     def _add_tableview(self):
         self._download_manager = QDownloadManager()
         model = QDownloadsTableModel(self._download_manager)
         self._tableview_model = model
         self._downloads_tableview_model = model
-        self.downloads_tableview = QDownloadsTableView(model)
-        self.downloads_tab.layout().addWidget(self.downloads_tableview)
+        tableview = QDownloadsTableView(model)
+        self.downloads_tableview = tableview
+        self.downloads_tab.layout().addWidget(tableview)
+        tableview.cancel_download.connect(self._on_cancel_download)
 
     def _add_infos(self):
         self.infos_frame = QInfosFrame()
@@ -162,3 +165,6 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
         self._download_manager.download(episode, bitrate, output_dir,
                                         proxies=self._app.get_proxies())
+
+    def _on_cancel_download(self, row):
+        self._tableview_model.cancel_download_at_row(row)

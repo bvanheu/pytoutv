@@ -167,22 +167,28 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
     def download_item_exists(self, episode):
         return episode.get_id() in self._download_list
 
+    def cancel_download_at_row(self, row):
+        # Get download item
+        dl_item = self.get_download_item_at_row(row)
+
+        # Ask download manager to cancel its work
+        self._download_manager.cancel_work(dl_item.get_work())
+
     def _setup_timer(self):
         self._refresh_timer = Qt.QTimer(self)
         self._refresh_timer.timeout.connect(self._on_timer_timeout)
-        self._refresh_timer.setInterval(2000)
+        self._refresh_timer.setInterval(500)
         self._refresh_timer.start()
 
     def _setup_signals(self):
-        dl_manager = self._download_manager
+        dlman = self._download_manager
 
-        dl_manager.download_created.connect(self._on_download_created_delayed)
-        dl_manager.download_started.connect(self._on_download_started_delayed)
-        dl_manager.download_progress.connect(
-            self._on_download_progress_delayed)
-        dl_manager.download_finished.connect(
-            self._on_download_finished_delayed)
-        dl_manager.download_error.connect(self._on_download_error_delayed)
+        dlman.download_created.connect(self._on_download_created_delayed)
+        dlman.download_started.connect(self._on_download_started_delayed)
+        dlman.download_progress.connect(self._on_download_progress_delayed)
+        dlman.download_finished.connect(self._on_download_finished_delayed)
+        dlman.download_error.connect(self._on_download_error_delayed)
+        dlman.download_cancelled.connect(self._on_download_cancelled_delayed)
 
     def _on_download_created_delayed(self, work):
         self._delayed_update_calls.append((self._on_download_created, [work]))
@@ -200,7 +206,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._delayed_update_calls.append((self._on_download_finished, [work]))
 
     def _on_download_error_delayed(self, work, ex):
-        self._on_download_error.append((self._on_download_error, [work, ex]))
+        self._delayed_update_calls.append((self._on_download_error, [work, ex]))
+
+    def _on_download_cancelled_delayed(self, work):
+        self._delayed_update_calls.append((self._on_download_cancelled, [work]))
 
     def _on_download_created(self, work):
         episode_id = work.get_episode().get_id()
@@ -252,6 +261,14 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
         item.set_state(_DownloadItemState.ERROR)
         item.set_error(ex)
+
+        self._signal_episode_data_changed(episode)
+
+    def _on_download_cancelled(self, work):
+        episode = work.get_episode()
+        item = self._get_download_item(episode)
+
+        item.set_state(_DownloadItemState.CANCELLED)
 
         self._signal_episode_data_changed(episode)
 
@@ -365,7 +382,12 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 return '{}:{:02}'.format(minutes, seconds)
             elif col == 8:
                 # Average download speed
-                return '{:.2f} kiB/s'.format(dl_item.get_avg_download_speed() / 1024)
+                if dl_item.get_state() != _DownloadItemState.RUNNING:
+                    return '0 kiB/s'
+
+                speed = dl_item.get_avg_download_speed() / 1024
+
+                return '{:.2f} kiB/s'.format(speed)
             elif col == 9:
                 # Progress bar
                 return None

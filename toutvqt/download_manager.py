@@ -55,6 +55,7 @@ class _QDownloadWorker(Qt.QObject):
     download_started = QtCore.pyqtSignal(object, object, str, int)
     download_progress = QtCore.pyqtSignal(object, object)
     download_finished = QtCore.pyqtSignal(object)
+    download_cancelled = QtCore.pyqtSignal(object)
     download_error = QtCore.pyqtSignal(object, object)
 
     def __init__(self, download_event_type, i):
@@ -64,14 +65,17 @@ class _QDownloadWorker(Qt.QObject):
         self._downloader = None
         self._cancelled = False
 
-    def cancel_works(self):
-        self._cancelled = True
+    def cancel_current_work(self):
         if self._downloader is not None:
             episode = self._current_work.get_episode()
             bitrate = self._current_work.get_bitrate()
             tmpl = 'Cancelling download of "{}" @ {} bps'
             logging.debug(tmpl.format(episode.get_title(), bitrate))
             self._downloader.cancel()
+
+    def cancel_all_works(self):
+        self._cancelled = True
+        self.cancel_current_work()
 
     def do_work(self, work):
         if self._cancelled:
@@ -96,11 +100,11 @@ class _QDownloadWorker(Qt.QObject):
         try:
             downloader.download()
         except dl.CancelledByUserException as e:
-            if self._cancelled:
-                return
-            else:
-                raise e
+            self._downloader = None
+            self.download_cancelled.emit(work)
+            return
         except Exception as e:
+            self._downloader = None
             title = episode.get_title()
             tmpl = 'Cannot download "{}" @ {} bps: {}'
             logging.error(tmpl.format(title, bitrate, e))
@@ -126,7 +130,7 @@ class _QDownloadWorker(Qt.QObject):
         if ev.type() == self._download_event_type:
             self._handle_download_event(ev)
         else:
-            logging.error("Shouldn't be here")
+            logging.error('Download worker received wrong custom event')
 
 
 class QDownloadManager(Qt.QObject):
@@ -135,6 +139,7 @@ class QDownloadManager(Qt.QObject):
     download_progress = QtCore.pyqtSignal(object, object)
     download_finished = QtCore.pyqtSignal(object)
     download_error = QtCore.pyqtSignal(object, object)
+    download_cancelled = QtCore.pyqtSignal(object)
 
     def __init__(self, nb_threads=5):
         super().__init__()
@@ -146,7 +151,7 @@ class QDownloadManager(Qt.QObject):
         # Cancel all workers
         logging.debug('Cancelling all download workers')
         for worker in self._workers:
-            worker.cancel_works()
+            worker.cancel_all_works()
 
         # Clear works
         logging.debug('Clearing remaining download works')
@@ -159,10 +164,20 @@ class QDownloadManager(Qt.QObject):
             thread.quit()
             thread.wait()
 
+    def cancel_work(self, work):
+        if work not in self._works_workers:
+            msg = 'Trying to cancel a work with no associated worker'
+            logging.warning(msg)
+            return
+
+        worker = self._works_workers[work]
+        worker.cancel_current_work()
+
     def _setup_threads(self, nb_threads):
         self._available_workers = queue.Queue()
         self._threads = []
         self._workers = []
+        self._works_workers = {}
         self._works = queue.Queue()
 
         for i in range(nb_threads):
@@ -174,8 +189,10 @@ class QDownloadManager(Qt.QObject):
             worker.moveToThread(thread)
             worker.download_finished.connect(self._on_worker_finished)
             worker.download_error.connect(self._on_worker_error)
+            worker.download_cancelled.connect(self._on_worker_finished)
 
             # Connect worker's signals directly to our signals
+            worker.download_cancelled.connect(self.download_cancelled)
             worker.download_error.connect(self.download_error)
             worker.download_finished.connect(self.download_finished)
             worker.download_started.connect(self.download_started)
@@ -195,6 +212,7 @@ class QDownloadManager(Qt.QObject):
             self._available_workers.put(worker)
             return
 
+        self._works_workers[work] = worker
         ev = _QDownloadStartEvent(self._download_event_type, work)
         Qt.QCoreApplication.postEvent(worker, ev)
 
@@ -208,9 +226,10 @@ class QDownloadManager(Qt.QObject):
     def _on_worker_finished(self, work):
         title = work.get_episode().get_title()
         br = work.get_bitrate()
-        logging.debug('Download of "{}" @ {} bps finished'.format(title, br))
+        logging.debug('Download of "{}" @ {} bps ended'.format(title, br))
         worker = self.sender()
 
+        del self._works_workers[work]
         self._available_workers.put(worker)
         self._do_next_work()
 
