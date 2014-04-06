@@ -172,7 +172,7 @@ class Downloader:
 
     def _init_download(self):
         # Prevent overwriting
-        if not self._overwrite and os.path.exists(self._filename):
+        if not self._overwrite and os.path.exists(self._output_path):
             raise FileExistsException()
 
         pl, cookies = Downloader.get_episode_playlist_cookies(self._episode)
