@@ -37,15 +37,20 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         model.fetching_start.connect(self._on_treeview_fetch_start)
         model.fetching_done.connect(self._on_treeview_fetch_done)
         self._treeview_model = model
+
         treeview = QEmissionsTreeView(model)
         self.emissions_treeview = treeview
         self.emissions_tab.layout().addWidget(treeview)
 
     def _add_tableview(self):
-        self._download_manager = QDownloadManager()
+        settings = self._app.get_settings()
+        nb_threads = settings.get_download_slots()
+        self._download_manager = QDownloadManager(nb_threads=nb_threads)
+
         model = QDownloadsTableModel(self._download_manager)
         self._tableview_model = model
         self._downloads_tableview_model = model
+
         tableview = QDownloadsTableView(model)
         self.downloads_tableview = tableview
         self.downloads_tab.layout().addWidget(tableview)

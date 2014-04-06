@@ -22,8 +22,8 @@ class _QTouTvApp(Qt.QApplication):
         self.setApplicationName(config.APP_NAME)
 
         self._setup_client()
-        self._setup_ui()
         self._setup_settings()
+        self._setup_ui()
         self._start()
 
     def get_settings(self):
@@ -42,16 +42,16 @@ class _QTouTvApp(Qt.QApplication):
     def _setup_ui(self):
         self.main_window = QTouTvMainWindow(self, self._client)
 
+        # Connect the signal between main window and the settings
+        self.main_window.settings_accepted.connect(
+            self._settings.apply_settings)
+
     def _setup_client(self):
         self._client = toutv.client.Client()
 
     def _setup_settings(self):
         # Create a default settings
         self._settings = QTouTvSettings()
-
-        # Connect the signal between main window and the settings
-        self.main_window.settings_accepted.connect(
-            self._settings.apply_settings)
 
         # Connect the signal between settings and us
         self._settings.setting_item_changed.connect(self._setting_item_changed)
