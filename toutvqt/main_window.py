@@ -165,12 +165,16 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             logging.error('Unsupported list of bitrates')
             return
 
-        pos = QtGui.QCursor().pos()
-        dialog = QChooseBitrateDialog(episodes, bitrates, btn_type)
-        dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
-        pos.setX(pos.x() - dialog.width())
-        pos.setY(pos.y() - dialog.height())
-        dialog.show_move(pos)
+        settings = self._app.get_settings()
+        if settings.get_always_max_quality():
+            self._on_bitrate_chosen(3, episodes)
+        else:
+            pos = QtGui.QCursor().pos()
+            dialog = QChooseBitrateDialog(episodes, bitrates, btn_type)
+            dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
+            pos.setX(pos.x() - dialog.width())
+            pos.setY(pos.y() - dialog.height())
+            dialog.show_move(pos)
 
     def _start_download(self, episode, bitrate, output_dir):
         if self._tableview_model.download_item_exists(episode):
