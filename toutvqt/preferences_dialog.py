@@ -1,3 +1,4 @@
+import os.path
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -46,7 +47,8 @@ class QTouTvPreferencesDialog(utils.QCommonDialog, utils.QtUiLoad):
     def _open_download_directory_browser(self, checked):
         msg = 'Select download directory'
         dl_dir = QtGui.QFileDialog.getExistingDirectory(self, msg)
-        self.download_directory_value.setText(dl_dir)
+        if dl_dir.strip():
+            self.download_directory_value.setText(os.path.abspath(dl_dir))
 
     def _send_settings_accepted(self):
         settings = {}
