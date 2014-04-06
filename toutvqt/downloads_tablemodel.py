@@ -132,14 +132,14 @@ class _DownloadItem:
         if self.get_dl_progress() is None:
             return None
 
-        done_bytes = self.get_dl_progress().get_done_bytes()
+        done_segments_bytes = self.get_dl_progress().get_done_segments_bytes()
         done_segments = self.get_dl_progress().get_done_segments()
         total_segments = self.get_total_segments()
 
-        if done_segments == 0 or done_bytes == 0:
+        if done_segments == 0 or done_segments_bytes == 0:
             return None
 
-        estimated_size = total_segments / done_segments * done_bytes
+        estimated_size = total_segments / done_segments * done_segments_bytes
 
         return estimated_size
 

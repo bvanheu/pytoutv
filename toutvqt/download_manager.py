@@ -35,15 +35,19 @@ class _DownloadWork:
 
 
 class _DownloadWorkProgress:
-    def __init__(self, done_segments=0, done_bytes=0):
+    def __init__(self, done_segments=0, done_bytes=0, done_segments_bytes=0):
         self._done_segments = done_segments
         self._done_bytes = done_bytes
+        self._done_segments_bytes = done_segments_bytes
 
     def get_done_segments(self):
         return self._done_segments
 
     def get_done_bytes(self):
         return self._done_bytes
+
+    def get_done_segments_bytes(self):
+        return self._done_segments_bytes
 
 
 class _QDownloadStartEvent(Qt.QEvent):
@@ -129,8 +133,10 @@ class _QDownloadWorker(Qt.QObject):
         self.download_started.emit(self._current_work, progress, filename,
                                    total_segments)
 
-    def _on_progress_update(self, done_segments, done_bytes):
-        dl_progress = _DownloadWorkProgress(done_segments, done_bytes)
+    def _on_progress_update(self, done_segments, done_bytes,
+                            done_segments_bytes):
+        dl_progress = _DownloadWorkProgress(done_segments, done_bytes,
+                                            done_segments_bytes)
         self.download_progress.emit(self._current_work, dl_progress)
 
     def _handle_download_event(self, ev):
