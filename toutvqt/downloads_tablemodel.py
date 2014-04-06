@@ -125,6 +125,21 @@ class _DownloadItem:
 
         return datetime.datetime.now() - self.get_started_dt()
 
+    def get_estimated_size(self):
+        if self.get_dl_progress() is None:
+            return None
+
+        done_bytes = self.get_dl_progress().get_done_bytes()
+        done_segments = self.get_dl_progress().get_done_segments()
+        total_segments = self.get_total_segments()
+
+        if done_segments == 0 or done_bytes == 0:
+            return None
+
+        estimated_size = total_segments / done_segments * done_bytes
+
+        return estimated_size
+
 
 class QDownloadsTableModel(Qt.QAbstractTableModel):
     _HEADER = [
@@ -134,6 +149,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Filename',
         'Sections',
         'Downloaded',
+        'Estimated size',
         'Added',
         'Elapsed',
         'Speed',
@@ -161,7 +177,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._setup_timer()
 
     def get_progress_col(self):
-        return 9
+        return 10
 
     def get_download_item_at_row(self, row):
         episode_id = list(self._download_list.keys())[row]
@@ -318,6 +334,19 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
     def columnCount(self, parent):
         return len(QDownloadsTableModel._HEADER)
 
+    @staticmethod
+    def _format_size(size):
+        if size < (1 << 10):
+            s = '{} B'.format(size)
+        elif size < (1 << 20):
+            s = '{:.1f} kiB'.format(size / (1 << 10))
+        elif size < (1 << 30):
+            s = '{:.1f} MiB'.format(size / (1 << 20))
+        else:
+            s = '{:.1f} GiB'.format(size / (1 << 30))
+
+        return s
+
     def data(self, index, role):
         col = index.column()
         if role == QtCore.Qt.DisplayRole:
@@ -359,32 +388,34 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
                 return '{}/{}'.format(done_segments, total_segments)
             elif col == 5:
-                # Bytes
+                # Downloaded bytes
                 if dl_progress is None:
                     return 0
 
                 done_bytes = dl_progress.get_done_bytes()
-                if done_bytes < (1 << 10):
-                    dl = '{} B'.format(done_bytes)
-                elif done_bytes < (1 << 20):
-                    dl = '{:.1f} kiB'.format(done_bytes / (1 << 10))
-                elif done_bytes < (1 << 30):
-                    dl = '{:.1f} MiB'.format(done_bytes / (1 << 20))
-                else:
-                    dl = '{:.1f} GiB'.format(done_bytes / (1 << 30))
+                dl = QDownloadsTableModel._format_size(done_bytes)
 
                 return dl
             elif col == 6:
+                # Estimated size
+                estimated_size = dl_item.get_estimated_size()
+                if estimated_size is None:
+                    return '?'
+
+                sz = QDownloadsTableModel._format_size(estimated_size)
+
+                return sz
+            elif col == 7:
                 # Added date
                 return dl_item.get_added_dt().strftime('%Y-%m-%d %H:%M:%S')
-            elif col == 7:
+            elif col == 8:
                 # Elapsed time
                 total_seconds = dl_item.get_elapsed().seconds
                 minutes = total_seconds // 60
                 seconds = total_seconds - (minutes * 60)
 
                 return '{}:{:02}'.format(minutes, seconds)
-            elif col == 8:
+            elif col == 9:
                 # Average download speed
                 if dl_item.get_state() != DownloadItemState.RUNNING:
                     return '0 kiB/s'
@@ -392,10 +423,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 speed = dl_item.get_avg_download_speed() / 1024
 
                 return '{:.2f} kiB/s'.format(speed)
-            elif col == 9:
+            elif col == 10:
                 # Progress bar
                 return None
-            elif col == 10:
+            elif col == 11:
                 # Status
                 handlers = QDownloadsTableModel._status_msg_handlers
 
