@@ -59,11 +59,16 @@ class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
 
     def _setup_ui(self):
         self._load_ui(QChooseBitrateDialog._UI_NAME)
+        self._populate_bitrate_buttons()
+        self.adjustSize()
+        self.setFixedHeight(self.height())
+        self.setFixedWidth(self.width())
 
     def _populate_bitrate_buttons(self):
         for res_index, bitrate in enumerate(self._bitrates):
             btn = self._btn_class(bitrate, res_index)
             btn.clicked.connect(self._on_bitrate_btn_clicked)
+            btn.adjustSize()
             self.buttons_vbox.addWidget(btn)
 
     def _on_bitrate_btn_clicked(self):
@@ -73,5 +78,4 @@ class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
         self.bitrate_chosen.emit(res_index, self._episodes)
 
     def show_move(self, pos):
-        self._populate_bitrate_buttons()
         super().show_move(pos)
