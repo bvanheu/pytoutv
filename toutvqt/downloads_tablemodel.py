@@ -200,7 +200,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._delayed_update_calls.append((self._on_download_finished, [work]))
 
     def _on_download_error_delayed(self, work, ex):
-        self._on_download_error.append((self._on_download_error, [work, ex]))
+        self._delayed_update_calls.append((self._on_download_error, [work, ex]))
 
     def _on_download_created(self, work):
         episode_id = work.get_episode().get_id()
