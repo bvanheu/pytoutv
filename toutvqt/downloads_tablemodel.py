@@ -170,7 +170,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
     def _setup_timer(self):
         self._refresh_timer = Qt.QTimer(self)
         self._refresh_timer.timeout.connect(self._on_timer_timeout)
-        self._refresh_timer.setInterval(2000)
+        self._refresh_timer.setInterval(1000)
         self._refresh_timer.start()
 
     def _setup_signals(self):
