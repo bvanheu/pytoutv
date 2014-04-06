@@ -181,8 +181,11 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         self.fetch_required.connect(self.fetcher.new_work_piece)
         self.fetcher.fetch_done.connect(self.fetch_done)
         self.fetcher.fetch_error.connect(self.fetch_error)
+        self.modelAboutToBeReset.connect(self._on_about_to_reset)
+        self.modelReset.connect(self._on_model_reset)
 
     def exit(self):
+        logging.debug('Joining tree model fetch thread')
         self.fetch_thread.quit()
         self.fetch_thread.wait()
 
@@ -239,9 +242,11 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         if type(ex) is toutv.client.ClientError:
             msg = 'Client error: {}'.format(ex)
         else:
-            logging.error(ex)
+            logging.error('Error: {}'.format(ex))
 
     def init_fetch(self, parent=Qt.QModelIndex()):
+        logging.debug('Initializing emissions fetching')
+
         if parent.isValid():
             parent.internalPointer().fetched = FetchState.STARTED
         else:
@@ -265,6 +270,15 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
         if role == QtCore.Qt.DisplayRole:
             return EmissionsTreeModel._HEADER[section]
 
+    def _on_about_to_reset(self):
+        if self.fetched == FetchState.DONE:
+            self.emissions = []
+            self.fetched = FetchState.NOPE
+
+    def _on_model_reset(self):
+        if self.fetched == FetchState.NOPE:
+            self.init_fetch()
+
 
 class EmissionsTreeModelFetcher(Qt.QObject):
     fetch_done = QtCore.pyqtSignal(object, list)
@@ -275,8 +289,6 @@ class EmissionsTreeModelFetcher(Qt.QObject):
         self.client = client
 
     def new_work_piece(self, parent):
-        msg = 'Fetching children of {}'.format(parent.internalPointer())
-        logging.debug(msg)
         if not parent.isValid():
             self.fetch_emissions(parent)
         elif type(parent.internalPointer()) == EmissionsTreeModelEmission:
@@ -307,6 +319,8 @@ class EmissionsTreeModelFetcher(Qt.QObject):
 
             return emission_title.lower()
 
+        logging.debug('Fetching emissions')
+
         try:
             emissions = self.client.get_page_repertoire().get_emissions()
         except Exception as e:
@@ -330,6 +344,8 @@ class EmissionsTreeModelFetcher(Qt.QObject):
         seasons_set = set()
         seasons_list = []
         seasons_dict = {}
+
+        logging.debug('Fetching seasons/episodes')
 
         try:
             episodes = self.client.get_emission_episodes(emission.bo)

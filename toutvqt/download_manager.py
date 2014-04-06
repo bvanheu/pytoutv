@@ -67,6 +67,10 @@ class _QDownloadWorker(Qt.QObject):
     def cancel_works(self):
         self._cancelled = True
         if self._downloader is not None:
+            episode = self._current_work.get_episode()
+            bitrate = self._current_work.get_bitrate()
+            tmpl = 'Cancelling download of "{}" @ {} bps'
+            logging.debug(tmpl.format(episode.get_title(), bitrate))
             self._downloader.cancel()
 
     def do_work(self, work):
@@ -87,6 +91,8 @@ class _QDownloadWorker(Qt.QObject):
                                    overwrite=True, proxies=proxies)
         self._downloader = downloader
 
+        tmpl = 'Starting download of "{}" @ {} bps'
+        logging.debug(tmpl.format(episode.get_title(), bitrate))
         try:
             downloader.download()
         except dl.CancelledByUserException as e:
@@ -96,7 +102,8 @@ class _QDownloadWorker(Qt.QObject):
                 raise e
         except Exception as e:
             title = episode.get_title()
-            logging.error('Cannot download "{}": {}'.format(title, e))
+            tmpl = 'Cannot download "{}" @ {} bps: {}'
+            logging.error(tmpl.format(title, bitrate, e))
             self.download_error.emit(work, e)
             return
 
@@ -199,6 +206,9 @@ class QDownloadManager(Qt.QObject):
         self._do_next_work()
 
     def _on_worker_finished(self, work):
+        title = work.get_episode().get_title()
+        br = work.get_bitrate()
+        logging.debug('Download of "{}" @ {} bps finished'.format(title, br))
         worker = self.sender()
 
         self._available_workers.put(worker)

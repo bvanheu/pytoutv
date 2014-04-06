@@ -1,3 +1,4 @@
+import logging
 import datetime
 from collections import OrderedDict
 from PyQt4 import Qt
@@ -205,7 +206,8 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         episode_id = work.get_episode().get_id()
 
         if episode_id in self._download_list:
-            print('I DON\'T KNOW WHAT TO DO!!!')
+            msg = 'Episode {} already in download list'.format(episode_id)
+            logging.warning(msg)
             return
 
         new_position = len(self._download_list)

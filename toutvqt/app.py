@@ -33,6 +33,7 @@ class _QTouTvApp(Qt.QApplication):
         return self._proxies
 
     def _start(self):
+        logging.debug('Starting application')
         self.main_window.start()
 
     def _setup_ui(self):
@@ -71,13 +72,16 @@ class _QTouTvApp(Qt.QApplication):
     def _on_setting_dl_dir_changed(self, value):
         # Create output directory if it doesn't exist
         if not os.path.exists(value):
+            logging.debug('Directory "{}" does not exist'.format(value))
             try:
                 os.makedirs(value)
             except:
                 # Ignore; should fail later
+                logging.warning('Cannot create directory "{}"'.format(value))
                 pass
 
     def _setting_item_changed(self, key, value):
+        logging.debug('Setting "{}" changed to "{}"'.format(key, value))
         if key == SettingsKeys.NETWORK_HTTP_PROXY:
             self._on_setting_http_proxy_changed(value)
         elif key == SettingsKeys.FILES_DOWNLOAD_DIR:
