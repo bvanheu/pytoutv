@@ -82,6 +82,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _setup_icons(self):
         self.setWindowIcon(utils.get_qicon('toutv'))
+        self._setup_action_icon('quit_action')
         self._setup_action_icon('refresh_emissions_action')
         self._setup_action_icon('preferences_action')
         self._setup_action_icon('about_action')
