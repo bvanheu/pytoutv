@@ -76,7 +76,7 @@ class _DownloadItem:
         time_delta = time_delta.total_seconds()
         bytes_delta = done_bytes - self._last_dl_stat.done_bytes
         last_speed = bytes_delta / time_delta
-        self._avg_speed = 0.1 * last_speed + 0.9 * self._avg_speed
+        self._avg_speed = 0.2 * last_speed + 0.8 * self._avg_speed
 
         self._last_dl_stat.done_bytes = done_bytes
         self._last_dl_stat.dt = now
