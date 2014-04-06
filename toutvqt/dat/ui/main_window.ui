@@ -43,14 +43,13 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>20</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="file_menu">
     <property name="title">
      <string>&amp;File</string>
     </property>
-    <addaction name="refresh_emissions_action"/>
     <addaction name="quit_action"/>
    </widget>
    <widget class="QMenu" name="edit_menu">
@@ -65,8 +64,15 @@
     </property>
     <addaction name="about_action"/>
    </widget>
+   <widget class="QMenu" name="view_menu">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="refresh_emissions_action"/>
+   </widget>
    <addaction name="file_menu"/>
    <addaction name="edit_menu"/>
+   <addaction name="view_menu"/>
    <addaction name="help_menu"/>
   </widget>
   <action name="quit_action">
@@ -105,9 +111,6 @@
   <action name="refresh_emissions_action">
    <property name="text">
     <string>&amp;Refresh emissions</string>
-   </property>
-   <property name="shortcut">
-    <string>F5</string>
    </property>
   </action>
  </widget>
