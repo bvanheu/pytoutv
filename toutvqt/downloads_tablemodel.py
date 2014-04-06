@@ -126,6 +126,9 @@ class _DownloadItem:
         return datetime.datetime.now() - self.get_started_dt()
 
     def get_estimated_size(self):
+        if self.get_state() == DownloadItemState.DONE:
+            return self.get_dl_progress().get_done_bytes()
+
         if self.get_dl_progress() is None:
             return None
 
