@@ -97,6 +97,8 @@ class QDownloadsTableView(Qt.QTreeView):
             Qt.QDesktopServices.openUrl(url)
         elif action is self._cancel_action:
             self.model().cancel_download_at_row(index.row())
+        elif action is self._remove_item_action:
+            self.model().remove_item_at_row(index.row())
 
     def set_default_columns_widths(self):
         pass

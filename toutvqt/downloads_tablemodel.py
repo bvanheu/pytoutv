@@ -197,6 +197,15 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         # Ask download manager to cancel its work
         self._download_manager.cancel_work(dl_item.get_work())
 
+    def remove_item_at_row(self, row):
+        # Get download item
+        dl_item = self.get_download_item_at_row(row)
+
+        self.beginRemoveRows(Qt.QModelIndex(), row, row)
+        episode_id = list(self._download_list.keys())[row]
+        del self._download_list[episode_id]
+        self.endRemoveRows()
+
     def _setup_timer(self):
         self._refresh_timer = Qt.QTimer(self)
         self._refresh_timer.timeout.connect(self._on_timer_timeout)
