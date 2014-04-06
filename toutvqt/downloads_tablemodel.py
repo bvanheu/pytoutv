@@ -313,7 +313,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
     def _signal_all_data_changed(self):
         index_start = self.createIndex(0, 0, None)
-        last_row = len(self._download_list)
+        last_row = len(self._download_list) - 1
         last_col = len(self._HEADER) - 1
         index_end = self.createIndex(last_row, last_col, None)
 
