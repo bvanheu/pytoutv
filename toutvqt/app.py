@@ -60,14 +60,16 @@ class _QTouTvApp(Qt.QApplication):
         self._settings.read_settings()
 
     def _on_setting_http_proxy_changed(self, value):
-        value = value.strip()
-        if not value:
-            proxies = None
-        else:
-            proxies = {
-                'http': value,
-                'https': value
-            }
+        proxies = None
+        if value is not None:
+            value = value.strip()
+            if not value:
+                proxies = None
+            else:
+                proxies = {
+                    'http': value,
+                    'https': value
+                }
 
         self._proxies = proxies
         self._client.set_proxies(proxies)

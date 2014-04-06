@@ -9,10 +9,20 @@ import logging
 class SettingsKeys:
     FILES_DOWNLOAD_DIR = 'files/download_directory'
     NETWORK_HTTP_PROXY = 'network/http_proxy'
+    DL_DOWNLOAD_SLOTS = 'downloads/download_slots'
+    DL_ALWAYS_MAX_QUALITY = 'downloads/always_max_quality'
+    DL_REMOVE_FINISHED = 'downloads/remove_finished'
 
 
 class QTouTvSettings(Qt.QObject):
     _DEFAULT_DOWNLOAD_DIRECTORY = QDir.home().absoluteFilePath('TOU.TV Downloads')
+    _settings_types = {
+        SettingsKeys.FILES_DOWNLOAD_DIR: str,
+        SettingsKeys.NETWORK_HTTP_PROXY: str,
+        SettingsKeys.DL_DOWNLOAD_SLOTS: int,
+        SettingsKeys.DL_ALWAYS_MAX_QUALITY: bool,
+        SettingsKeys.DL_REMOVE_FINISHED: bool,
+    }
     setting_item_changed = QtCore.pyqtSignal(str, object)
 
     def __init__(self):
@@ -26,6 +36,9 @@ class QTouTvSettings(Qt.QObject):
         def_dl_dir = QTouTvSettings._DEFAULT_DOWNLOAD_DIRECTORY
         self.defaults[SettingsKeys.FILES_DOWNLOAD_DIR] = def_dl_dir
         self.defaults[SettingsKeys.NETWORK_HTTP_PROXY] = None
+        self.defaults[SettingsKeys.DL_DOWNLOAD_SLOTS] = 5
+        self.defaults[SettingsKeys.DL_ALWAYS_MAX_QUALITY] = False
+        self.defaults[SettingsKeys.DL_REMOVE_FINISHED] = False
 
     def write_settings(self):
         logging.debug('Writing settings')
@@ -50,7 +63,8 @@ class QTouTvSettings(Qt.QObject):
         keys = settings.allKeys()
 
         for k in keys:
-            read_settings[k] = settings.value(k)
+            setting_type = QTouTvSettings._settings_types[k]
+            read_settings[k] = settings.value(k, type=setting_type)
 
         self.apply_settings(read_settings)
 
@@ -85,6 +99,15 @@ class QTouTvSettings(Qt.QObject):
 
     def get_http_proxy(self):
         return self._settings_dict[SettingsKeys.NETWORK_HTTP_PROXY]
+
+    def get_download_slots(self):
+        return int(self._settings_dict[SettingsKeys.DL_DOWNLOAD_SLOTS])
+
+    def get_always_max_quality(self):
+        return self._settings_dict[SettingsKeys.DL_ALWAYS_MAX_QUALITY]
+
+    def get_remove_finished(self):
+        return self._settings_dict[SettingsKeys.DL_REMOVE_FINISHED]
 
     def debug_print_settings(self):
         print(self._settings_dict)
