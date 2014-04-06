@@ -32,6 +32,9 @@ class _QTouTvApp(Qt.QApplication):
     def get_proxies(self):
         return self._proxies
 
+    def stop(self):
+        self.main_window.close()
+
     def _start(self):
         logging.debug('Starting application')
         self.main_window.start()
@@ -88,10 +91,13 @@ class _QTouTvApp(Qt.QApplication):
             self._on_setting_dl_dir_changed(value)
 
 
-def _register_sigint():
+def _register_sigint(app):
     if platform.system() == 'Linux':
+        def handler(signal, frame):
+            app.stop()
+
         import signal
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGINT, handler)
 
 
 def _configure_logging():
@@ -100,7 +106,7 @@ def _configure_logging():
 
 def run():
     _configure_logging()
-    _register_sigint()
     app = _QTouTvApp(sys.argv)
+    _register_sigint(app)
 
     return app.exec_()
