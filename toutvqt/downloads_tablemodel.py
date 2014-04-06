@@ -278,23 +278,17 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         item.set_filename(filename)
         item.set_state(DownloadItemState.RUNNING)
 
-        self._signal_episode_data_changed(episode)
-
     def _on_download_progress(self, work, dl_progress, now):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
         item.set_dl_progress(dl_progress, now)
 
-        self._signal_episode_data_changed(episode)
-
     def _on_download_finished(self, work):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
         item.set_state(DownloadItemState.DONE)
-
-        self._signal_episode_data_changed(episode)
 
     def _on_download_error(self, work, ex):
         episode = work.get_episode()
@@ -303,27 +297,25 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         item.set_state(DownloadItemState.ERROR)
         item.set_error(ex)
 
-        self._signal_episode_data_changed(episode)
-
     def _on_download_cancelled(self, work):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
         item.set_state(DownloadItemState.CANCELLED)
 
-        self._signal_episode_data_changed(episode)
-
     def _on_timer_timeout(self):
-        print(len(self._delayed_update_calls))
         for func, args in self._delayed_update_calls:
             func(*args)
 
         self._delayed_update_calls = []
 
-    def _signal_episode_data_changed(self, episode):
-        episode_id = episode.get_id()
-        index_start = self.index_from_id(episode_id, 0)
-        index_end = self.index_from_id(episode_id, len(self._HEADER) - 1)
+        self._signal_all_data_changed()
+
+    def _signal_all_data_changed(self):
+        index_start = self.createIndex(0, 0, None)
+        last_row = len(self._download_list)
+        last_col = len(self._HEADER) - 1
+        index_end = self.createIndex(last_row, last_col, None)
 
         self.dataChanged.emit(index_start, index_end)
 
@@ -331,7 +323,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._download_manager.exit()
 
     def index(self, row, column, parent):
-        key = list(self._download_list.keys())[row]
+        keys = list(self._download_list.keys())
+        if row >= len(keys):
+            return None
+        key = keys[row]
         dl_item = self._download_list[key]
         work = dl_item.get_work()
         episode_id = work.get_episode().get_id()
