@@ -336,7 +336,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
     def index(self, row, column, parent):
         keys = list(self._download_list.keys())
         if row >= len(keys):
-            return None
+            return Qt.QModelIndex()
         key = keys[row]
         dl_item = self._download_list[key]
         work = dl_item.get_work()
