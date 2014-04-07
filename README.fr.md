@@ -38,7 +38,7 @@ pytoutv requiert :
     * [setuptools](https://pythonhosted.org/setuptools/)
       ([disponible sur PyPI](https://pypi.python.org/pypi/setuptools))
 
-pytoutv est réputé fonctionner sur Ubuntu, Debian, Arch Linux et Windows.
+pytoutv est réputé fonctionner sur Ubuntu, Debian, Fedora et Arch Linux.
 
 
 Installation
