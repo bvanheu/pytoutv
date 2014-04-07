@@ -81,6 +81,9 @@ Installez ensuite pytoutv à l'aide de pip :
 
     $ sudo pip install pytoutv
 
+
+### Ubuntu et Debian
+
 Sur Debian et Ubuntu, pip utilise par défaut les dépendances en Python 2.
 Pour régler ce problème, vous pouvez télécharger la version Python 3 de pip :
 
@@ -89,6 +92,18 @@ Pour régler ce problème, vous pouvez télécharger la version Python 3 de pip 
 Par la suite, il ne suffit que de lancer l'installation avec ce paquet:
 
     $ sudo pip3 install pytoutv
+
+
+### Fedora
+
+Sur Fedora, pip utilise par défaut les dépendances en Python 2.
+Pour régler ce problème, vous pouvez télécharger la version Python 3 de pip :
+
+    $ sudo yum install python3-pip
+
+Par la suite, il ne suffit que de lancer l'installation avec ce paquet:
+
+    $ sudo python3-pip install pytoutv
 
 
 Avec setup.py
