@@ -103,7 +103,7 @@ def _register_sigint(app):
 
 
 def _configure_logging():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
 
 
 def run():
