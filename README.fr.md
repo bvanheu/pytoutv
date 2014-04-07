@@ -120,7 +120,7 @@ vous pouvez installer pytoutv directement en utilisant son script `setup.py` :
 
         $ sudo ./setup.py install
 
-Avec Debian et Ubuntu, vous devrez surement spécifier que vous souhaitez
+Sur Debian, Ubuntu et Fedora, vous devrez surement spécifier que vous souhaitez
 utiliser Python 3 pour faire rouler le programme :
 
     $ sudo python3 ./setup.py install
