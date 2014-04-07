@@ -10,14 +10,14 @@
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the <organization> nor the
+#     * Neither the name of the pytoutv nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DISCLAIMED. IN NO EVENT SHALL Philippe Proulx BE LIABLE FOR ANY
 # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 # (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -39,15 +39,25 @@ if v.major < 3 or v.minor < 3:
 entry_points = {
     'console_scripts': [
         'toutv = toutvcli.app:run'
+    ],
+    'gui_scripts': [
+        'qtoutv = toutvqt.app:run'
     ]
 }
 packages = [
     'toutv',
-    'toutvcli'
+    'toutvcli',
+    'toutvqt'
 ]
+package_data = {
+    'toutvqt': [
+        'dat/ui/*.ui',
+        'dat/icons/*.png'
+    ]
+}
 install_requires = [
-    'pycrypto>=2.6.0',
-    'requests>=2.2.0',
+    'pycrypto>=2.0.0',
+    'requests>=2.0.0',
     'setuptools>=3.0'
 ]
 
@@ -58,7 +68,8 @@ setup(name='pytoutv',
       author_email='bvanheu@gmail.com',
       url='https://github.com/bvanheu/pytoutv',
       keywords='TOUTV',
-      license="GPLv3",
+      license="BSD",
       packages=packages,
+      package_data=package_data,
       install_requires=install_requires,
       entry_points=entry_points)

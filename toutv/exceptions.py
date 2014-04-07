@@ -1,7 +1,5 @@
-# Copyright (c) 2012, Benjamin Vanheuverzwijn <bvanheu@gmail.com>
+# Copyright (c) 2014, Philippe Proulx <eepp.ca>
 # All rights reserved.
-#
-# Thanks to Marc-Etienne M. Leveille
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -17,7 +15,7 @@
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL Benjamin Vanheuverzwijn BE LIABLE FOR ANY
+# DISCLAIMED. IN NO EVENT SHALL Philippe Proulx BE LIABLE FOR ANY
 # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 # (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -25,36 +23,34 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import toutv.bos as bos
+
+class RequestTimeout(Exception):
+    def __init__(self, url, timeout):
+        self._url = url
+        self._timeout = timeout
+
+    def get_url(self):
+        return self._url
+
+    def get_timeout(self):
+        return self._timeout
+
+    def __str__(self):
+        tmpl = 'Request timeout ({} s for "{}")'
+        return tmpl.format(self._timeout, self._url)
 
 
-class Mapper:
-    def create(self, klass):
-        return klass()
+class UnexpectedHttpStatusCode(Exception):
+    def __init__(self, url, status_code):
+        self._url = url
+        self._status_code = status_code
 
+    def get_url(self):
+        return self._url
 
-class JsonMapper(Mapper):
-    def dto_to_bo(self, dto, klass):
-        bo = self.create(klass)
-        bo_vars = vars(bo)
+    def get_status_code(self):
+        return self._status_code
 
-        for key in bo_vars.keys():
-            value = dto[key]
-
-            if isinstance(value, dict):
-                if '__type' not in value:
-                    raise RuntimeError('Cannot find "__type" in value')
-                typ = value['__type']
-
-                if typ in ['GenreDTO:#RC.Svc.Web.TouTV',
-                           'GenreDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, bos.Genre)
-                elif typ in ['EmissionDTO:#RC.Svc.Web.TouTV',
-                             'EmissionDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, bos.Emission)
-                elif typ in ['EpisodeDTO:#RC.Svc.Web.TouTV',
-                             'EpisodeDTO:RC.Svc.Web.TouTV']:
-                    value = self.dto_to_bo(value, bos.Episode)
-            setattr(bo, key, value)
-
-        return bo
+    def __str__(self):
+        tmpl = 'Unexpected HTTP response code {} for "{}"'
+        return tmpl.format(self._status_code, self._url)

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=qtoutv
+Comment=TOU.TV GUI client
+TryExec=qtoutv
+Exec=qtoutv
+Icon=qtoutv
+Type=Application
+Categories=Network;FileTransfer;Qt;

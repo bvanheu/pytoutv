@@ -10,14 +10,14 @@
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the <organization> nor the
+#     * Neither the name of pytoutv nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DISCLAIMED. IN NO EVENT SHALL Benjamin Vanheuverzwijn BE LIABLE FOR ANY
 # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 # (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -25,13 +25,91 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re
-import os
+
 import datetime
+import logging
+import os
+import re
+import requests
 import toutv.dl
+import toutv.config
 
 
-class AbstractEmission:
+def _clean_description(desc):
+    desc = desc.replace('\n', ' ')
+    desc = desc.replace('  ', ' ')
+
+    return desc.strip()
+
+
+class _Bo:
+    def set_proxies(self, proxies):
+        self._proxies = proxies
+
+    def get_proxies(self):
+        if hasattr(self, '_proxies'):
+            return self._proxies
+
+        self._proxies = None
+
+        return self._proxies
+
+    def _do_request(self, url, timeout=None):
+        proxies = self.get_proxies()
+
+        try:
+            r = requests.get(url, headers=toutv.config.HEADERS,
+                             proxies=proxies, timeout=timeout)
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
+                                                                r.status_code)
+        except requests.exceptions.Timeout:
+            raise toutv.exceptions.RequestTimeout(url, timeout)
+
+        return r
+
+
+class _ThumbnailProvider:
+    def _cache_medium_thumb(self):
+        if self.has_medium_thumb_data():
+            # No need to download again
+            return
+
+        urls = self.get_medium_thumb_urls()
+
+        for url in urls:
+            if not url:
+                continue
+
+            logging.debug('HTTP-getting "{}"'.format(url))
+
+            try:
+                r = self._do_request(url, timeout=2)
+            except Exception as e:
+                # Ignore any network error
+                logging.warning(e)
+                continue
+
+            self._medium_thumb_data = r.content
+            break
+
+    def get_medium_thumb_data(self):
+        self._cache_medium_thumb()
+
+        return self._medium_thumb_data
+
+    def has_medium_thumb_data(self):
+        if not hasattr(self, '_medium_thumb_data'):
+            self._medium_thumb_data = None
+
+        return (self._medium_thumb_data is not None)
+
+    def get_medium_thumb_urls(self):
+        """Returns a list of possible thumbnail urls in order of preference."""
+        raise NotImplementedError()
+
+
+class _AbstractEmission(_Bo):
     def get_id(self):
         return self.Id
 
@@ -39,13 +117,18 @@ class AbstractEmission:
         return self.Genre
 
     def get_url(self):
-        return self.Url
+        if self.Url is None:
+            return None
+
+        return '{}/{}'.format(toutv.config.TOUTV_BASE_URL, self.Url)
 
     def get_removal_date(self):
         if self.DateRetraitOuEmbargo is None:
             return None
 
         # Format looks like: /Date(1395547200000-0400)/
+        # Sometimes we have weird values: '/Date(-62135578800000-0500)/',
+        # we'll return None in that case.
         d = self.DateRetraitOuEmbargo
         m = re.match(r'/Date\((\d+)-\d+\)/', d)
         if m is not None:
@@ -59,7 +142,7 @@ class AbstractEmission:
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class Emission(AbstractEmission):
+class Emission(_AbstractEmission, _ThumbnailProvider):
     def __init__(self):
         self.CategoryURL = None
         self.ClassCategory = None
@@ -125,9 +208,16 @@ class Emission(AbstractEmission):
         return self.Country
 
     def get_description(self):
-        return self.Description
+        return _clean_description(self.Description)
 
     def get_network(self):
+        if self.Network == '(not specified)':
+            return None
+
+        if self.Network is None:
+            # We observed CBFT (SRC) is the default network when not specified
+            return 'CBFT'
+
         return self.Network
 
     def get_tags(self):
@@ -139,8 +229,14 @@ class Emission(AbstractEmission):
 
         return tags
 
+    def get_medium_thumb_urls(self):
+        name = self.Url.replace('-', '')
+        url = toutv.config.EMISSION_THUMB_URL_TMPL.format(name)
 
-class Genre:
+        return [url, self.ImagePromoNormalK]
+
+
+class Genre(_Bo):
     def __init__(self):
         self.CategoryURL = None
         self.ClassCategory = None
@@ -161,7 +257,7 @@ class Genre:
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class Episode:
+class Episode(_Bo, _ThumbnailProvider):
     def __init__(self):
         self.AdPattern = None
         self.AirDateFormated = None
@@ -265,6 +361,12 @@ class Episode:
     def get_id(self):
         return self.Id
 
+    def get_author(self):
+        return self.PeopleAuthor
+
+    def get_director(self):
+        return self.PeopleDirector
+
     def get_year(self):
         return self.Year
 
@@ -272,7 +374,10 @@ class Episode:
         return self.GenreTitle
 
     def get_url(self):
-        return self.Url
+        if self.Url is None:
+            return None
+
+        return '{}/{}'.format(toutv.config.TOUTV_BASE_URL, self.Url)
 
     def get_season_number(self):
         return self.SeasonNumber
@@ -284,10 +389,17 @@ class Episode:
         return self.SeasonAndEpisode
 
     def get_description(self):
-        return self.Description
+        return _clean_description(self.Description)
 
     def get_emission_id(self):
         return self.CategoryId
+
+    def get_length(self):
+        tot_seconds = int(self.Length) // 1000
+        minutes = tot_seconds // 60
+        seconds = tot_seconds - (60 * minutes)
+
+        return minutes, seconds
 
     def get_air_date(self):
         if self.AirDateFormated is None:
@@ -321,18 +433,22 @@ class Episode:
 
     def get_available_bitrates(self):
         # Get playlist
-        playlist = toutv.dl.Downloader.get_episode_playlist(self)
+        proxies = self.get_proxies()
+        playlist = toutv.dl.Downloader.get_episode_playlist(self, proxies)
 
         # Get video bitrates
         bitrates = Episode._get_video_bitrates(playlist)
 
         return sorted(bitrates)
 
+    def get_medium_thumb_urls(self):
+        return [self.ImageThumbMoyenL]
+
     def __str__(self):
         return '{} ({})'.format(self.get_title(), self.get_id())
 
 
-class EmissionRepertoire(AbstractEmission):
+class EmissionRepertoire(_AbstractEmission):
     def __init__(self):
         self.AnneeProduction = None
         self.CategorieDuree = None
@@ -363,7 +479,8 @@ class EmissionRepertoire(AbstractEmission):
     def get_year(self):
         return self.AnneeProduction
 
-class SearchResults:
+
+class SearchResults(_Bo):
     def __init__(self):
         self.ModifiedQuery = None
         self.Results = None
@@ -374,7 +491,8 @@ class SearchResults:
     def get_results(self):
         return self.Results
 
-class SearchResultData:
+
+class SearchResultData(_Bo):
     def __init__(self):
         self.Emission = None
         self.Episode = None
@@ -385,11 +503,15 @@ class SearchResultData:
     def get_episode(self):
         return self.Episode
 
-class Repertoire:
+
+class Repertoire(_Bo):
     def __init__(self):
         self.Emissions = None
         self.Genres = None
         self.Pays = None
+
+    def set_emissions(self, emissions):
+        self.Emissions = emissions
 
     def get_emissions(self):
         return self.Emissions

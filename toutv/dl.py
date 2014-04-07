@@ -11,14 +11,15 @@
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the <organization> nor the
+#     * Neither the name of pytoutv nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DISCLAIMED. IN NO EVENT SHALL Benjamin Vanheuverzwijn OR Philippe Proulx
+# BE LIABLE FOR ANY
 # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 # (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -28,10 +29,12 @@
 
 import re
 import os
+import errno
 import struct
 import requests
 from Crypto.Cipher import AES
 import toutv.config
+import toutv.exceptions
 from toutv import m3u8
 
 
@@ -44,17 +47,34 @@ class DownloaderError(RuntimeError):
 
 
 class CancelledException(Exception):
-    pass
+    def __str__(self):
+        return 'Download cancelled'
 
 
-class FileExists(Exception):
-    pass
+class CancelledByNetworkErrorException(CancelledException):
+    def __str__(self):
+        return 'Download cancelled due to network error'
+
+
+class CancelledByUserException(CancelledException):
+    def __str__(self):
+        return 'Download cancelled by user'
+
+
+class FileExistsException(Exception):
+    def __str__(self):
+        return 'File exists'
+
+
+class NoSpaceLeftException(Exception):
+    def __str__(self):
+        return 'No space left while downloading'
 
 
 class Downloader:
     def __init__(self, episode, bitrate, output_dir=os.getcwd(),
                  filename=None, on_progress_update=None,
-                 on_dl_start=None, overwrite=False):
+                 on_dl_start=None, overwrite=False, proxies=None):
         self._episode = episode
         self._bitrate = bitrate
         self._output_dir = output_dir
@@ -62,16 +82,39 @@ class Downloader:
         self._on_progress_update = on_progress_update
         self._on_dl_start = on_dl_start
         self._overwrite = overwrite
+        self._proxies = proxies
 
         self._set_output_path()
 
     @staticmethod
-    def get_episode_playlist_url(episode):
+    def _do_request(url, params=None, proxies=None, timeout=None,
+                    cookies=None, stream=False):
+        try:
+            r = requests.get(url, params=params, headers=toutv.config.HEADERS,
+                             proxies=proxies, cookies=cookies,
+                             timeout=15, stream=stream)
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
+                                                                r.status_code)
+        except requests.exceptions.Timeout:
+            raise toutv.exceptions.RequestTimeout(url, timeout)
+
+        return r
+
+    def _do_proxies_requests(self, url, params=None, timeout=None,
+                             cookies=None, stream=False):
+        return Downloader._do_request(url, params=params, timeout=timeout,
+                                      cookies=cookies, proxies=self._proxies,
+                                      stream=stream)
+
+    @staticmethod
+    def get_episode_playlist_url(episode, proxies=None):
         url = toutv.config.TOUTV_PLAYLIST_URL
         params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
         params['idMedia'] = episode.PID
 
-        r = requests.get(url, params=params, headers=toutv.config.HEADERS)
+        r = Downloader._do_request(url, params=params, proxies=proxies,
+                                   timeout=15)
         response_obj = r.json()
 
         if response_obj['errorCode']:
@@ -80,11 +123,10 @@ class Downloader:
         return response_obj['url']
 
     @staticmethod
-    def get_episode_playlist_cookies(episode):
+    def get_episode_playlist_cookies(episode, proxies=None):
         url = Downloader.get_episode_playlist_url(episode)
 
-        # Do requests
-        r = requests.get(url, headers=toutv.config.HEADERS)
+        r = Downloader._do_request(url, proxies=proxies, timeout=15)
 
         # Parse M3U8 file
         m3u8_file = r.text
@@ -93,14 +135,10 @@ class Downloader:
         return playlist, r.cookies
 
     @staticmethod
-    def get_episode_playlist(episode):
-        pl, cookies = Downloader.get_episode_playlist_cookies(episode)
+    def get_episode_playlist(episode, proxies):
+        pl, cookies = Downloader.get_episode_playlist_cookies(episode, proxies)
 
         return pl
-
-    @staticmethod
-    def _replace_accents(filename):
-        filename = filename.replace('é', 'E')
 
     def _gen_filename(self):
         # Remove illegal characters from filename
@@ -134,15 +172,16 @@ class Downloader:
 
     def _init_download(self):
         # Prevent overwriting
-        if not self._overwrite and os.path.exists(self._filename):
-            raise FileExists()
+        if not self._overwrite and os.path.exists(self._output_path):
+            raise FileExistsException()
 
         pl, cookies = Downloader.get_episode_playlist_cookies(self._episode)
         self._playlist = pl
         self._cookies = cookies
 
-        self._total_bytes = 0
-        self._total_segments = 0
+        self._done_bytes = 0
+        self._done_segments = 0
+        self._done_segments_bytes = 0
         self._do_cancel = False
 
     def get_filename(self):
@@ -159,32 +198,49 @@ class Downloader:
 
     def _notify_dl_start(self):
         if self._on_dl_start:
-            self._on_dl_start(self._filename, self._segments_count)
+            self._on_dl_start(self._filename, self._total_segments)
 
     def _notify_progress_update(self):
         if self._on_progress_update:
-            self._on_progress_update(self._total_segments, self._total_bytes)
+            self._on_progress_update(self._done_segments,
+                                     self._done_bytes,
+                                     self._done_segments_bytes)
 
     def _download_segment(self, segindex):
         segment = self._segments[segindex]
         count = segindex + 1
 
-        r = requests.get(segment.uri, headers=toutv.config.HEADERS,
-                         cookies=self._cookies)
-        encrypted_ts_segment = r.content
+        r = self._do_proxies_requests(segment.uri, cookies=self._cookies,
+                                      timeout=10, stream=True)
+
+        encrypted_ts_segment = bytearray()
+        chunks_count = 0
+        for chunk in r.iter_content(8192):
+            if self._do_cancel:
+                raise CancelledByUserException()
+            encrypted_ts_segment += chunk
+            self._done_bytes += len(chunk)
+            if chunks_count % 32 == 0:
+                self._notify_progress_update()
+            chunks_count += 1
+
         aes_iv = struct.pack('>IIII', 0, 0, 0, count)
         aes = AES.new(self._key, AES.MODE_CBC, aes_iv)
-        ts_segment = aes.decrypt(encrypted_ts_segment)
+        ts_segment = aes.decrypt(bytes(encrypted_ts_segment))
 
-        self._of.write(ts_segment)
-        self._total_bytes += len(ts_segment)
+        try:
+            self._of.write(ts_segment)
+        except OSError as e:
+            if e.errno == errno.ENOSPC:
+                raise NoSpaceLeftException()
+            raise e
 
     def _get_video_stream(self):
         for stream in self._playlist.streams:
             if stream.bandwidth == self._bitrate:
                 return stream
 
-        raise DownloadError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
+        raise DownloaderError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
 
     def download(self):
         self._init_download()
@@ -193,18 +249,16 @@ class Downloader:
         stream = self._get_video_stream()
 
         # Get video playlist
-        r = requests.get(stream.uri, headers=toutv.config.HEADERS,
-                         cookies=self._cookies)
+        r = self._do_proxies_requests(stream.uri, cookies=self._cookies)
         m3u8_file = r.text
         self._video_playlist = m3u8.parse(m3u8_file,
                                           os.path.dirname(stream.uri))
         self._segments = self._video_playlist.segments
-        self._segments_count = len(self._segments)
+        self._total_segments = len(self._segments)
 
         # Get decryption key
         uri = self._segments[0].key.uri
-        r = requests.get(uri, headers=toutv.config.HEADERS,
-                         cookies=self._cookies)
+        r = self._do_proxies_requests(uri, cookies=self._cookies)
         self._key = r.content
 
         # Download segments
@@ -212,8 +266,7 @@ class Downloader:
             self._notify_dl_start()
             self._notify_progress_update()
             for segindex in range(len(self._segments)):
-                if self._do_cancel:
-                    raise CancelledException()
                 self._download_segment(segindex)
-                self._total_segments += 1
+                self._done_segments += 1
+                self._done_segments_bytes = self._done_bytes
                 self._notify_progress_update()

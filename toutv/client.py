@@ -10,14 +10,14 @@
 #     * Redistributions in binary form must reproduce the above copyright
 #       notice, this list of conditions and the following disclaimer in the
 #       documentation and/or other materials provided with the distribution.
-#     * Neither the name of the <organization> nor the
+#     * Neither the name of pytoutv nor the
 #       names of its contributors may be used to endorse or promote products
 #       derived from this software without specific prior written permission.
 #
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DISCLAIMED. IN NO EVENT SHALL Benjamin Vanheuverzwijn BE LIABLE FOR ANY
 # DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 # (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 # LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
@@ -33,7 +33,6 @@ import toutv.cache
 import toutv.mapper
 import toutv.transport
 import toutv.config
-import toutv.bos as bos
 import toutv.dl
 from toutv import m3u8
 
@@ -54,36 +53,68 @@ class ClientError(RuntimeError):
 
 class Client:
     def __init__(self, transport=toutv.transport.JsonTransport(),
-                 cache=toutv.cache.EmptyCache()):
-        self.transport = transport
-        self.cache = cache
+                 cache=toutv.cache.EmptyCache(), proxies=None):
+        self._transport = transport
+        self._cache = cache
+
+        self.set_proxies(proxies)
+
+    def set_proxies(self, proxies):
+        self._proxies = proxies
+        self._transport.set_proxies(proxies)
+
+    def _set_bo_proxies(self, bo):
+        bo.set_proxies(self._proxies)
+
+    def _set_bos_proxies(self, bos):
+        for bo in bos:
+            self._set_bo_proxies(bo)
 
     def get_emissions(self):
-        emissions = self.cache.get_emissions()
+        emissions = self._cache.get_emissions()
         if emissions is None:
-            emissions = self.transport.get_emissions()
-            self.cache.set_emissions(emissions)
+            emissions = self._transport.get_emissions()
+            self._cache.set_emissions(emissions)
+
+        self._set_bos_proxies(emissions.values())
 
         return emissions
 
     def get_emission_episodes(self, emission):
-        episodes = self.cache.get_emission_episodes(emission)
+        episodes = self._cache.get_emission_episodes(emission)
         if episodes is None:
-            episodes = self.transport.get_emission_episodes(emission)
-            self.cache.set_emission_episodes(emission, episodes)
+            episodes = self._transport.get_emission_episodes(emission)
+            self._cache.set_emission_episodes(emission, episodes)
+
+        self._set_bos_proxies(episodes.values())
 
         return episodes
 
     def get_page_repertoire(self):
-        page_repertoire = self.cache.get_page_repertoire()
+        # Get repertoire emissions
+        page_repertoire = self._cache.get_page_repertoire()
         if page_repertoire is None:
-            page_repertoire = self.transport.get_page_repertoire()
-            self.cache.set_page_repertoire(page_repertoire)
+            page_repertoire = self._transport.get_page_repertoire()
+            self._cache.set_page_repertoire(page_repertoire)
+        rep_em = page_repertoire.get_emissions()
+
+        # Get all emissions (contain more infos) to match them
+        all_em = self.get_emissions()
+
+        # Get more infos for repertoire emissions
+        emissions = {k: all_em[k] for k in all_em if k in rep_em}
+        page_repertoire.set_emissions(emissions)
+
+        # Set proxies
+        self._set_bos_proxies(emissions.values())
 
         return page_repertoire
 
     def search(self, query):
-        return self.transport.search(query)
+        search = self._transport.search(query)
+        self._set_bo_proxies(search)
+
+        return seach
 
     def get_emission_by_name(self, emission_name):
         emissions = self.get_emissions()
@@ -93,7 +124,7 @@ class Client:
         # Fill candidates
         for emid, emission in emissions.items():
             candidates.append(str(emid))
-            candidates.append(emission.Title.upper())
+            candidates.append(emission.get_title().upper())
 
         # Get close matches
         close_matches = difflib.get_close_matches(emission_name_upper,
@@ -109,7 +140,8 @@ class Client:
 
         # Exact match
         for emid, emission in emissions.items():
-            if emission_name_upper in [str(emid), emission.Title.upper()]:
+            exact_matches = [str(emid), emission.get_title().upper()]
+            if emission_name_upper in exact_matches:
                 return emission
 
     def get_episode_by_name(self, emission, episode_name):
@@ -119,8 +151,8 @@ class Client:
 
         for epid, episode in episodes.items():
             candidates.append(str(epid))
-            candidates.append(episode.Title.upper())
-            candidates.append(episode.SeasonAndEpisode)
+            candidates.append(episode.get_title().upper())
+            candidates.append(episode.get_sae())
 
         # Get close matches
         close_matches = difflib.get_close_matches(episode_name_upper,
@@ -138,8 +170,8 @@ class Client:
         for epid, episode in episodes.items():
             search_items = [
                 str(epid),
-                episode.Title.upper(),
-                episode.SeasonAndEpisode
+                episode.get_title().upper(),
+                episode.get_sae()
             ]
             if episode_name_upper in search_items:
                 return episode
@@ -155,13 +187,12 @@ class Client:
     def get_episode_from_url(self, url):
         # Try sending the request
         try:
-            r = requests.get(url)
-        except Exception as e:
-            raise ClientError('Cannot open URL "{}"'.format(url))
-
-        if r.status_code != 200:
-            msg = 'Opening URL "{}" returned HTTP status {}'.format(url, r.status_code)
-            raise ClientError(msg)
+            r = requests.get(url, proxies=self._proxies)
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
+                                                                r.status_code)
+        except requests.exceptions.Timeout:
+            raise toutv.exceptions.RequestTimeout(url, timeout)
 
         # Extract emission ID
         regex = r'program-(\d+)'
