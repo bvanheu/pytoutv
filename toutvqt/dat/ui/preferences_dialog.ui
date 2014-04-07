@@ -125,7 +125,7 @@
       <item row="2" column="1">
        <widget class="QCheckBox" name="remove_finished_check">
         <property name="text">
-         <string>Remove finished downloads from list</string>
+         <string>Remove finished/cancelled downloads from list</string>
         </property>
        </widget>
       </item>

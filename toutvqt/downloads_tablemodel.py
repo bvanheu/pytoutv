@@ -174,6 +174,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         DownloadItemState.DONE: lambda i: 'Done'
     }
     download_finished = QtCore.pyqtSignal(object)
+    download_cancelled = QtCore.pyqtSignal(object)
 
     def __init__(self, download_manager, parent=None):
         super().__init__(parent)
@@ -313,6 +314,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         item = self._get_download_item(episode)
 
         item.set_state(DownloadItemState.CANCELLED)
+        self.download_cancelled.emit(work)
 
     def _on_timer_timeout(self):
         for func, args in self._delayed_update_calls:

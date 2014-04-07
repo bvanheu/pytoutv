@@ -49,6 +49,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
         model = QDownloadsTableModel(self._download_manager)
         model.download_finished.connect(self._on_download_finished)
+        model.download_cancelled.connect(self._on_download_finished)
         self._downloads_tableview_model = model
 
         tableview = QDownloadsTableView(model)
