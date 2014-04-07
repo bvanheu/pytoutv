@@ -172,7 +172,7 @@ class Downloader:
 
     def _init_download(self):
         # Prevent overwriting
-        if not self._overwrite and os.path.exists(self._filename):
+        if not self._overwrite and os.path.exists(self._output_path):
             raise FileExistsException()
 
         pl, cookies = Downloader.get_episode_playlist_cookies(self._episode)
@@ -181,6 +181,7 @@ class Downloader:
 
         self._done_bytes = 0
         self._done_segments = 0
+        self._done_segments_bytes = 0
         self._do_cancel = False
 
     def get_filename(self):
@@ -202,7 +203,8 @@ class Downloader:
     def _notify_progress_update(self):
         if self._on_progress_update:
             self._on_progress_update(self._done_segments,
-                                     self._done_bytes)
+                                     self._done_bytes,
+                                     self._done_segments_bytes)
 
     def _download_segment(self, segindex):
         segment = self._segments[segindex]
@@ -266,4 +268,5 @@ class Downloader:
             for segindex in range(len(self._segments)):
                 self._download_segment(segindex)
                 self._done_segments += 1
+                self._done_segments_bytes = self._done_bytes
                 self._notify_progress_update()

@@ -22,8 +22,8 @@ class _QTouTvApp(Qt.QApplication):
         self.setApplicationName(config.APP_NAME)
 
         self._setup_client()
-        self._setup_ui()
         self._setup_settings()
+        self._setup_ui()
         self._start()
 
     def get_settings(self):
@@ -32,12 +32,19 @@ class _QTouTvApp(Qt.QApplication):
     def get_proxies(self):
         return self._proxies
 
+    def stop(self):
+        self.main_window.close()
+
     def _start(self):
         logging.debug('Starting application')
         self.main_window.start()
 
     def _setup_ui(self):
         self.main_window = QTouTvMainWindow(self, self._client)
+
+        # Connect the signal between main window and the settings
+        self.main_window.settings_accepted.connect(
+            self._settings.apply_settings)
 
     def _setup_client(self):
         self._client = toutv.client.Client()
@@ -46,10 +53,6 @@ class _QTouTvApp(Qt.QApplication):
         # Create a default settings
         self._settings = QTouTvSettings()
 
-        # Connect the signal between main window and the settings
-        self.main_window.settings_accepted.connect(
-            self._settings.apply_settings)
-
         # Connect the signal between settings and us
         self._settings.setting_item_changed.connect(self._setting_item_changed)
 
@@ -57,14 +60,16 @@ class _QTouTvApp(Qt.QApplication):
         self._settings.read_settings()
 
     def _on_setting_http_proxy_changed(self, value):
-        value = value.strip()
-        if not value:
-            proxies = None
-        else:
-            proxies = {
-                'http': value,
-                'https': value
-            }
+        proxies = None
+        if value is not None:
+            value = value.strip()
+            if not value:
+                proxies = None
+            else:
+                proxies = {
+                    'http': value,
+                    'https': value
+                }
 
         self._proxies = proxies
         self._client.set_proxies(proxies)
@@ -88,10 +93,13 @@ class _QTouTvApp(Qt.QApplication):
             self._on_setting_dl_dir_changed(value)
 
 
-def _register_sigint():
+def _register_sigint(app):
     if platform.system() == 'Linux':
+        def handler(signal, frame):
+            app.stop()
+
         import signal
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        signal.signal(signal.SIGINT, handler)
 
 
 def _configure_logging():
@@ -100,7 +108,7 @@ def _configure_logging():
 
 def run():
     _configure_logging()
-    _register_sigint()
     app = _QTouTvApp(sys.argv)
+    _register_sigint(app)
 
     return app.exec_()

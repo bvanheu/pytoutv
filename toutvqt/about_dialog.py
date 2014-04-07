@@ -30,3 +30,6 @@ class QTouTvAboutDialog(utils.QCommonDialog, utils.QtUiLoad):
     def _setup_ui(self):
         self._load_ui(QTouTvAboutDialog._UI_NAME)
         self._set_contents()
+        self.adjustSize()
+        self.setFixedWidth(self.width())
+        self.setFixedHeight(self.height())

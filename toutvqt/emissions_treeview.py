@@ -39,6 +39,15 @@ class QEmissionsTreeView(Qt.QTreeView):
 
         selection_model.selectionChanged.connect(self.item_selection_changed)
 
+        model.fetching_start.connect(self._on_fetch_start)
+        model.fetching_done.connect(self._on_fetch_done)
+
+    def _on_fetch_start(self):
+        self.setCursor(QtCore.Qt.WaitCursor)
+
+    def _on_fetch_done(self):
+        self.setCursor(QtCore.Qt.ArrowCursor)
+
     def set_default_columns_widths(self):
         self.setColumnWidth(0, self.width() - 300)
         self.setColumnWidth(1, 100)
@@ -48,7 +57,7 @@ class QEmissionsTreeView(Qt.QTreeView):
 
         indexes = selected.indexes()
 
-        if len(indexes) == 0:
+        if not indexes:
             self.none_selected.emit()
             return
 

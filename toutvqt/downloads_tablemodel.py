@@ -8,10 +8,10 @@ from PyQt4 import QtCore
 class _DownloadStat:
     def __init__(self):
         self.done_bytes = 0
-        self.dt = datetime.datetime.now()
+        self.dt = None
 
 
-class _DownloadItemState:
+class DownloadItemState:
     QUEUED = 0
     RUNNING = 1
     PAUSED = 2
@@ -28,11 +28,11 @@ class _DownloadItem:
         self._filename = None
         self._added_dt = datetime.datetime.now()
         self._started_dt = None
-        self._done_elapsed = None
-        self._last_dl_stat = _DownloadStat()
+        self._end_elapsed = None
+        self._last_dl_stat = None
         self._avg_speed = 0
         self._error = None
-        self._state = _DownloadItemState.QUEUED
+        self._state = DownloadItemState.QUEUED
 
     def set_error(self, ex):
         self._error = ex
@@ -44,10 +44,14 @@ class _DownloadItem:
         return self._state
 
     def set_state(self, state):
-        if state == _DownloadItemState.RUNNING:
+        if state == DownloadItemState.RUNNING:
             self._started_dt = datetime.datetime.now()
-        elif state == _DownloadItemState.DONE:
-            self._done_elapsed = self.get_elapsed()
+        elif state in [
+            DownloadItemState.DONE,
+            DownloadItemState.CANCELLED,
+            DownloadItemState.ERROR
+        ]:
+            self._end_elapsed = self.get_elapsed()
             self._avg_speed = 0
 
         self._state = state
@@ -58,24 +62,30 @@ class _DownloadItem:
     def get_avg_download_speed(self):
         return self._avg_speed
 
-    def _compute_avg_speed(self):
+    def _compute_avg_speed(self, dt):
         done_bytes = self.get_dl_progress().get_done_bytes()
-        now = datetime.datetime.now()
+        now = dt
 
-        if self.get_elapsed().seconds >= 3:
-            time_delta = now - self._last_dl_stat.dt
-            time_delta = time_delta.total_seconds()
-            bytes_delta = done_bytes - self._last_dl_stat.done_bytes
-            self._avg_speed = bytes_delta / time_delta
+        if self._last_dl_stat is None:
+            self._last_dl_stat = _DownloadStat()
+            self._last_dl_stat.done_bytes = done_bytes
+            self._last_dl_stat.dt = now
+            return
+
+        time_delta = now - self._last_dl_stat.dt
+        time_delta = time_delta.total_seconds()
+        bytes_delta = done_bytes - self._last_dl_stat.done_bytes
+        last_speed = bytes_delta / time_delta
+        self._avg_speed = 0.2 * last_speed + 0.8 * self._avg_speed
 
         self._last_dl_stat.done_bytes = done_bytes
-        self._last_dl_stat.dt = datetime.datetime.now()
+        self._last_dl_stat.dt = now
 
-    def set_dl_progress(self, dl_progress):
+    def set_dl_progress(self, dl_progress, dt):
         self._dl_progress = dl_progress
 
-        if self.get_state() == _DownloadItemState.RUNNING:
-            self._compute_avg_speed()
+        if self.get_state() == DownloadItemState.RUNNING:
+            self._compute_avg_speed(dt)
 
     def get_work(self):
         return self._work
@@ -96,10 +106,10 @@ class _DownloadItem:
         self._filename = filename
 
     def get_progress_percent(self):
-        is_init = (self.get_state() == _DownloadItemState.QUEUED)
+        is_init = (self.get_state() == DownloadItemState.QUEUED)
         if is_init or self.get_dl_progress() is None:
             return 0
-        if self.get_state() == _DownloadItemState.DONE:
+        if self.get_state() == DownloadItemState.DONE:
             return 100
 
         num = self.get_dl_progress().get_done_segments()
@@ -114,12 +124,30 @@ class _DownloadItem:
         return self._started_dt
 
     def get_elapsed(self):
-        if self.get_state() == _DownloadItemState.QUEUED:
+        if self.get_state() == DownloadItemState.QUEUED:
             return datetime.timedelta()
-        elif self.get_state() == _DownloadItemState.DONE:
-            return self._done_elapsed
+        elif self._end_elapsed is not None:
+            return self._end_elapsed
 
         return datetime.datetime.now() - self.get_started_dt()
+
+    def get_estimated_size(self):
+        if self.get_state() == DownloadItemState.DONE:
+            return self.get_dl_progress().get_done_bytes()
+
+        if self.get_dl_progress() is None:
+            return None
+
+        done_segments_bytes = self.get_dl_progress().get_done_segments_bytes()
+        done_segments = self.get_dl_progress().get_done_segments()
+        total_segments = self.get_total_segments()
+
+        if done_segments == 0 or done_segments_bytes == 0:
+            return None
+
+        estimated_size = total_segments / done_segments * done_segments_bytes
+
+        return estimated_size
 
 
 class QDownloadsTableModel(Qt.QAbstractTableModel):
@@ -130,6 +158,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Filename',
         'Sections',
         'Downloaded',
+        'Estimated size',
         'Added',
         'Elapsed',
         'Speed',
@@ -137,13 +166,14 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Status',
     ]
     _status_msg_handlers = {
-        _DownloadItemState.QUEUED: lambda i: 'Queued',
-        _DownloadItemState.RUNNING: lambda i: 'Running',
-        _DownloadItemState.PAUSED: lambda i: 'Paused',
-        _DownloadItemState.CANCELLED: lambda i: 'Cancelled',
-        _DownloadItemState.ERROR: lambda i: 'Error: {}'.format(i.get_error()),
-        _DownloadItemState.DONE: lambda i: 'Done'
+        DownloadItemState.QUEUED: lambda i: 'Queued',
+        DownloadItemState.RUNNING: lambda i: 'Running',
+        DownloadItemState.PAUSED: lambda i: 'Paused',
+        DownloadItemState.CANCELLED: lambda i: 'Cancelled',
+        DownloadItemState.ERROR: lambda i: 'Error: {}'.format(i.get_error()),
+        DownloadItemState.DONE: lambda i: 'Done'
     }
+    download_finished = QtCore.pyqtSignal(object)
 
     def __init__(self, download_manager, parent=None):
         super().__init__(parent)
@@ -157,7 +187,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._setup_timer()
 
     def get_progress_col(self):
-        return 9
+        return 10
 
     def get_download_item_at_row(self, row):
         episode_id = list(self._download_list.keys())[row]
@@ -173,6 +203,24 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
         # Ask download manager to cancel its work
         self._download_manager.cancel_work(dl_item.get_work())
+
+    def remove_episode_id_item(self, eid):
+        if eid not in self._download_list:
+            return
+
+        row = list(self._download_list.keys()).index(eid)
+        self.beginRemoveRows(Qt.QModelIndex(), row, row)
+        del self._download_list[eid]
+        self.endRemoveRows()
+
+    def remove_item_at_row(self, row):
+        # Get download item
+        dl_item = self.get_download_item_at_row(row)
+
+        self.beginRemoveRows(Qt.QModelIndex(), row, row)
+        episode_id = list(self._download_list.keys())[row]
+        del self._download_list[episode_id]
+        self.endRemoveRows()
 
     def _setup_timer(self):
         self._refresh_timer = Qt.QTimer(self)
@@ -195,12 +243,15 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
     def _on_download_started_delayed(self,  work, dl_progress, filename,
                                      total_segments):
+        now = datetime.datetime.now()
         self._delayed_update_calls.append(
-            (self._on_download_started, [work, dl_progress, filename, total_segments]))
+            (self._on_download_started, [work, dl_progress, filename,
+                                         total_segments, now]))
 
     def _on_download_progress_delayed(self, work, dl_progress):
-        self._delayed_update_calls.append(
-            (self._on_download_progress, [work, dl_progress]))
+        now = datetime.datetime.now()
+        self._delayed_update_calls.append((self._on_download_progress,
+                                          [work, dl_progress, now]))
 
     def _on_download_finished_delayed(self, work):
         self._delayed_update_calls.append((self._on_download_finished, [work]))
@@ -228,60 +279,54 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         return self._download_list[episode.get_id()]
 
     def _on_download_started(self, work, dl_progress, filename,
-                             total_segments):
+                             total_segments, now):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_dl_progress(dl_progress)
+        item.set_dl_progress(dl_progress, now)
         item.set_total_segments(total_segments)
         item.set_filename(filename)
-        item.set_state(_DownloadItemState.RUNNING)
+        item.set_state(DownloadItemState.RUNNING)
 
-        self._signal_episode_data_changed(episode)
-
-    def _on_download_progress(self, work, dl_progress):
+    def _on_download_progress(self, work, dl_progress, now):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_dl_progress(dl_progress)
-
-        self._signal_episode_data_changed(episode)
+        item.set_dl_progress(dl_progress, now)
 
     def _on_download_finished(self, work):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_state(_DownloadItemState.DONE)
-
-        self._signal_episode_data_changed(episode)
+        item.set_state(DownloadItemState.DONE)
+        self.download_finished.emit(work)
 
     def _on_download_error(self, work, ex):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_state(_DownloadItemState.ERROR)
+        item.set_state(DownloadItemState.ERROR)
         item.set_error(ex)
-
-        self._signal_episode_data_changed(episode)
 
     def _on_download_cancelled(self, work):
         episode = work.get_episode()
         item = self._get_download_item(episode)
 
-        item.set_state(_DownloadItemState.CANCELLED)
-
-        self._signal_episode_data_changed(episode)
+        item.set_state(DownloadItemState.CANCELLED)
 
     def _on_timer_timeout(self):
-        for (func, args) in self._delayed_update_calls:
+        for func, args in self._delayed_update_calls:
             func(*args)
 
         self._delayed_update_calls = []
 
-    def _signal_episode_data_changed(self, episode):
-        episode_id = episode.get_id()
-        index_start = self.index_from_id(episode_id, 0)
-        index_end = self.index_from_id(episode_id, len(self._HEADER) - 1)
+        self._signal_all_data_changed()
+
+    def _signal_all_data_changed(self):
+        index_start = self.createIndex(0, 0, None)
+        last_row = len(self._download_list) - 1
+        last_col = len(self._HEADER) - 1
+        index_end = self.createIndex(last_row, last_col, None)
 
         self.dataChanged.emit(index_start, index_end)
 
@@ -289,7 +334,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._download_manager.exit()
 
     def index(self, row, column, parent):
-        key = list(self._download_list.keys())[row]
+        keys = list(self._download_list.keys())
+        if row >= len(keys):
+            return None
+        key = keys[row]
         dl_item = self._download_list[key]
         work = dl_item.get_work()
         episode_id = work.get_episode().get_id()
@@ -313,6 +361,19 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
     def columnCount(self, parent):
         return len(QDownloadsTableModel._HEADER)
+
+    @staticmethod
+    def _format_size(size):
+        if size < (1 << 10):
+            s = '{} B'.format(size)
+        elif size < (1 << 20):
+            s = '{:.1f} kiB'.format(size / (1 << 10))
+        elif size < (1 << 30):
+            s = '{:.1f} MiB'.format(size / (1 << 20))
+        else:
+            s = '{:.1f} GiB'.format(size / (1 << 30))
+
+        return s
 
     def data(self, index, role):
         col = index.column()
@@ -355,43 +416,46 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
                 return '{}/{}'.format(done_segments, total_segments)
             elif col == 5:
-                # Bytes
+                # Downloaded bytes
                 if dl_progress is None:
                     return 0
 
                 done_bytes = dl_progress.get_done_bytes()
-                if done_bytes < (1 << 10):
-                    dl = '{} B'.format(done_bytes)
-                elif done_bytes < (1 << 20):
-                    dl = '{:.1f} kiB'.format(done_bytes / (1 << 10))
-                elif done_bytes < (1 << 30):
-                    dl = '{:.1f} MiB'.format(done_bytes / (1 << 20))
-                else:
-                    dl = '{:.1f} GiB'.format(done_bytes / (1 << 30))
+                dl = QDownloadsTableModel._format_size(done_bytes)
 
                 return dl
             elif col == 6:
+                # Estimated size
+                estimated_size = dl_item.get_estimated_size()
+                if estimated_size is None:
+                    return '?'
+
+                sz = QDownloadsTableModel._format_size(estimated_size)
+
+                return sz
+            elif col == 7:
                 # Added date
                 return dl_item.get_added_dt().strftime('%Y-%m-%d %H:%M:%S')
-            elif col == 7:
+            elif col == 8:
                 # Elapsed time
                 total_seconds = dl_item.get_elapsed().seconds
                 minutes = total_seconds // 60
                 seconds = total_seconds - (minutes * 60)
 
                 return '{}:{:02}'.format(minutes, seconds)
-            elif col == 8:
+            elif col == 9:
                 # Average download speed
-                if dl_item.get_state() != _DownloadItemState.RUNNING:
+                if dl_item.get_state() != DownloadItemState.RUNNING:
                     return '0 kiB/s'
 
-                speed = dl_item.get_avg_download_speed() / 1024
+                speed = dl_item.get_avg_download_speed()
+                sz = QDownloadsTableModel._format_size(speed)
 
-                return '{:.2f} kiB/s'.format(speed)
-            elif col == 9:
+                return '{}/s'.format(sz)
+            elif col == 10:
                 # Progress bar
                 return None
-            elif col == 10:
+            elif col == 11:
                 # Status
                 handlers = QDownloadsTableModel._status_msg_handlers
 

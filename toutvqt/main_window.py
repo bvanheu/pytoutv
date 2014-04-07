@@ -13,6 +13,7 @@ from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.preferences_dialog import QTouTvPreferencesDialog
 from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
 from toutvqt.choose_bitrate_dialog import QBitrateResQualityButton
+from toutvqt.choose_bitrate_dialog import QResQualityButton
 from toutvqt.infos_frame import QInfosFrame
 from toutvqt import utils
 from toutvqt import config
@@ -33,23 +34,29 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _add_treeview(self):
         model = EmissionsTreeModel(self._client)
+        model.fetching_start.connect(self._on_treeview_fetch_start)
+        model.fetching_done.connect(self._on_treeview_fetch_done)
         self._treeview_model = model
+
         treeview = QEmissionsTreeView(model)
         self.emissions_treeview = treeview
         self.emissions_tab.layout().addWidget(treeview)
 
     def _add_tableview(self):
-        self._download_manager = QDownloadManager()
+        settings = self._app.get_settings()
+        nb_threads = settings.get_download_slots()
+        self._download_manager = QDownloadManager(nb_threads=nb_threads)
+
         model = QDownloadsTableModel(self._download_manager)
-        self._tableview_model = model
+        model.download_finished.connect(self._on_download_finished)
         self._downloads_tableview_model = model
+
         tableview = QDownloadsTableView(model)
         self.downloads_tableview = tableview
         self.downloads_tab.layout().addWidget(tableview)
-        tableview.cancel_download.connect(self._on_cancel_download)
 
     def _add_infos(self):
-        self.infos_frame = QInfosFrame()
+        self.infos_frame = QInfosFrame(self._client)
         self.infos_frame.select_download.connect(self._on_select_download)
         self.emissions_tab.layout().addWidget(self.infos_frame)
         treeview = self.emissions_treeview
@@ -82,6 +89,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _setup_icons(self):
         self.setWindowIcon(utils.get_qicon('toutv'))
+        self._setup_action_icon('quit_action')
         self._setup_action_icon('refresh_emissions_action')
         self._setup_action_icon('preferences_action')
         self._setup_action_icon('about_action')
@@ -101,6 +109,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def closeEvent(self, close_event):
         logging.debug('Closing main window')
+        self._set_wait_cursor()
         self.infos_frame.exit()
         self._downloads_tableview_model.exit()
         self._treeview_model.exit()
@@ -128,33 +137,83 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         pos.setY(pos.y() + 60)
         settings.show_move(pos)
 
-    def _on_select_download(self, episode):
-        title = episode.get_title()
-        logging.debug('Episode "{}" selected for download'.format(title))
-
-        pos = QtGui.QCursor().pos()
-        cursor = self.cursor()
+    def _set_wait_cursor(self):
         self.setCursor(QtCore.Qt.WaitCursor)
-        bitrates = episode.get_available_bitrates()
-        self.setCursor(cursor)
-        if len(bitrates) > 1:
+
+    def _set_normal_cursor(self):
+        self.setCursor(QtCore.Qt.ArrowCursor)
+
+    def _on_download_finished(self, work):
+        settings = self._app.get_settings()
+
+        if settings.get_remove_finished():
+            eid = work.get_episode().get_id()
+            self._downloads_tableview_model.remove_episode_id_item(eid)
+
+    def _on_treeview_fetch_start(self):
+        self.refresh_emissions_action.setEnabled(False)
+
+    def _on_treeview_fetch_done(self):
+        self.refresh_emissions_action.setEnabled(True)
+
+    def _on_select_download(self, episodes):
+        logging.debug('Episodes selected for download')
+
+        if len(episodes) == 1:
+            self._set_wait_cursor()
             btn_type = QBitrateResQualityButton
-            dialog = QChooseBitrateDialog(episode, bitrates, btn_type)
+            bitrates = episodes[0].get_available_bitrates()
+            self._set_normal_cursor()
+        else:
+            btn_type = QResQualityButton
+            bitrates = range(4)
+
+        if len(bitrates) != 4:
+            logging.error('Unsupported list of bitrates')
+            return
+
+        settings = self._app.get_settings()
+        if settings.get_always_max_quality():
+            self._on_bitrate_chosen(3, episodes)
+        else:
+            pos = QtGui.QCursor().pos()
+            dialog = QChooseBitrateDialog(episodes, bitrates, btn_type)
             dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
             pos.setX(pos.x() - dialog.width())
             pos.setY(pos.y() - dialog.height())
             dialog.show_move(pos)
-        else:
-            self._on_bitrate_chosen(bitrate[0], episode)
 
-    def _on_bitrate_chosen(self, bitrate, episode):
-        tmpl = 'Bitrate chosen for episode "{}": {} bps'
-        logging.debug(tmpl.format(episode.get_title(), bitrate))
-
-        if self._tableview_model.download_item_exists(episode):
+    def _start_download(self, episode, bitrate, output_dir):
+        if self._downloads_tableview_model.download_item_exists(episode):
             tmpl = 'Download of episode "{}" @ {} bps already exists'
             logging.info(tmpl.format(episode.get_title(), bitrate))
             return
+
+        self._download_manager.download(episode, bitrate, output_dir,
+                                        proxies=self._app.get_proxies())
+
+    def start_download_episodes(self, res_index, episodes, output_dir):
+        self._set_wait_cursor()
+
+        episodes_bitrates = []
+
+        for episode in episodes:
+            bitrates = episode.get_available_bitrates()
+            if len(bitrates) != 4:
+                tmpl = 'Unsupported bitrate list for episode "{}"'
+                logging.error(tmpl.format(episode.get_title()))
+                continue
+            episodes_bitrates.append((episode, bitrates[res_index]))
+
+        for episode, bitrate in episodes_bitrates:
+            tmpl = 'Queueing download of episode "{}" @ {} bps'
+            logging.debug(tmpl.format(episode.get_title(), bitrate))
+            self._start_download(episode, bitrate, output_dir)
+
+        self._set_normal_cursor()
+
+    def _on_bitrate_chosen(self, res_index, episodes):
+        logging.debug('Bitrate chosen')
 
         settings = self._app.get_settings()
         output_dir = settings.get_download_directory()
@@ -163,8 +222,4 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             logging.error(msg)
             return
 
-        self._download_manager.download(episode, bitrate, output_dir,
-                                        proxies=self._app.get_proxies())
-
-    def _on_cancel_download(self, row):
-        self._tableview_model.cancel_download_at_row(row)
+        self.start_download_episodes(res_index, episodes, output_dir)

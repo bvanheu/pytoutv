@@ -474,7 +474,8 @@ class App:
         self._cur_pb = ProgressBar(filename, total_segments)
         self._print_cur_pb(0, 0)
 
-    def _on_dl_progress_update(self, done_segments, done_bytes):
+    def _on_dl_progress_update(self, done_segments, done_bytes,
+                               done_segments_bytes):
         if self._stop:
             return
         self._print_cur_pb(done_segments, done_bytes)

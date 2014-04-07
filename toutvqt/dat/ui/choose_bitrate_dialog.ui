@@ -5,26 +5,6 @@
   <property name="windowModality">
    <enum>Qt::ApplicationModal</enum>
   </property>
-  <property name="geometry">
-   <rect>
-    <x>0</x>
-    <y>0</y>
-    <width>280</width>
-    <height>250</height>
-   </rect>
-  </property>
-  <property name="minimumSize">
-   <size>
-    <width>280</width>
-    <height>0</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>280</width>
-    <height>16777215</height>
-   </size>
-  </property>
   <property name="windowTitle">
    <string>Choose a video bitrate</string>
   </property>
@@ -32,7 +12,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>The episode you wish to download has more than one available video bitrates. Please choose one:</string>
+      <string>The episode(s) you wish to download has/have more than one available video qualities. Please choose one:</string>
      </property>
      <property name="textFormat">
       <enum>Qt::PlainText</enum>
@@ -43,6 +23,22 @@
     </widget>
    </item>
    <item>
+    <spacer name="verticalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>6</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
     <layout class="QVBoxLayout" name="buttons_vbox"/>
    </item>
    <item>
@@ -50,10 +46,13 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
      <property name="sizeHint" stdset="0">
       <size>
        <width>20</width>
-       <height>40</height>
+       <height>6</height>
       </size>
      </property>
     </spacer>
