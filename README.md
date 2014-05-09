@@ -119,7 +119,9 @@ If you have the Python prompt with the correct version stated,
 you're ready for the next step!
 
 Exit the Python prompt (if not back to your usual terminal)
-and run: "sudo pip3 install pytoutv".
+and run: 
+
+    $ sudo pip3 install pytoutv
 
 Now, have fun!
 
