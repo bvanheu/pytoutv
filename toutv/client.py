@@ -114,7 +114,7 @@ class Client:
         search = self._transport.search(query)
         self._set_bo_proxies(search)
 
-        return seach
+        return search
 
     def get_emission_by_name(self, emission_name):
         emissions = self.get_emissions()
