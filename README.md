@@ -36,7 +36,7 @@ pytoutv needs:
     * [setuptools](https://pythonhosted.org/setuptools/)
       ([available on PyPI](https://pypi.python.org/pypi/setuptools))
 
-pytoutv is known to work on Ubuntu, Debian, Fedora ,Arch Linux and Mac OS X.
+pytoutv is known to work on Ubuntu, Debian, Fedora, Arch Linux and Mac OS X.
 
 
 Installing
