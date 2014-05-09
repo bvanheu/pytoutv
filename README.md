@@ -36,7 +36,7 @@ pytoutv needs:
     * [setuptools](https://pythonhosted.org/setuptools/)
       ([available on PyPI](https://pypi.python.org/pypi/setuptools))
 
-pytoutv is known to work on Ubuntu, Debian, Fedora and Arch Linux.
+pytoutv is known to work on Ubuntu, Debian, Fedora ,Arch Linux and Mac OS X.
 
 
 Installing
@@ -101,6 +101,34 @@ To fix this, you can download the Python 3 version of pip:
 You can then run the installation using this package:
 
     $ sudo python3-pip install pytoutv
+
+
+### Mac OS X
+
+First, make sure you have the latest version of Python installed. 
+Apple provides their own build of Python 2.7, but you'll need 
+3.3 or more for pytoutv.
+
+You can download the latest build for your version of Mac OS X
+on here: https://www.python.org/download/
+
+To check if it has installed correctly, simply run 'python3.X'
+(where X is the subversion, like '3.4').
+
+If you have the Python prompt with the correct version stated,
+you're ready for the next step!
+
+Exit the Python prompt (if not back to your usual terminal)
+and run: "sudo pip3 install pytoutv".
+
+Now, have fun!
+
+
+PLEASE NOTE:
+It seems the autoinstall script doesn't add pytoutv's path
+to the global paths file.
+Add "/Library/Frameworks/Python.framework/Versions/3.4/bin"
+to "/etc/paths/" and you should be in business!
 
 
 Using setup.py
