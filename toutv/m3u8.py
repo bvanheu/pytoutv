@@ -220,7 +220,7 @@ def parse(data, base_uri):
             duration, title = attributes.split(',')
             segment = Segment()
             segment.key = current_key
-            segment.duration = int(duration.strip())
+            segment.duration = float(duration.strip())
             segment.title = title.strip()
             segment.uri = lines[count + 1]
             if _line_is_relative_uri(segment.uri):
