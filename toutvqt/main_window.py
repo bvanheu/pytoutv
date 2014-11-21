@@ -18,6 +18,7 @@ from toutvqt.infos_frame import QInfosFrame
 from toutvqt import utils
 from toutvqt import config
 from toutv import client
+from toutv import exceptions
 
 
 class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
@@ -101,6 +102,9 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         # Hide status bar until implemented
         self.statusbar.hide()
 
+    def _setup_errormsg(self):
+        self._error_msg_dialog = Qt.QErrorMessage(self)
+
     def _setup_ui(self):
         self._load_ui(QTouTvMainWindow._UI_NAME)
         self._setup_icons()
@@ -109,6 +113,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         self._add_tableview()
         self._setup_menus()
         self._setup_statusbar()
+        self._setup_errormsg()
 
     def closeEvent(self, close_event):
         logging.debug('Closing main window')
@@ -162,14 +167,21 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     def _on_select_download(self, episodes):
         logging.debug('Episodes selected for download')
 
-        if len(episodes) == 1:
-            self._set_wait_cursor()
-            btn_type = QBitrateResQualityButton
-            bitrates = episodes[0].get_available_bitrates()
-            self._set_normal_cursor()
-        else:
-            btn_type = QResQualityButton
-            bitrates = range(QTouTvMainWindow._nb_expected_bitrates)
+        ''' Get available bitrate list '''
+        try:
+            if len(episodes) == 1:
+                self._set_wait_cursor()
+                btn_type = QBitrateResQualityButton
+                bitrates = episodes[0].get_available_bitrates()
+                self._set_normal_cursor()
+            else:
+                btn_type = QResQualityButton
+                bitrates = range(QTouTvMainWindow._nb_expected_bitrates)
+        except exceptions.UnexpectedHttpStatusCode as e:
+            self._error_msg_dialog.showMessage(
+                'Could not download episode playlist. It might not be available '
+                'yet.')
+            return
 
         if len(bitrates) != QTouTvMainWindow._nb_expected_bitrates:
             logging.error('Unsupported list of bitrates')
