@@ -186,8 +186,10 @@ class Client:
 
     def get_episode_from_url(self, url):
         # Try sending the request
+        timeout = 10
+
         try:
-            r = requests.get(url, proxies=self._proxies)
+            r = requests.get(url, proxies=self._proxies, timeout=timeout)
             if r.status_code != 200:
                 raise toutv.exceptions.UnexpectedHttpStatusCode(url,
                                                                 r.status_code)
