@@ -24,6 +24,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     _UI_NAME = 'main_window'
     settings_accepted = QtCore.pyqtSignal(dict)
 
+    _nb_expected_bitrates = 6
+
     def __init__(self, app, client):
         super().__init__()
 
@@ -167,15 +169,15 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             self._set_normal_cursor()
         else:
             btn_type = QResQualityButton
-            bitrates = range(4)
+            bitrates = range(QTouTvMainWindow._nb_expected_bitrates)
 
-        if len(bitrates) != 4:
+        if len(bitrates) != QTouTvMainWindow._nb_expected_bitrates:
             logging.error('Unsupported list of bitrates')
             return
 
         settings = self._app.get_settings()
         if settings.get_always_max_quality():
-            self._on_bitrate_chosen(3, episodes)
+            self._on_bitrate_chosen(QTouTvMainWindow._nb_expected_bitrates - 1, episodes)
         else:
             pos = QtGui.QCursor().pos()
             dialog = QChooseBitrateDialog(episodes, bitrates, btn_type)
@@ -200,7 +202,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
         for episode in episodes:
             bitrates = episode.get_available_bitrates()
-            if len(bitrates) != 4:
+            if len(bitrates) != QTouTvMainWindow._nb_expected_bitrates:
                 tmpl = 'Unsupported bitrate list for episode "{}"'
                 logging.error(tmpl.format(episode.get_title()))
                 continue
