@@ -63,10 +63,11 @@ class JsonTransport(Transport):
 
     def _do_query(self, endpoint, params={}):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
+        timeout = 10
 
         try:
             r = requests.get(url, params=params, headers=toutv.config.HEADERS,
-                             proxies=self._proxies, timeout=10)
+                             proxies=self._proxies, timeout=timeout)
             if r.status_code != 200:
                 code = r.status_code
                 raise toutv.exceptions.UnexpectedHttpStatusCode(url, code)
