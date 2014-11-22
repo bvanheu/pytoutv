@@ -36,7 +36,14 @@ pytoutv needs:
     * [setuptools](https://pythonhosted.org/setuptools/)
       ([available on PyPI](https://pypi.python.org/pypi/setuptools))
 
-pytoutv is known to work on Ubuntu, Debian, Fedora, Arch Linux and Mac OS X.
+Optional dependencies:
+
+  * termcolor
+    ([available on PyPI](https://pypi.python.org/pypi/termcolor)):
+    colors in terminal (CLI)
+
+pytoutv is known to work on Ubuntu, Debian, Fedora, Arch Linux
+and Mac OS X.
 
 
 Installing
@@ -105,8 +112,8 @@ You can then run the installation using this package:
 
 ### Mac OS X
 
-First, make sure you have the latest version of Python installed. 
-Apple provides their own build of Python 2.7, but you'll need 
+First, make sure you have the latest version of Python installed.
+Apple provides their own build of Python 2.7, but you'll need
 3.3 or more for pytoutv.
 
 You can download the latest build for your version of Mac OS X
@@ -119,7 +126,7 @@ If you have the Python prompt with the correct version stated,
 you're ready for the next step!
 
 Exit the Python prompt (if not back to your usual terminal)
-and run: 
+and run:
 
     $ sudo pip3 install pytoutv
 

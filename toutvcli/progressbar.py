@@ -25,6 +25,12 @@
 
 import shutil
 
+try:
+    from termcolor import colored
+    _has_termcolor = True
+except ImportError:
+    _has_termcolor = False
+
 
 class ProgressBar:
     def __init__(self, filename, segments_count):
@@ -35,26 +41,36 @@ class ProgressBar:
     def _get_terminal_width():
         return shutil.get_terminal_size()[0]
 
-    def _get_bar_widget(self, total_segments, width):
+    def _get_bar_widget(self, width):
+        total_segments = self._total_segments
         inner_width = width - 2
         plain = round(total_segments / self._segments_count * inner_width)
         empty = inner_width - plain
-        bar = '[{}{}]'.format('#' * plain, '-' * empty)
+        empty_s = '-' * empty
+
+        if _has_termcolor:
+            empty_s = colored(empty_s, attrs=['dark'])
+
+        bar = '[{}{}]'.format('#' * plain, empty_s)
 
         return bar
 
-    def _get_percent_widget(self, total_segments, width):
+    def _get_percent_widget(self, width):
+        total_segments = self._total_segments
         percent = int(total_segments / self._segments_count * 100)
         base = '{}%'.format(percent)
 
         return base.rjust(width)
 
-    def _get_segments_widget(self, total_segments, width):
+    def _get_segments_widget(self, width):
+        total_segments = self._total_segments
         base = '{}/{}'.format(total_segments, self._segments_count)
 
         return base.rjust(width)
 
-    def _get_size_widget(self, total_bytes, width):
+    def _get_size_widget(self, width):
+        total_bytes = self._total_bytes
+
         if total_bytes < (1 << 10):
             base = '{} B'.format(total_bytes)
         elif total_bytes < (1 << 20):
@@ -68,13 +84,21 @@ class ProgressBar:
 
     def _get_filename_widget(self, width):
         filename_len = len(self._filename)
+
         if filename_len < width:
-            return self._filename.ljust(width)
+            s = self._filename.ljust(width)
         else:
-            return '{}...'.format(self._filename[:width - 3])
+            s = '{}...'.format(self._filename[:width - 3])
+
+        if _has_termcolor and self._total_segments != self._segments_count:
+            s = colored(s, attrs=['bold'])
+
+        return s
 
     def get_bar(self, total_segments, total_bytes):
         # Different required widths for widgets
+        self._total_segments = total_segments
+        self._total_bytes = total_bytes
         term_width = ProgressBar._get_terminal_width()
         percent_width = 5
         size_width = 12
@@ -86,11 +110,11 @@ class ProgressBar:
         bar_width = variable_width - filename_width
 
         # Get all widgets
-        wpercent = self._get_percent_widget(total_segments, percent_width)
-        wsize = self._get_size_widget(total_bytes, size_width)
-        wsegments = self._get_segments_widget(total_segments, segments_width)
+        wpercent = self._get_percent_widget(percent_width)
+        wsize = self._get_size_widget(size_width)
+        wsegments = self._get_segments_widget(segments_width)
         wfilename = self._get_filename_widget(filename_width)
-        wbar = self._get_bar_widget(total_segments, bar_width)
+        wbar = self._get_bar_widget(bar_width)
 
         # Build line
         line = '{}{}{} {}{}'.format(wfilename, wsize, wsegments, wbar,
