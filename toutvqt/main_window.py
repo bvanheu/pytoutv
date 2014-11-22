@@ -172,7 +172,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             if len(episodes) == 1:
                 self._set_wait_cursor()
                 btn_type = QBitrateResQualityButton
-                bitrates = episodes[0].get_available_bitrates()
+                qualities = episodes[0].get_available_qualities()
+                bitrates = [q.bitrate for q in qualities]
                 self._set_normal_cursor()
             else:
                 btn_type = QResQualityButton
@@ -213,7 +214,9 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         episodes_bitrates = []
 
         for episode in episodes:
-            bitrates = episode.get_available_bitrates()
+            qualities = episode.get_available_qualities()
+            bitrates = [q.bitrate for q in qualities]
+
             if len(bitrates) != QTouTvMainWindow._nb_expected_bitrates:
                 tmpl = 'Unsupported bitrate list for episode "{}"'
                 logging.error(tmpl.format(episode.get_title()))
