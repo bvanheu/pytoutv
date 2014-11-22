@@ -469,7 +469,7 @@ class App:
 
         # ensure 100% is printed
         if done_segments == self._cur_segments_count:
-            force = False
+            force = True
 
         if not force and (cur_time - self._last_pb_time < .2):
             return
