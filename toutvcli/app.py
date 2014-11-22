@@ -30,6 +30,7 @@
 import argparse
 import os
 import sys
+import time
 import textwrap
 import platform
 import toutv.dl
@@ -463,8 +464,15 @@ class App:
 
         return closest
 
-    def _print_cur_pb(self, done_segments, done_bytes):
+    def _print_cur_pb(self, done_segments, done_bytes, force):
+        cur_time = time.time()
+
+        if not force and (cur_time - self._last_pb_time < .2):
+            return
+
+        self._last_pb_time = cur_time
         bar = self._cur_pb.get_bar(done_segments, done_bytes)
+
         sys.stdout.write('\r{}'.format(bar))
         sys.stdout.flush()
 
@@ -472,13 +480,15 @@ class App:
         self._cur_filename = filename
         self._cur_segments_count = total_segments
         self._cur_pb = ProgressBar(filename, total_segments)
-        self._print_cur_pb(0, 0)
+        self._last_pb_time = time.time()
+        self._print_cur_pb(0, 0, True)
 
     def _on_dl_progress_update(self, done_segments, done_bytes,
                                done_segments_bytes):
         if self._stop:
             return
-        self._print_cur_pb(done_segments, done_bytes)
+
+        self._print_cur_pb(done_segments, done_bytes, False)
 
     def _fetch_episode(self, episode, output_dir, bitrate, quality, overwrite):
         # Get available bitrates for episode
