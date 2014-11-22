@@ -8,9 +8,9 @@ from toutv import dl
 
 
 class _DownloadWork:
-    def __init__(self, episode, bitrate, output_dir, proxies):
+    def __init__(self, episode, quality, output_dir, proxies):
         self._episode = episode
-        self._bitrate = bitrate
+        self._quality = quality
         self._output_dir = output_dir
         self._proxies = proxies
         self._cancelled = False
@@ -18,8 +18,9 @@ class _DownloadWork:
     def get_episode(self):
         return self._episode
 
-    def get_bitrate(self):
-        return self._bitrate
+    @property
+    def quality(self):
+        return self._quality
 
     def get_output_dir(self):
         return self._output_dir
@@ -79,7 +80,7 @@ class _QDownloadWorker(Qt.QObject):
     def cancel_current_work(self):
         if self._downloader is not None:
             episode = self._current_work.get_episode()
-            bitrate = self._current_work.get_bitrate()
+            bitrate = self._current_work.quality.bitrate
             tmpl = 'Cancelling download of "{}" @ {} bps'
             logging.debug(tmpl.format(episode.get_title(), bitrate))
             self._downloader.cancel()
@@ -98,7 +99,7 @@ class _QDownloadWorker(Qt.QObject):
         self._current_work = work
 
         episode = work.get_episode()
-        bitrate = work.get_bitrate()
+        bitrate = work.quality.bitrate
         output_dir = work.get_output_dir()
         proxies = work.get_proxies()
 
@@ -231,8 +232,8 @@ class QDownloadManager(Qt.QObject):
         ev = _QDownloadStartEvent(self._download_event_type, work)
         Qt.QCoreApplication.postEvent(worker, ev)
 
-    def download(self, episode, bitrate, output_dir, proxies):
-        work = _DownloadWork(episode, bitrate, output_dir, proxies)
+    def download(self, episode, quality, output_dir, proxies):
+        work = _DownloadWork(episode, quality, output_dir, proxies)
 
         self.download_created.emit(work)
         self._works.put(work)
@@ -240,7 +241,7 @@ class QDownloadManager(Qt.QObject):
 
     def _on_worker_finished(self, work):
         title = work.get_episode().get_title()
-        br = work.get_bitrate()
+        br = work.quality.bitrate
         logging.debug('Download of "{}" @ {} bps ended'.format(title, br))
         worker = self.sender()
 
