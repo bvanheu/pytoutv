@@ -38,6 +38,12 @@ pytoutv requiert :
     * [setuptools](https://pythonhosted.org/setuptools/)
       ([disponible sur PyPI](https://pypi.python.org/pypi/setuptools))
 
+Dépendances facultatives :
+
+  * termcolor
+    ([disponible sur PyPI](https://pypi.python.org/pypi/termcolor)):
+    couleurs dans le terminal (CLI)
+
 pytoutv est réputé fonctionner sur Ubuntu, Debian, Fedora, Arch Linux et Mac OS X.
 
 
