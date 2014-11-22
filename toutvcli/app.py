@@ -431,7 +431,11 @@ class App:
         infos_lines.append('  * Available qualities:')
         for quality in qualities:
             bitrate = quality.bitrate // 1000
-            resolution = '{}x{}'.format(quality.xres, quality.yres)
+
+            xres = quality.xres or '?'
+            yres = quality.yres or '?'
+
+            resolution = '{}x{}'.format(xres, yres)
             line = '    * {} kbps ({})'.format(bitrate, resolution)
             infos_lines.append(line)
 
