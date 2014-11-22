@@ -43,6 +43,8 @@ Dépendances facultatives :
   * termcolor
     ([disponible sur PyPI](https://pypi.python.org/pypi/termcolor)):
     couleurs dans le terminal (CLI)
+  * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download):
+    interface Qt
 
 pytoutv est réputé fonctionner sur Ubuntu, Debian, Fedora, Arch Linux et Mac OS X.
 
