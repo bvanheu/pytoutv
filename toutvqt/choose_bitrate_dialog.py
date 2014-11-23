@@ -1,9 +1,17 @@
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from toutvqt import utils
+from enum import Enum
+
+
+class SymbolicQuality(Enum):
+    LOWEST = 0
+    AVERAGE = 1
+    HIGHEST = 2
 
 
 class _QQualityButton(Qt.QPushButton):
+
     def __init__(self, quality):
         super().__init__()
 
@@ -23,17 +31,26 @@ class _QQualityButton(Qt.QPushButton):
 
 
 class QBitrateResQualityButton(_QQualityButton):
+
     def _get_text(self):
-        return '{} kbps ({}p)'.format(self.quality.bitrate // 1000, self.quality.yres)
+        return '{} kbps ({}p)'.format(self.quality.bitrate // 1000,
+                                      self.quality.yres)
 
 
-class QResQualityButton(_QQualityButton):
+class QSymbolicQualityButton(_QQualityButton):
+
     def _get_text(self):
-        return '{}p'.format(self.quality.yres)
+        texts = {
+            SymbolicQuality.LOWEST: 'Lowest quality',
+            SymbolicQuality.AVERAGE: 'Average quality',
+            SymbolicQuality.HIGHEST: 'Highest quality',
+        }
+        return texts[self.quality]
 
 
 class QChooseBitrateDialog(utils.QCommonDialog, utils.QtUiLoad):
     _UI_NAME = 'choose_bitrate_dialog'
+
     bitrate_chosen = QtCore.pyqtSignal(object, list)
 
     def __init__(self, episodes, qualities, btn_class):

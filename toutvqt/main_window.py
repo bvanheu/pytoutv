@@ -11,9 +11,9 @@ from toutvqt.emissions_treeview import QEmissionsTreeView
 from toutvqt.emissions_treemodel import EmissionsTreeModel
 from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.preferences_dialog import QTouTvPreferencesDialog
-from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
+from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog, SymbolicQuality,\
+    QSymbolicQualityButton
 from toutvqt.choose_bitrate_dialog import QBitrateResQualityButton
-from toutvqt.choose_bitrate_dialog import QResQualityButton
 from toutvqt.infos_frame import QInfosFrame
 from toutvqt import utils
 from toutvqt import config
@@ -69,7 +69,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _setup_file_menu(self):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
-        self.refresh_emissions_action.triggered.connect(self._treeview_model.reset)
+        self.refresh_emissions_action.triggered.connect(
+            self._treeview_model.reset)
 
     def _setup_edit_menu(self):
         self.preferences_action.triggered.connect(
@@ -162,6 +163,15 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     def _on_treeview_fetch_done(self):
         self.refresh_emissions_action.setEnabled(True)
 
+    def _show_choose_bitrate_dialog(self, episodes, qualities, btn_class):
+        pos = QtGui.QCursor().pos()
+        dialog = QChooseBitrateDialog(
+            episodes, qualities, btn_class)
+        dialog.bitrate_chosen.connect(self._on_quality_chosen)
+        pos.setX(pos.x() - dialog.width())
+        pos.setY(pos.y() - dialog.height())
+        dialog.show_move(pos)
+
     def _on_select_download_single(self, episodes):
         logging.debug('Single episode selected for download')
 
@@ -171,19 +181,15 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
         try:
             self._set_wait_cursor()
             qualities = episodes[0].get_available_qualities()
-            
+            btn_class = QBitrateResQualityButton
+
             settings = self._app.get_settings()
             if settings.get_always_max_quality():
-                ''' Assume the qualities are ordered from low to high ''' 
+                ''' Assume the qualities are ordered from low to high '''
                 self._on_quality_chosen(qualities[-1], episodes)
             else:
-                pos = QtGui.QCursor().pos()
-                dialog = QChooseBitrateDialog(episodes, qualities, QBitrateResQualityButton)
-                dialog.bitrate_chosen.connect(self._on_quality_chosen)
-                pos.setX(pos.x() - dialog.width())
-                pos.setY(pos.y() - dialog.height())
-                dialog.show_move(pos)
-            
+                self._show_choose_bitrate_dialog(episodes, qualities, btn_class)
+
         except exceptions.UnexpectedHttpStatusCode as e:
             self._error_msg_dialog.showMessage(
                 'Could not download episode playlist. It might not be available '
@@ -194,6 +200,14 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _on_select_download_multi(self, episodes):
         logging.debug('Multiple episodes selected for download')
+        qualities = list(SymbolicQuality)
+        btn_class = QSymbolicQualityButton
+
+        settings = self._app.get_settings()
+        if settings.get_always_max_quality():
+            self._on_quality_chosen(SymbolicQuality.HIGHEST, episodes)
+        else:
+            self._show_choose_bitrate_dialog(episodes, qualities, btn_class)
 
     def _on_select_download(self, episodes):
         ''' User clicked on the download button '''
@@ -214,19 +228,46 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def start_download_episode_single(self, quality, episode, output_dir):
         self._set_wait_cursor()
-        
+
         tmpl = 'Queueing download of episode "{}" @ {} bps'
         logging.debug(tmpl.format(episode.get_title(), quality.bitrate))
         self._start_download(episode, quality, output_dir)
 
         self._set_normal_cursor()
 
-    def start_download_episodes_multi(self, quality, episodes, output_dir):
+    def start_download_episodes_multi(self, symbolic_quality, episodes, output_dir):
         self._set_wait_cursor()
-        
-        # Not implemented yet
 
-        self._set_normal_cursor()
+        # Not implemented yet
+        print("Download {} in symbolic_quality {}".format(episodes, symbolic_quality) )
+        #download_list = []
+        try:
+            for episode in episodes:
+                qualities = episode.get_available_qualities()
+                if symbolic_quality == SymbolicQuality.HIGHEST:
+                    quality = qualities[-1]
+                elif symbolic_quality == SymbolicQuality.LOWEST:
+                    quality = qualities[0]
+                elif symbolic_quality == SymbolicQuality.AVERAGE:
+                    avg = 0
+                    for symbolic_quality in qualities:
+                        avg += symbolic_quality.bitrate
+                    avg /= len(qualities)
+                    quality = min(qualities, key=lambda q: abs(q.bitrate - avg))
+                    #download_list.append((episode, quality))
+
+                tmpl = 'Queueing download of episode "{}" @ {} bps'
+                logging.debug(tmpl.format(episode.get_title(), quality))
+                self._start_download(episode, quality, output_dir)
+                
+                
+        except exceptions.UnexpectedHttpStatusCode:
+            self._error_msg_dialog.showMessage(
+                'Could not download episode playlist. It might not be available '
+                'yet.')
+            return
+        finally:
+            self._set_normal_cursor()
 
     def _on_quality_chosen(self, quality, episodes):
         ''' user selected a quality from the popup '''
@@ -240,6 +281,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             return
 
         if len(episodes) == 1:
-            self.start_download_episode_single(quality, episodes[0], output_dir)
+            self.start_download_episode_single(
+                quality, episodes[0], output_dir)
         elif len(episodes) > 1:
             self.start_download_episodes_multi(quality, episodes, output_dir)
