@@ -276,6 +276,13 @@ class Episode(_Bo, _ThumbnailProvider):
         def yres(self):
             return self._yres
 
+        def __hash__(self):
+            return hash(self._bitrate) + hash(self._xres) + hash(self._yres)
+
+        def __eq__(self, other):
+            return self.bitrate == other.bitrate and self.xres == other.xres \
+                and self.yres == other.yres
+
     def __init__(self):
         self.AdPattern = None
         self.AirDateFormated = None
