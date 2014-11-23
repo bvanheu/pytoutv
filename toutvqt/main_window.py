@@ -218,7 +218,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _start_download(self, episode, quality, output_dir):
         # Fixme: download_item_exists should take the qu ality as well
-        if self._downloads_tableview_model.download_item_exists(episode):
+        if self._downloads_tableview_model.download_item_exists(episode.get_id(), quality):
             tmpl = 'Download of episode "{}" @ {} bps already exists'
             logging.info(tmpl.format(episode.get_title(), quality.bitrate))
             return
@@ -238,9 +238,6 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     def start_download_episodes_multi(self, symbolic_quality, episodes, output_dir):
         self._set_wait_cursor()
 
-        # Not implemented yet
-        print("Download {} in symbolic_quality {}".format(episodes, symbolic_quality) )
-        #download_list = []
         try:
             for episode in episodes:
                 qualities = episode.get_available_qualities()
