@@ -1,5 +1,4 @@
 import logging
-from pkg_resources import resource_filename
 from PyQt4 import Qt, QtCore
 from toutvqt.emissions_treemodel import EmissionsTreeModelEmission
 from toutvqt.emissions_treemodel import EmissionsTreeModelSeason

@@ -1,4 +1,3 @@
-import os.path
 from PyQt4.Qt import QDir
 from PyQt4.Qt import QSettings
 from PyQt4 import QtCore
@@ -15,7 +14,7 @@ class SettingsKeys:
 
 
 class QTouTvSettings(Qt.QObject):
-    _DEFAULT_DOWNLOAD_DIRECTORY = QDir.home().absoluteFilePath('TOU.TV Downloads')
+    _DEFAULT_DOWNLOAD_DIR = QDir.home().absoluteFilePath('TOU.TV Downloads')
     _settings_types = {
         SettingsKeys.FILES_DOWNLOAD_DIR: str,
         SettingsKeys.NETWORK_HTTP_PROXY: str,
@@ -33,7 +32,7 @@ class QTouTvSettings(Qt.QObject):
     def _fill_defaults(self):
         """Fills defaults with sensible default values."""
         self.defaults = {}
-        def_dl_dir = QTouTvSettings._DEFAULT_DOWNLOAD_DIRECTORY
+        def_dl_dir = QTouTvSettings._DEFAULT_DOWNLOAD_DIR
         self.defaults[SettingsKeys.FILES_DOWNLOAD_DIR] = def_dl_dir
         self.defaults[SettingsKeys.NETWORK_HTTP_PROXY] = ""
         self.defaults[SettingsKeys.DL_DOWNLOAD_SLOTS] = 5

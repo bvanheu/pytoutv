@@ -216,9 +216,6 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self.endRemoveRows()
 
     def remove_item_at_row(self, row):
-        # Get download item
-        dl_item = self.get_download_item_at_row(row)
-
         self.beginRemoveRows(Qt.QModelIndex(), row, row)
         key = list(self._download_list.keys())[row]
         del self._download_list[key]
@@ -259,10 +256,12 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._delayed_update_calls.append((self._on_download_finished, [work]))
 
     def _on_download_error_delayed(self, work, ex):
-        self._delayed_update_calls.append((self._on_download_error, [work, ex]))
+        self._delayed_update_calls.append((self._on_download_error,
+                                           [work, ex]))
 
     def _on_download_cancelled_delayed(self, work):
-        self._delayed_update_calls.append((self._on_download_cancelled, [work]))
+        self._delayed_update_calls.append((self._on_download_cancelled,
+                                           [work]))
 
     def _on_download_created(self, work):
         episode_id = work.get_episode().get_id()
@@ -356,20 +355,12 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         key = keys[row]
         dl_item = self._download_list[key]
         work = dl_item.get_work()
-        #episode_id = work.get_episode().get_id()
-        idx = self.createIndex(row, column, None)
+        idx = self.createIndex(row, column, work)
 
         return idx
 
     def parent(self, child):
         return Qt.QModelIndex()
-
-    '''
-    def index_from_id(self, episode_id, column):
-        row = list(self._download_list.keys()).index(episode_id)
-
-        return self.createIndex(row, column, None)
-    '''
 
     def rowCount(self, parent):
         if not parent.isValid():

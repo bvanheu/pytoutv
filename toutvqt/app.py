@@ -2,8 +2,6 @@ import os
 import sys
 import logging
 import platform
-from pkg_resources import resource_filename
-from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
 from toutvqt.settings import QTouTvSettings

@@ -1,6 +1,5 @@
 import os.path
 import logging
-from pkg_resources import resource_filename
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -16,8 +15,6 @@ from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog, SymbolicQuality,
 from toutvqt.choose_bitrate_dialog import QBitrateResQualityButton
 from toutvqt.infos_frame import QInfosFrame
 from toutvqt import utils
-from toutvqt import config
-from toutv import client
 from toutv import exceptions
 
 
@@ -188,12 +185,13 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
                 ''' Assume the qualities are ordered from low to high '''
                 self._on_quality_chosen(qualities[-1], episodes)
             else:
-                self._show_choose_bitrate_dialog(episodes, qualities, btn_class)
+                self._show_choose_bitrate_dialog(episodes, qualities,
+                                                 btn_class)
 
-        except exceptions.UnexpectedHttpStatusCode as e:
+        except exceptions.UnexpectedHttpStatusCode:
             self._error_msg_dialog.showMessage(
-                'Could not download episode playlist. It might not be available '
-                'yet.')
+                'Could not download episode playlist. It might not be '
+                'available yet.')
             return
         finally:
             self._set_normal_cursor()
@@ -218,7 +216,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _start_download(self, episode, quality, output_dir):
         # Fixme: download_item_exists should take the qu ality as well
-        if self._downloads_tableview_model.download_item_exists(episode.get_id(), quality):
+        if self._downloads_tableview_model.download_item_exists(
+                episode.get_id(), quality):
             tmpl = 'Download of episode "{}" @ {} bps already exists'
             logging.info(tmpl.format(episode.get_title(), quality.bitrate))
             return
@@ -235,7 +234,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
         self._set_normal_cursor()
 
-    def start_download_episodes_multi(self, symbolic_quality, episodes, output_dir):
+    def start_download_episodes_multi(self, symbolic_quality, episodes,
+                                      output_dir):
         self._set_wait_cursor()
 
         try:
@@ -250,18 +250,17 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
                     for symbolic_quality in qualities:
                         avg += symbolic_quality.bitrate
                     avg /= len(qualities)
-                    quality = min(qualities, key=lambda q: abs(q.bitrate - avg))
-                    #download_list.append((episode, quality))
+                    quality = min(qualities,
+                                  key=lambda q: abs(q.bitrate - avg))
 
                 tmpl = 'Queueing download of episode "{}" @ {} bps'
                 logging.debug(tmpl.format(episode.get_title(), quality))
                 self._start_download(episode, quality, output_dir)
-                
-                
+
         except exceptions.UnexpectedHttpStatusCode:
             self._error_msg_dialog.showMessage(
-                'Could not download episode playlist. It might not be available '
-                'yet.')
+                'Could not download episode playlist. It might not be '
+                'available yet.')
             return
         finally:
             self._set_normal_cursor()
