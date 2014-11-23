@@ -258,6 +258,31 @@ class Genre(_Bo):
 
 
 class Episode(_Bo, _ThumbnailProvider):
+    class Quality:
+        def __init__(self, bitrate, xres, yres):
+            self._bitrate = bitrate
+            self._xres = xres
+            self._yres = yres
+
+        @property
+        def bitrate(self):
+            return self._bitrate
+
+        @property
+        def xres(self):
+            return self._xres
+
+        @property
+        def yres(self):
+            return self._yres
+
+        def __hash__(self):
+            return hash(self._bitrate) + hash(self._xres) + hash(self._yres)
+
+        def __eq__(self, other):
+            return self.bitrate == other.bitrate and self.xres == other.xres \
+                and self.yres == other.yres
+
     def __init__(self):
         self.AdPattern = None
         self.AirDateFormated = None
@@ -416,30 +441,45 @@ class Episode(_Bo, _ThumbnailProvider):
         return self._emission
 
     @staticmethod
-    def _get_video_bitrates(playlist):
-        bitrates = []
+    def _get_video_qualities(playlist):
+        qualities = []
 
         for stream in playlist.streams:
-            index = os.path.basename(stream.uri)
-
-            # TOU.TV team doesnt use the "AUDIO" or "VIDEO" M3U8 tag so we must
-            # parse the URL to find out about video stream:
+            # TOU.TV team doesnt use the "AUDIO" or "VIDEO" M3U8 tags so
+            # we must parse the URL to find out about video stream:
             #   index_X_av.m3u8 -> audio-video (av)
             #   index_X_a.m3u8 -> audio (a)
-            if index.split('_', 2)[2][0:2] == 'av':
-                bitrates.append(stream.bandwidth)
+            if not re.search(r'_av\.m3u8', stream.uri):
+                continue
 
-        return bitrates
+            xres = None
+            yres = None
 
-    def get_available_bitrates(self):
+            if stream.resolution is not None:
+                m = re.match(r'(\d+)x(\d+)', stream.resolution)
+
+                if m:
+                    xres = int(m.group(1))
+                    yres = int(m.group(2))
+
+            bw = int(stream.bandwidth)
+            quality = Episode.Quality(bw, xres, yres)
+
+            qualities.append(quality)
+
+        return qualities
+
+    def get_available_qualities(self):
         # Get playlist
         proxies = self.get_proxies()
         playlist = toutv.dl.Downloader.get_episode_playlist(self, proxies)
 
-        # Get video bitrates
-        bitrates = Episode._get_video_bitrates(playlist)
+        # Get video qualities
+        qualities = Episode._get_video_qualities(playlist)
 
-        return sorted(bitrates)
+        qualities.sort(key=lambda q: q.bitrate)
+
+        return qualities
 
     def get_medium_thumb_urls(self):
         return [self.ImageThumbMoyenL]

@@ -1,4 +1,3 @@
-from PyQt4 import Qt
 from toutvqt import config
 from toutvqt import utils
 from toutvqt import __version__

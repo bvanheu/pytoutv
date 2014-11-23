@@ -348,7 +348,6 @@ class EmissionsTreeModelFetcher(Qt.QObject):
 
     def fetch_seasons(self, parent):
         emission = parent.internalPointer()
-        seasons_set = set()
         seasons_list = []
         seasons_dict = {}
 

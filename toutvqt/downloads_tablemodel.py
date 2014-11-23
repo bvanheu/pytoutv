@@ -164,6 +164,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Speed',
         'Progress',
         'Status',
+        'Quality',
     ]
     _status_msg_handlers = {
         DownloadItemState.QUEUED: lambda i: 'Queued',
@@ -191,12 +192,11 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         return 10
 
     def get_download_item_at_row(self, row):
-        episode_id = list(self._download_list.keys())[row]
+        return list(self._download_list.values())[row]
 
-        return self._download_list[episode_id]
-
-    def download_item_exists(self, episode):
-        return episode.get_id() in self._download_list
+    def download_item_exists(self, episode_id, quality):
+        key = (episode_id, quality)
+        return key in self._download_list
 
     def cancel_download_at_row(self, row):
         # Get download item
@@ -205,22 +205,20 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         # Ask download manager to cancel its work
         self._download_manager.cancel_work(dl_item.get_work())
 
-    def remove_episode_id_item(self, eid):
-        if eid not in self._download_list:
+    def remove_episode_id_item(self, episode_id, quality):
+        key = (episode_id, quality)
+        if key not in self._download_list:
             return
 
-        row = list(self._download_list.keys()).index(eid)
+        row = list(self._download_list.keys()).index(key)
         self.beginRemoveRows(Qt.QModelIndex(), row, row)
-        del self._download_list[eid]
+        del self._download_list[key]
         self.endRemoveRows()
 
     def remove_item_at_row(self, row):
-        # Get download item
-        dl_item = self.get_download_item_at_row(row)
-
         self.beginRemoveRows(Qt.QModelIndex(), row, row)
-        episode_id = list(self._download_list.keys())[row]
-        del self._download_list[episode_id]
+        key = list(self._download_list.keys())[row]
+        del self._download_list[key]
         self.endRemoveRows()
 
     def _setup_timer(self):
@@ -258,31 +256,38 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         self._delayed_update_calls.append((self._on_download_finished, [work]))
 
     def _on_download_error_delayed(self, work, ex):
-        self._delayed_update_calls.append((self._on_download_error, [work, ex]))
+        self._delayed_update_calls.append((self._on_download_error,
+                                           [work, ex]))
 
     def _on_download_cancelled_delayed(self, work):
-        self._delayed_update_calls.append((self._on_download_cancelled, [work]))
+        self._delayed_update_calls.append((self._on_download_cancelled,
+                                           [work]))
 
     def _on_download_created(self, work):
         episode_id = work.get_episode().get_id()
+        quality = work.quality
+        key = (episode_id, quality)
 
-        if episode_id in self._download_list:
+        if key in self._download_list:
             msg = 'Episode {} already in download list'.format(episode_id)
             logging.warning(msg)
             return
 
         new_position = len(self._download_list)
         self.beginInsertRows(Qt.QModelIndex(), new_position, new_position)
-        self._download_list[episode_id] = _DownloadItem(work)
+        self._download_list[key] = _DownloadItem(work)
         self.endInsertRows()
 
-    def _get_download_item(self, episode):
-        return self._download_list[episode.get_id()]
+    def _get_download_item(self, episode, quality):
+        key = (episode.get_id(), quality)
+        return self._download_list[key]
 
     def _on_download_started(self, work, dl_progress, filename,
                              total_segments, now):
         episode = work.get_episode()
-        item = self._get_download_item(episode)
+        quality = work.quality
+
+        item = self._get_download_item(episode, quality)
 
         item.set_dl_progress(dl_progress, now)
         item.set_total_segments(total_segments)
@@ -291,27 +296,35 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
     def _on_download_progress(self, work, dl_progress, now):
         episode = work.get_episode()
-        item = self._get_download_item(episode)
+        quality = work.quality
+
+        item = self._get_download_item(episode, quality)
 
         item.set_dl_progress(dl_progress, now)
 
     def _on_download_finished(self, work):
         episode = work.get_episode()
-        item = self._get_download_item(episode)
+        quality = work.quality
+
+        item = self._get_download_item(episode, quality)
 
         item.set_state(DownloadItemState.DONE)
         self.download_finished.emit(work)
 
     def _on_download_error(self, work, ex):
         episode = work.get_episode()
-        item = self._get_download_item(episode)
+        quality = work.quality
+
+        item = self._get_download_item(episode, quality)
 
         item.set_state(DownloadItemState.ERROR)
         item.set_error(ex)
 
     def _on_download_cancelled(self, work):
         episode = work.get_episode()
-        item = self._get_download_item(episode)
+        quality = work.quality
+
+        item = self._get_download_item(episode, quality)
 
         item.set_state(DownloadItemState.CANCELLED)
         self.download_cancelled.emit(work)
@@ -342,18 +355,12 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         key = keys[row]
         dl_item = self._download_list[key]
         work = dl_item.get_work()
-        episode_id = work.get_episode().get_id()
-        idx = self.createIndex(row, column, None)
+        idx = self.createIndex(row, column, work)
 
         return idx
 
     def parent(self, child):
         return Qt.QModelIndex()
-
-    def index_from_id(self, episode_id, column):
-        row = list(self._download_list.keys()).index(episode_id)
-
-        return self.createIndex(row, column, None)
 
     def rowCount(self, parent):
         if not parent.isValid():
@@ -384,12 +391,13 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
             # I don't know why, calling index.internalPointer() seems to
             # segfault
             row = index.row()
-            episode_id = list(self._download_list.keys())[row]
-            dl_item = self._download_list[episode_id]
+            key = list(self._download_list.keys())[row]
+            dl_item = self._download_list[key]
             dl_progress = dl_item.get_dl_progress()
 
             work = dl_item.get_work()
             episode = work.get_episode()
+            quality = work.quality
 
             if col == 0:
                 # Emission
@@ -462,6 +470,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 handlers = QDownloadsTableModel._status_msg_handlers
 
                 return handlers[dl_item.get_state()](dl_item)
+            elif col == 12:
+                return '{}x{}@{}kbps'.format(quality.xres,
+                                             quality.yres,
+                                             quality.bitrate // 1000)
 
     def headerData(self, col, ori, role):
         if ori == QtCore.Qt.Horizontal:

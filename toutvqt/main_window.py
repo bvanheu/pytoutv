@@ -1,6 +1,5 @@
 import os.path
 import logging
-from pkg_resources import resource_filename
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -11,21 +10,17 @@ from toutvqt.emissions_treeview import QEmissionsTreeView
 from toutvqt.emissions_treemodel import EmissionsTreeModel
 from toutvqt.about_dialog import QTouTvAboutDialog
 from toutvqt.preferences_dialog import QTouTvPreferencesDialog
-from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog
+from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog, SymbolicQuality,\
+    QSymbolicQualityButton
 from toutvqt.choose_bitrate_dialog import QBitrateResQualityButton
-from toutvqt.choose_bitrate_dialog import QResQualityButton
 from toutvqt.infos_frame import QInfosFrame
 from toutvqt import utils
-from toutvqt import config
-from toutv import client
 from toutv import exceptions
 
 
 class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     _UI_NAME = 'main_window'
     settings_accepted = QtCore.pyqtSignal(dict)
-
-    _nb_expected_bitrates = 6
 
     def __init__(self, app, client):
         super().__init__()
@@ -71,7 +66,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
 
     def _setup_file_menu(self):
         self.quit_action.triggered.connect(self._app.closeAllWindows)
-        self.refresh_emissions_action.triggered.connect(self._treeview_model.reset)
+        self.refresh_emissions_action.triggered.connect(
+            self._treeview_model.reset)
 
     def _setup_edit_menu(self):
         self.preferences_action.triggered.connect(
@@ -164,71 +160,114 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
     def _on_treeview_fetch_done(self):
         self.refresh_emissions_action.setEnabled(True)
 
-    def _on_select_download(self, episodes):
-        logging.debug('Episodes selected for download')
+    def _show_choose_bitrate_dialog(self, episodes, qualities, btn_class):
+        pos = QtGui.QCursor().pos()
+        dialog = QChooseBitrateDialog(
+            episodes, qualities, btn_class)
+        dialog.bitrate_chosen.connect(self._on_quality_chosen)
+        pos.setX(pos.x() - dialog.width())
+        pos.setY(pos.y() - dialog.height())
+        dialog.show_move(pos)
 
-        ''' Get available bitrate list '''
+    def _on_select_download_single(self, episodes):
+        logging.debug('Single episode selected for download')
+
+        assert len(episodes) == 1
+
+        ''' Get available qualities '''
         try:
-            if len(episodes) == 1:
-                self._set_wait_cursor()
-                btn_type = QBitrateResQualityButton
-                bitrates = episodes[0].get_available_bitrates()
-                self._set_normal_cursor()
-            else:
-                btn_type = QResQualityButton
-                bitrates = range(QTouTvMainWindow._nb_expected_bitrates)
-        except exceptions.UnexpectedHttpStatusCode as e:
-            self._error_msg_dialog.showMessage(
-                'Could not download episode playlist. It might not be available '
-                'yet.')
-            return
+            self._set_wait_cursor()
+            qualities = episodes[0].get_available_qualities()
+            btn_class = QBitrateResQualityButton
 
-        if len(bitrates) != QTouTvMainWindow._nb_expected_bitrates:
-            logging.error('Unsupported list of bitrates')
+            settings = self._app.get_settings()
+            if settings.get_always_max_quality():
+                ''' Assume the qualities are ordered from low to high '''
+                self._on_quality_chosen(qualities[-1], episodes)
+            else:
+                self._show_choose_bitrate_dialog(episodes, qualities,
+                                                 btn_class)
+
+        except exceptions.UnexpectedHttpStatusCode:
+            self._error_msg_dialog.showMessage(
+                'Could not download episode playlist. It might not be '
+                'available yet.')
             return
+        finally:
+            self._set_normal_cursor()
+
+    def _on_select_download_multi(self, episodes):
+        logging.debug('Multiple episodes selected for download')
+        qualities = list(SymbolicQuality)
+        btn_class = QSymbolicQualityButton
 
         settings = self._app.get_settings()
         if settings.get_always_max_quality():
-            self._on_bitrate_chosen(QTouTvMainWindow._nb_expected_bitrates - 1, episodes)
+            self._on_quality_chosen(SymbolicQuality.HIGHEST, episodes)
         else:
-            pos = QtGui.QCursor().pos()
-            dialog = QChooseBitrateDialog(episodes, bitrates, btn_type)
-            dialog.bitrate_chosen.connect(self._on_bitrate_chosen)
-            pos.setX(pos.x() - dialog.width())
-            pos.setY(pos.y() - dialog.height())
-            dialog.show_move(pos)
+            self._show_choose_bitrate_dialog(episodes, qualities, btn_class)
 
-    def _start_download(self, episode, bitrate, output_dir):
-        if self._downloads_tableview_model.download_item_exists(episode):
+    def _on_select_download(self, episodes):
+        ''' User clicked on the download button '''
+        if len(episodes) == 1:
+            self._on_select_download_single(episodes)
+        elif len(episodes) > 1:
+            self._on_select_download_multi(episodes)
+
+    def _start_download(self, episode, quality, output_dir):
+        # Fixme: download_item_exists should take the qu ality as well
+        if self._downloads_tableview_model.download_item_exists(
+                episode.get_id(), quality):
             tmpl = 'Download of episode "{}" @ {} bps already exists'
-            logging.info(tmpl.format(episode.get_title(), bitrate))
+            logging.info(tmpl.format(episode.get_title(), quality.bitrate))
             return
 
-        self._download_manager.download(episode, bitrate, output_dir,
+        self._download_manager.download(episode, quality, output_dir,
                                         proxies=self._app.get_proxies())
 
-    def start_download_episodes(self, res_index, episodes, output_dir):
+    def start_download_episode_single(self, quality, episode, output_dir):
         self._set_wait_cursor()
 
-        episodes_bitrates = []
-
-        for episode in episodes:
-            bitrates = episode.get_available_bitrates()
-            if len(bitrates) != QTouTvMainWindow._nb_expected_bitrates:
-                tmpl = 'Unsupported bitrate list for episode "{}"'
-                logging.error(tmpl.format(episode.get_title()))
-                continue
-            episodes_bitrates.append((episode, bitrates[res_index]))
-
-        for episode, bitrate in episodes_bitrates:
-            tmpl = 'Queueing download of episode "{}" @ {} bps'
-            logging.debug(tmpl.format(episode.get_title(), bitrate))
-            self._start_download(episode, bitrate, output_dir)
+        tmpl = 'Queueing download of episode "{}" @ {} bps'
+        logging.debug(tmpl.format(episode.get_title(), quality.bitrate))
+        self._start_download(episode, quality, output_dir)
 
         self._set_normal_cursor()
 
-    def _on_bitrate_chosen(self, res_index, episodes):
-        logging.debug('Bitrate chosen')
+    def start_download_episodes_multi(self, symbolic_quality, episodes,
+                                      output_dir):
+        self._set_wait_cursor()
+
+        try:
+            for episode in episodes:
+                qualities = episode.get_available_qualities()
+                if symbolic_quality == SymbolicQuality.HIGHEST:
+                    quality = qualities[-1]
+                elif symbolic_quality == SymbolicQuality.LOWEST:
+                    quality = qualities[0]
+                elif symbolic_quality == SymbolicQuality.AVERAGE:
+                    avg = 0
+                    for symbolic_quality in qualities:
+                        avg += symbolic_quality.bitrate
+                    avg /= len(qualities)
+                    quality = min(qualities,
+                                  key=lambda q: abs(q.bitrate - avg))
+
+                tmpl = 'Queueing download of episode "{}" @ {} bps'
+                logging.debug(tmpl.format(episode.get_title(), quality))
+                self._start_download(episode, quality, output_dir)
+
+        except exceptions.UnexpectedHttpStatusCode:
+            self._error_msg_dialog.showMessage(
+                'Could not download episode playlist. It might not be '
+                'available yet.')
+            return
+        finally:
+            self._set_normal_cursor()
+
+    def _on_quality_chosen(self, quality, episodes):
+        ''' user selected a quality from the popup '''
+        logging.debug('Quality chosen')
 
         settings = self._app.get_settings()
         output_dir = settings.get_download_directory()
@@ -237,4 +276,8 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
             logging.error(msg)
             return
 
-        self.start_download_episodes(res_index, episodes, output_dir)
+        if len(episodes) == 1:
+            self.start_download_episode_single(
+                quality, episodes[0], output_dir)
+        elif len(episodes) > 1:
+            self.start_download_episodes_multi(quality, episodes, output_dir)

@@ -2,8 +2,6 @@ import os
 import sys
 import logging
 import platform
-from pkg_resources import resource_filename
-from PyQt4 import uic
 from PyQt4 import Qt
 from toutvqt.main_window import QTouTvMainWindow
 from toutvqt.settings import QTouTvSettings
@@ -103,7 +101,9 @@ def _register_sigint(app):
 
 
 def _configure_logging():
-    logging.basicConfig(level=logging.WARNING)
+    fmt = '[thread %(threadName)10s] %(levelname)7s %(asctime)s ' \
+          '%(message)s(%(funcName)s@%(filename)s:%(lineno)d)'
+    logging.basicConfig(level=logging.WARNING, format=fmt)
 
 
 def run():

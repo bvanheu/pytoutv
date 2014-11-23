@@ -1,4 +1,3 @@
-from pkg_resources import resource_filename
 from PyQt4 import Qt, QtCore
 from toutvqt.downloads_itemdelegate import QDlItemDelegate
 from toutvqt.downloads_tablemodel import DownloadItemState

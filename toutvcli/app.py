@@ -413,7 +413,7 @@ class App:
 
     def _print_info_episode(self, episode):
         emission = episode.get_emission()
-        bitrates = episode.get_available_bitrates()
+        qualities = episode.get_available_qualities()
 
         print(emission.get_title())
         print('{}  [{}]'.format(episode.get_title(), episode.get_sae()))
@@ -429,10 +429,15 @@ class App:
         if air_date is not None:
             line = '  * Air date: {}'.format(air_date)
             infos_lines.append(line)
-        infos_lines.append('  * Available bitrates:')
-        for bitrate in bitrates:
-            bitrate = bitrate // 1000
-            line = '    * {} kbps'.format(bitrate)
+        infos_lines.append('  * Available qualities:')
+        for quality in qualities:
+            bitrate = quality.bitrate // 1000
+
+            xres = quality.xres or '?'
+            yres = quality.yres or '?'
+
+            resolution = '{}x{}'.format(xres, yres)
+            line = '    * {} kbps ({})'.format(bitrate, resolution)
             infos_lines.append(line)
 
         print('\n\nInfos:\n')
@@ -456,13 +461,13 @@ class App:
         self._print_info_episode(episode)
 
     @staticmethod
-    def _get_average_bitrate(bitrates):
-        mi = bitrates[0]
-        ma = bitrates[-1]
+    def _get_average_bitrate(qualities):
+        mi = qualities[0].bitrate
+        ma = qualities[-1].bitrate
         avg = (ma + mi) // 2
-        closest = min(bitrates, key=lambda x: abs(x - avg))
+        closest = min(qualities, key=lambda q: abs(q.bitrate - avg))
 
-        return closest
+        return closest.bitrate
 
     def _print_cur_pb(self, done_segments, done_bytes, force):
         cur_time = time.time()
@@ -496,16 +501,16 @@ class App:
 
     def _fetch_episode(self, episode, output_dir, bitrate, quality, overwrite):
         # Get available bitrates for episode
-        bitrates = episode.get_available_bitrates()
+        qualities = episode.get_available_qualities()
 
         # Choose bitrate
         if bitrate is None:
             if quality == App.QUALITY_MIN:
-                bitrate = bitrates[0]
+                bitrate = qualities[0].bitrate
             elif quality == App.QUALITY_MAX:
-                bitrate = bitrates[-1]
+                bitrate = qualities[-1].bitrate
             elif quality == App.QUALITY_AVG:
-                bitrate = App._get_average_bitrate(bitrates)
+                bitrate = App._get_average_bitrate(qualities)
 
         # Create downloader
         opu = self._on_dl_progress_update
