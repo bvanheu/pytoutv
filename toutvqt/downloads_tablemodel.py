@@ -164,6 +164,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
         'Speed',
         'Progress',
         'Status',
+        'Quality',
     ]
     _status_msg_handlers = {
         DownloadItemState.QUEUED: lambda i: 'Queued',
@@ -405,6 +406,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
 
             work = dl_item.get_work()
             episode = work.get_episode()
+            quality = work.quality
 
             if col == 0:
                 # Emission
@@ -477,6 +479,10 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
                 handlers = QDownloadsTableModel._status_msg_handlers
 
                 return handlers[dl_item.get_state()](dl_item)
+            elif col == 12:
+                return '{}x{}@{}kbps'.format(quality.xres,
+                                             quality.yres,
+                                             quality.bitrate // 1000)
 
     def headerData(self, col, ori, role):
         if ori == QtCore.Qt.Horizontal:
