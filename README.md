@@ -275,6 +275,11 @@ Here are a few CLI usage examples.
         * 925 kbps
         * 1324 kbps
 
+### Fetching an episode
+
+    $ toutv fetch Enquete S2014E11
+    Enquête.S2014E11.La.guerre.d...    28.8 MiB    24/260 [##-----------------]   9%
+
 
 ### Fetching an episode at maximum available video quality
 

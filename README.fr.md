@@ -273,6 +273,12 @@ Voici quelques exemples d'utilisation de l'interface en ligne de commande.
         * 1324 kbps
 
 
+### Téléchargement d'un épisode
+
+    $ toutv fetch Enquete S2014E11
+    Enquête.S2014E11.La.guerre.d...    28.8 MiB    24/260 [##-----------------]   9%
+
+
 ### Téléchargement d'un épisode avec la meilleure qualité vidéo disponible
 
     $ toutv fetch -q MAX 'série noire' s01e05
