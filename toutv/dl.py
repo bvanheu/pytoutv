@@ -99,6 +99,8 @@ class Downloader:
                                                                      r.status_code)
         except requests.exceptions.Timeout:
             raise toutv.exceptions.RequestTimeoutError(url, timeout)
+        except requests.exceptions.ConnectionError as e:
+            raise toutv.exceptions.NetworkError() from e
 
         return r
 
@@ -224,6 +226,15 @@ class Downloader:
         # rename part file to segment file (should be atomic)
         os.rename(partpath, segpath)
 
+    def _download_segment_with_retry(self, segindex, num_tries=3):
+        for i in range(num_tries):
+            try:
+                return self._download_segment(segindex)
+            except toutv.exceptions.NetworkError:
+                # If it was our last retry, give up and propagate the exception.
+                if i + 1 == num_tries:
+                    raise
+
     def _get_video_stream(self):
         for stream in self._playlist.streams:
             if stream.bandwidth == self._bitrate:
@@ -297,7 +308,7 @@ class Downloader:
 
         for segindex in range(len(self._segments)):
             try:
-                self._download_segment(segindex)
+                self._download_segment_with_retry(segindex)
             except Exception as e:
                 if type(e) is OSError and e.errno == errno.ENOSPC:
                     raise NoSpaceLeftError()
