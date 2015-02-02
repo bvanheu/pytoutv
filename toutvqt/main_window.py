@@ -188,7 +188,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
                 self._show_choose_bitrate_dialog(episodes, qualities,
                                                  btn_class)
 
-        except exceptions.UnexpectedHttpStatusCode:
+        except exceptions.UnexpectedHttpStatusCodeError:
             self._error_msg_dialog.showMessage(
                 'Could not download episode playlist. It might not be '
                 'available yet.')
@@ -257,7 +257,7 @@ class QTouTvMainWindow(Qt.QMainWindow, utils.QtUiLoad):
                 logging.debug(tmpl.format(episode.get_title(), quality))
                 self._start_download(episode, quality, output_dir)
 
-        except exceptions.UnexpectedHttpStatusCode:
+        except exceptions.UnexpectedHttpStatusCodeError:
             self._error_msg_dialog.showMessage(
                 'Could not download episode playlist. It might not be '
                 'available yet.')

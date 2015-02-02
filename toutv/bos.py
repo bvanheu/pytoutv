@@ -61,10 +61,10 @@ class _Bo:
             r = requests.get(url, headers=toutv.config.HEADERS,
                              proxies=proxies, timeout=timeout)
             if r.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
-                                                                r.status_code)
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url,
+                                                                     r.status_code)
         except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeout(url, timeout)
+            raise toutv.exceptions.RequestTimeoutError(url, timeout)
 
         return r
 

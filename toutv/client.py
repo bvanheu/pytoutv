@@ -191,10 +191,10 @@ class Client:
         try:
             r = requests.get(url, proxies=self._proxies, timeout=timeout)
             if r.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
-                                                                r.status_code)
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url,
+                                                                     r.status_code)
         except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeout(url, timeout)
+            raise toutv.exceptions.RequestTimeoutError(url, timeout)
 
         # Extract emission ID
         regex = r'program-(\d+)'

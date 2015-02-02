@@ -38,7 +38,7 @@ import toutv.exceptions
 from toutv import m3u8
 
 
-class DownloaderError(RuntimeError):
+class DownloadError(RuntimeError):
     def __init__(self, msg):
         self._msg = msg
 
@@ -46,29 +46,19 @@ class DownloaderError(RuntimeError):
         return self._msg
 
 
-class CancelledException(Exception):
-    def __str__(self):
-        return 'Download cancelled'
+class CancelledByUserError(DownloadError):
+    def __init__(self):
+        super().__init__('Download cancelled by user')
 
 
-class CancelledByNetworkErrorException(CancelledException):
-    def __str__(self):
-        return 'Download cancelled due to network error'
+class FileExistsError(DownloadError):
+    def __init__(self):
+        super().__init__('File exists')
 
 
-class CancelledByUserException(CancelledException):
-    def __str__(self):
-        return 'Download cancelled by user'
-
-
-class FileExistsException(Exception):
-    def __str__(self):
-        return 'File exists'
-
-
-class NoSpaceLeftException(Exception):
-    def __str__(self):
-        return 'No space left while downloading'
+class NoSpaceLeftError(DownloadError):
+    def __init__(self):
+        super().__init__('No space left on device')
 
 
 class Downloader:
@@ -94,10 +84,10 @@ class Downloader:
                              proxies=proxies, cookies=cookies,
                              timeout=15, stream=stream)
             if r.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
-                                                                r.status_code)
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url,
+                                                                     r.status_code)
         except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeout(url, timeout)
+            raise toutv.exceptions.RequestTimeoutError(url, timeout)
 
         return r
 
@@ -173,7 +163,7 @@ class Downloader:
     def _init_download(self):
         # Prevent overwriting
         if not self._overwrite and os.path.exists(self._output_path):
-            raise FileExistsException()
+            raise FileExistsError()
 
         pl, cookies = Downloader.get_episode_playlist_cookies(self._episode)
         self._playlist = pl
@@ -217,7 +207,7 @@ class Downloader:
         chunks_count = 0
         for chunk in r.iter_content(8192):
             if self._do_cancel:
-                raise CancelledByUserException()
+                raise CancelledByUserError()
             encrypted_ts_segment += chunk
             self._done_bytes += len(chunk)
             if chunks_count % 32 == 0:
@@ -232,7 +222,7 @@ class Downloader:
             self._of.write(ts_segment)
         except OSError as e:
             if e.errno == errno.ENOSPC:
-                raise NoSpaceLeftException()
+                raise NoSpaceLeftError()
             raise e
 
     def _get_video_stream(self):
@@ -240,7 +230,7 @@ class Downloader:
             if stream.bandwidth == self._bitrate:
                 return stream
 
-        raise DownloaderError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
+        raise DownloadError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
 
     def download(self):
         self._init_download()

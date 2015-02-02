@@ -54,53 +54,55 @@ class App:
         self._stop = False
 
     def run(self):
+        # Errors are catched here and a corresponding error code is
+        # returned. The codes are:
+        #
+        #   * 0: all okay
+        #   * 1: client error
+        #   * 2: download error (cancelled, file exists, no space left, etc.)
+        #   * 3: network error (timeout, bad HTTP request, etc.)
+        #   * 10: bad argument
+        #   * 100: unknown error
         if not self._args:
             self._argparser.print_help()
             return 10
 
         args = self._argparser.parse_args(self._args)
-        no_cache = False
-        if hasattr(args, 'no_cache'):
-            no_cache = args.no_cache
+        no_cache = args.no_cache
 
         self._toutvclient = self._build_toutv_client(no_cache)
 
         try:
             args.func(args)
         except toutv.client.ClientError as e:
-            print('Error: {}'.format(e), file=sys.stderr)
+            print('Client error: {}'.format(e), file=sys.stderr)
             return 1
-        except toutv.dl.DownloaderError as e:
-            print('Download error: {}'.format(e), file=sys.stderr)
-            return 2
-        except toutv.dl.CancelledByUserException as e:
+        except toutv.dl.CancelledByUserError as e:
             print('Download cancelled by user', file=sys.stderr)
-            return 3
-        except toutv.dl.CancelledByNetworkErrorException as e:
-            msg = 'Download cancelled due to network error'
-            print(msg, file=sys.stderr)
-            return 3
-        except toutv.dl.FileExistsException as e:
+            return 2
+        except toutv.dl.FileExistsError as e:
             msg = 'Destination file exists (use -f to force)'
             print(msg, file=sys.stderr)
-            return 4
-        except toutv.exceptions.RequestTimeout as e:
-            timeout = e.get_timeout()
-            url = e.get_url()
-            tmpl = 'Timeout error ({} s for "{}")'
-            print(tmpl.format(timeout, url), file=sys.stderr)
-            return 5
-        except toutv.exceptions.UnexpectedHttpStatusCode as e:
-            status_code = e.get_status_code()
-            url = e.get_url()
-            tmpl = 'HTTP status code {} for "{}"'
-            print(tmpl.format(status_code, url), file=sys.stderr)
-            return 5
-        except toutv.dl.NoSpaceLeftException:
+            return 2
+        except toutv.dl.NoSpaceLeftError:
             print('No space left on device while downloading', file=sys.stderr)
-            return 6
+            return 2
+        except toutv.dl.DownloadError as e:
+            print('Download error: {}'.format(e), file=sys.stderr)
+            return 2
+        except toutv.exceptions.RequestTimeoutError as e:
+            tmpl = 'Timeout error ({} s for "{}")'
+            print(tmpl.format(e.timeout, e.url), file=sys.stderr)
+            return 3
+        except toutv.exceptions.UnexpectedHttpStatusCodeError as e:
+            tmpl = 'Bad HTTP status code ({}) for "{}"'
+            print(tmpl.format(e.status_code, e.url), file=sys.stderr)
+            return 3
+        except toutv.exceptions.NetworkError as e:
+            print('Network error: {}'.format(e), file=sys.stderr)
+            return 3
         except Exception as e:
-            print('Unknown error: {}'.format(e), file=sys.stderr)
+            print('Unknown exception: {}'.format(e), file=sys.stderr)
             return 100
 
         return 0
@@ -555,30 +557,34 @@ class App:
 
         for episode in episodes.values():
             title = episode.get_title()
+
             if self._stop:
-                raise toutv.dl.CancelledByUserException()
+                raise toutv.dl.CancelledByUserError()
             try:
                 self._fetch_episode(episode, output_dir, bitrate, quality,
                                     overwrite)
                 sys.stdout.write('\n')
                 sys.stdout.flush()
-            except toutv.dl.CancelledByUserException as e:
-                raise e
-            except toutv.dl.CancelledByNetworkErrorException:
-                tmpl = 'Error: cannot fetch "{}": network error'
-                print(tmpl.format(title), file=sys.stderr)
-            except toutv.exceptions.RequestTimeout:
+            except toutv.exceptions.RequestTimeoutError:
                 tmpl = 'Error: cannot fetch "{}": request timeout'
                 print(tmpl.format(title), file=sys.stderr)
-            except toutv.exceptions.UnexpectedHttpStatusCode:
+            except toutv.exceptions.UnexpectedHttpStatusCodeError:
                 tmpl = 'Error: cannot fetch "{}": unexpected HTTP status code'
                 print(tmpl.format(title), file=sys.stderr)
-            except toutv.dl.FileExistsException as e:
+            except toutv.exceptions.NetworkError as e:
+                tmpl = 'Error: cannot fetch "{}": {}'
+                print(tmpl.format(title, e), file=sys.stderr)
+            except toutv.dl.FileExistsError as e:
                 tmpl = 'Error: cannot fetch "{}": destination file exists'
                 print(tmpl.format(title), file=sys.stderr)
-            except:
-                tmpl = 'Error: cannot fetch "{}"'
-                print(tmpl.format(title), file=sys.stderr)
+            except toutv.dl.CancelledByUserError as e:
+                raise e
+            except toutv.dl.DownloadError as e:
+                tmpl = 'Error: cannot fetch "{}": {}'
+                print(tmpl.format(title, e), file=sys.stderr)
+            except Exception as e:
+                tmpl = 'Error: cannot fetch "{}": {}'
+                print(tmpl.format(title, e), file=sys.stderr)
 
     def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
                                       quality, overwrite):

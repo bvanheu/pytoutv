@@ -112,7 +112,7 @@ class _QDownloadWorker(Qt.QObject):
         logging.debug(tmpl.format(episode.get_title(), bitrate))
         try:
             downloader.download()
-        except dl.CancelledByUserException as e:
+        except dl.CancelledByUserError as e:
             self._downloader = None
             self.download_cancelled.emit(work)
             return

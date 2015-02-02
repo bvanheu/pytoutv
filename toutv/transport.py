@@ -70,9 +70,9 @@ class JsonTransport(Transport):
                              proxies=self._proxies, timeout=timeout)
             if r.status_code != 200:
                 code = r.status_code
-                raise toutv.exceptions.UnexpectedHttpStatusCode(url, code)
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url, code)
         except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeout(url, timeout)
+            raise toutv.exceptions.RequestTimeoutError(url, timeout)
 
         response_obj = r.json()
 
