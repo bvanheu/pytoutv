@@ -4,3 +4,4 @@
 /build
 /ez_setup.py
 /*.egg-info
+*.ts
