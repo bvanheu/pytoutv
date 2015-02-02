@@ -35,7 +35,7 @@ import requests
 from Crypto.Cipher import AES
 import toutv.config
 import toutv.exceptions
-from toutv import m3u8
+import toutv.m3u8
 
 
 class DownloadError(RuntimeError):
@@ -64,7 +64,8 @@ class NoSpaceLeftError(DownloadError):
 class Downloader:
     def __init__(self, episode, bitrate, output_dir=os.getcwd(),
                  filename=None, on_progress_update=None,
-                 on_dl_start=None, overwrite=False, proxies=None):
+                 on_dl_start=None, overwrite=False, proxies=None,
+                 timeout=15):
         self._episode = episode
         self._bitrate = bitrate
         self._output_dir = output_dir
@@ -73,16 +74,16 @@ class Downloader:
         self._on_dl_start = on_dl_start
         self._overwrite = overwrite
         self._proxies = proxies
+        self._timeout = timeout
 
         self._set_output_path()
 
-    @staticmethod
-    def _do_request(url, params=None, proxies=None, timeout=None,
-                    cookies=None, stream=False):
+    def _do_request(self, url, params=None, stream=False):
         try:
             r = requests.get(url, params=params, headers=toutv.config.HEADERS,
-                             proxies=proxies, cookies=cookies,
-                             timeout=15, stream=stream)
+                             proxies=self._proxies, cookies=self._cookies,
+                             timeout=self._timeout, stream=stream)
+
             if r.status_code != 200:
                 raise toutv.exceptions.UnexpectedHttpStatusCodeError(url,
                                                                      r.status_code)
@@ -91,52 +92,15 @@ class Downloader:
 
         return r
 
-    def _do_proxies_requests(self, url, params=None, timeout=None,
-                             cookies=None, stream=False):
-        return Downloader._do_request(url, params=params, timeout=timeout,
-                                      cookies=cookies, proxies=self._proxies,
-                                      stream=stream)
-
-    @staticmethod
-    def get_episode_playlist_url(episode, proxies=None):
-        url = toutv.config.TOUTV_PLAYLIST_URL
-        params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
-        params['idMedia'] = episode.PID
-
-        r = Downloader._do_request(url, params=params, proxies=proxies,
-                                   timeout=15)
-        response_obj = r.json()
-
-        if response_obj['errorCode']:
-            raise RuntimeError(response_obj['message'])
-
-        return response_obj['url']
-
-    @staticmethod
-    def get_episode_playlist_cookies(episode, proxies=None):
-        url = Downloader.get_episode_playlist_url(episode)
-
-        r = Downloader._do_request(url, proxies=proxies, timeout=15)
-
-        # Parse M3U8 file
-        m3u8_file = r.text
-        playlist = m3u8.parse(m3u8_file, os.path.dirname(url))
-
-        return playlist, r.cookies
-
-    @staticmethod
-    def get_episode_playlist(episode, proxies):
-        pl, cookies = Downloader.get_episode_playlist_cookies(episode, proxies)
-
-        return pl
-
     def _gen_filename(self):
-        # Remove illegal characters from filename
+        # remove illegal characters from filename
         emission_title = self._episode.get_emission().Title
         episode_title = self._episode.Title
+
         if self._episode.SeasonAndEpisode is not None:
             sae = self._episode.SeasonAndEpisode
             episode_title = '{} {}'.format(sae, episode_title)
+
         br = self._bitrate // 1000
         episode_title = '{} {}kbps'.format(episode_title, br)
         filename = '{}.{}.ts'.format(emission_title, episode_title)
@@ -147,40 +111,42 @@ class Downloader:
         return filename
 
     def _set_output_path(self):
-        # Create output directory if it doesn't exist
+        # create output directory if it doesn't exist
         try:
             os.makedirs(self._output_dir)
-        except Exception as e:
+        except:
             pass
 
-        # Generate a filename if not specified by user
+        # generate a filename if not specified by user
         if self._filename is None:
             self._filename = self._gen_filename()
 
-        # Set output path
+        # set output path
         self._output_path = os.path.join(self._output_dir, self._filename)
 
     def _init_download(self):
-        # Prevent overwriting
+        # prevent overwriting
         if not self._overwrite and os.path.exists(self._output_path):
             raise FileExistsError()
 
-        pl, cookies = Downloader.get_episode_playlist_cookies(self._episode)
+        pl, cookies = self._episode.get_playlist_cookies()
         self._playlist = pl
         self._cookies = cookies
-
         self._done_bytes = 0
         self._done_segments = 0
         self._done_segments_bytes = 0
         self._do_cancel = False
 
-    def get_filename(self):
+    @property
+    def filename(self):
         return self._filename
 
-    def get_output_path(self):
+    @property
+    def output_path(self):
         return self._output_path
 
-    def get_output_dir(self):
+    @property
+    def output_dir(self):
         return self._output_dir
 
     def cancel(self):
@@ -199,17 +165,17 @@ class Downloader:
     def _download_segment(self, segindex):
         segment = self._segments[segindex]
         count = segindex + 1
-
-        r = self._do_proxies_requests(segment.uri, cookies=self._cookies,
-                                      timeout=10, stream=True)
-
+        r = self._do_request(segment.uri, stream=True)
         encrypted_ts_segment = bytearray()
         chunks_count = 0
+
         for chunk in r.iter_content(8192):
             if self._do_cancel:
                 raise CancelledByUserError()
+
             encrypted_ts_segment += chunk
             self._done_bytes += len(chunk)
+
             if chunks_count % 32 == 0:
                 self._notify_progress_update()
             chunks_count += 1
@@ -223,6 +189,7 @@ class Downloader:
         except OSError as e:
             if e.errno == errno.ENOSPC:
                 raise NoSpaceLeftError()
+
             raise e
 
     def _get_video_stream(self):
@@ -235,26 +202,27 @@ class Downloader:
     def download(self):
         self._init_download()
 
-        # Select appropriate stream for required bitrate
+        # select appropriate stream for required bitrate
         stream = self._get_video_stream()
 
-        # Get video playlist
-        r = self._do_proxies_requests(stream.uri, cookies=self._cookies)
+        # get video playlist
+        r = self._do_request(stream.uri)
         m3u8_file = r.text
-        self._video_playlist = m3u8.parse(m3u8_file,
-                                          os.path.dirname(stream.uri))
+        self._video_playlist = toutv.m3u8.parse(m3u8_file,
+                                                os.path.dirname(stream.uri))
         self._segments = self._video_playlist.segments
         self._total_segments = len(self._segments)
 
-        # Get decryption key
+        # get decryption key
         uri = self._segments[0].key.uri
-        r = self._do_proxies_requests(uri, cookies=self._cookies)
+        r = self._do_request(uri)
         self._key = r.content
 
-        # Download segments
+        # download segments
         with open(self._output_path, 'wb') as self._of:
             self._notify_dl_start()
             self._notify_progress_update()
+
             for segindex in range(len(self._segments)):
                 self._download_segment(segindex)
                 self._done_segments += 1
