@@ -283,6 +283,12 @@ class Episode(_Bo, _ThumbnailProvider):
             return self.bitrate == other.bitrate and self.xres == other.xres \
                 and self.yres == other.yres
 
+        def __repr__(self):
+            s = 'Quality(res={xres}x{yres}, bitrate={bitrate})'
+            return s.format(xres=self.xres,
+                            yres=self.yres,
+                            bitrate=self.bitrate)
+
     def __init__(self):
         self.AdPattern = None
         self.AirDateFormated = None
