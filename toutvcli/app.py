@@ -111,7 +111,8 @@ class App:
             print('Network error: {}'.format(e), file=sys.stderr)
             return 3
         except Exception as e:
-            print('Unknown exception: {}'.format(e), file=sys.stderr)
+            print('Unknown exception: {}: {}'.format(type(e), e),
+                  file=sys.stderr)
             return 100
 
         return 0
