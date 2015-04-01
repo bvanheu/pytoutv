@@ -387,7 +387,7 @@ class App:
         emissions_keys.sort(key=title_func)
         for ekey in emissions_keys:
             title = title_func(ekey)
-            print('{}: {}'.format(ekey, title))
+            print('{} - {}'.format(ekey, title))
 
     def _print_list_episodes(self, emission):
         episodes = self._toutvclient.get_emission_episodes(emission)
@@ -406,7 +406,7 @@ class App:
             episode = episodes[ekey]
             sae = episode.get_sae()
             title = episode.get_title()
-            print('  * {}: {} {}'.format(ekey, sae, title))
+            print('  * {} - {} - {}'.format(ekey, sae, title))
 
     def _print_list_episodes_name(self, emission_name):
         try:
