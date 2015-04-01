@@ -126,13 +126,6 @@ class App:
 
         return 0
 
-    def stop(self):
-        print('\nStopping...')
-
-        if self._dl is not None:
-            self._dl.cancel()
-        self._stop = True
-
     def _handle_no_match_exception(self, e):
         print('Cannot find "{}"'.format(e.query))
         if not e.candidates:
@@ -656,7 +649,8 @@ class App:
 def _register_sigint(app):
     if platform.system() == 'Linux':
         def handler(signal, frame):
-            app.stop()
+            print('Cancelled by user', file=sys.stderr)
+            sys.exit(1)
 
         import signal
         signal.signal(signal.SIGINT, handler)
