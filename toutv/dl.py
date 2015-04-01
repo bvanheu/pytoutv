@@ -162,7 +162,23 @@ class Downloader:
                                      self._done_bytes,
                                      self._done_segments_bytes)
 
+    def _get_segment_file_path(self, segindex):
+        fmt = '.toutv-{}-{}-{}-{}.ts'
+        segname = fmt.format(self._episode.get_emission().get_id(),
+                             self._episode.get_id(), self._bitrate, segindex)
+
+        return os.path.join(self._output_dir, segname)
+
     def _download_segment(self, segindex):
+        # segment already downloaded? skip
+        segpath = self._get_segment_file_path(segindex)
+        partpath = segpath + '.part'
+
+        if os.path.isfile(segpath):
+            statinfo = os.stat(segpath)
+            self._done_bytes += statinfo.st_size
+            return
+
         segment = self._segments[segindex]
         count = segindex + 1
         r = self._do_request(segment.uri, stream=True)
@@ -184,13 +200,12 @@ class Downloader:
         aes = AES.new(self._key, AES.MODE_CBC, aes_iv)
         ts_segment = aes.decrypt(bytes(encrypted_ts_segment))
 
-        try:
-            self._of.write(ts_segment)
-        except OSError as e:
-            if e.errno == errno.ENOSPC:
-                raise NoSpaceLeftError()
+        # completely write the part file first (could be interrupted)
+        with open(partpath, 'wb') as f:
+            f.write(ts_segment)
 
-            raise e
+        # rename part file to segment file (should be atomic)
+        os.rename(partpath, segpath)
 
     def _get_video_stream(self):
         for stream in self._playlist.streams:
@@ -198,6 +213,33 @@ class Downloader:
                 return stream
 
         raise DownloadError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
+
+    def _stitch_segment_files(self):
+        part_output_path = self._output_path + '.part'
+
+        with open(part_output_path, 'wb') as of:
+            for segindex in range(len(self._segments)):
+                segpath = self._get_segment_file_path(segindex)
+
+                if not os.path.isfile(segpath):
+                    raise DownloadError('Cannot find segment file "{}"'.format(segpath))
+
+                with open(segpath, 'rb') as segf:
+                    of.write(segf.read())
+
+        os.rename(part_output_path, self._output_path)
+
+    def _remove_segment_file(self, segindex):
+        segpath = self._get_segment_file_path(segindex)
+
+        try:
+            os.remove(segpath)
+        except Exception as e:
+            raise DownloadError('Cannot remove segment file "{}": {}'.format(segpath, e))
+
+    def _remove_segment_files(self):
+        for segindex in range(len(self._segments)):
+            self._remove_segment_file(segindex)
 
     def download(self):
         self._init_download()
@@ -219,12 +261,30 @@ class Downloader:
         self._key = r.content
 
         # download segments
-        with open(self._output_path, 'wb') as self._of:
-            self._notify_dl_start()
+        self._notify_dl_start()
+        self._notify_progress_update()
+
+        for segindex in range(len(self._segments)):
+            try:
+                self._download_segment(segindex)
+            except Exception as e:
+                if type(e) is OSError and e.errno == errno.ENOSPC:
+                    raise NoSpaceLeftError()
+
+                raise DownloadError('Cannot download segment {}: {}'.format(segindex + 1, e))
+
+            self._done_segments += 1
+            self._done_segments_bytes = self._done_bytes
             self._notify_progress_update()
 
-            for segindex in range(len(self._segments)):
-                self._download_segment(segindex)
-                self._done_segments += 1
-                self._done_segments_bytes = self._done_bytes
-                self._notify_progress_update()
+        # stitch individual segment files as a complete file
+        try:
+            self._stitch_segment_files()
+        except Exception as e:
+            if type(e) is OSError and e.errno == errno.ENOSPC:
+                raise NoSpaceLeftError()
+
+            raise DownloadError('Cannot stitch segment files: {}'.format(e))
+
+        # remove segment files
+        self._remove_segment_files()
