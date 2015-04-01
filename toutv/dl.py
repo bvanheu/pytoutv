@@ -31,6 +31,7 @@ import re
 import os
 import errno
 import struct
+import logging
 import requests
 from Crypto.Cipher import AES
 import toutv.config
@@ -68,6 +69,7 @@ class Downloader:
                  filename=None, on_progress_update=None,
                  on_dl_start=None, overwrite=False, proxies=None,
                  timeout=15):
+        self._logger = logging.getLogger(__name__)
         self._episode = episode
         self._bitrate = bitrate
         self._output_dir = output_dir
@@ -81,6 +83,8 @@ class Downloader:
         self._set_output_path()
 
     def _do_request(self, url, params=None, stream=False):
+        self._logger.debug('HTTP GET request @ {}'.format(url))
+
         try:
             r = requests.get(url, params=params, headers=toutv.config.HEADERS,
                              proxies=self._proxies, cookies=self._cookies,
@@ -152,6 +156,7 @@ class Downloader:
         return self._output_dir
 
     def cancel(self):
+        self._logger.info('cancelling download')
         self._do_cancel = True
 
     def _notify_dl_start(self):
@@ -172,11 +177,16 @@ class Downloader:
         return os.path.join(self._output_dir, segname)
 
     def _download_segment(self, segindex):
+        self._logger.debug('downloading segment {}'.format(segindex))
+
         # segment already downloaded? skip
         segpath = self._get_segment_file_path(segindex)
         partpath = segpath + '.part'
+        self._logger.debug('partial segment file path: "{}"'.format(partpath))
+        self._logger.debug('segment file path: "{}"'.format(segpath))
 
         if os.path.isfile(segpath):
+            self._logger.debug('segment file exists; skipping')
             statinfo = os.stat(segpath)
             self._done_bytes += statinfo.st_size
             return
@@ -204,6 +214,7 @@ class Downloader:
 
         # completely write the part file first (could be interrupted)
         with open(partpath, 'wb') as f:
+            self._logger.debug('writing partial segment file "{}"'.format(partpath))
             f.write(ts_segment)
 
         # rename part file to segment file (should be atomic)
@@ -217,6 +228,7 @@ class Downloader:
         raise DownloadError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
 
     def _stitch_segment_files(self):
+        self._logger.debug('stitching {} segment files'.format(len(self._segments)))
         part_output_path = self._output_path + '.part'
 
         with open(part_output_path, 'wb') as of:
@@ -227,12 +239,14 @@ class Downloader:
                     raise DownloadError('Cannot find segment file "{}"'.format(segpath))
 
                 with open(segpath, 'rb') as segf:
+                    self._logger.debug('concatenating segment file "{}"'.format(segpath))
                     of.write(segf.read())
 
         os.rename(part_output_path, self._output_path)
 
     def _remove_segment_file(self, segindex):
         segpath = self._get_segment_file_path(segindex)
+        self._logger.debug('removing segment file "{}"'.format(segpath))
 
         try:
             os.remove(segpath)
@@ -240,10 +254,18 @@ class Downloader:
             raise DownloadError('Cannot remove segment file "{}": {}'.format(segpath, e))
 
     def _remove_segment_files(self):
+        self._logger.debug('removing {} segment files'.format(len(self._segments)))
+
         for segindex in range(len(self._segments)):
             self._remove_segment_file(segindex)
 
     def download(self):
+        self._logger.debug('starting download')
+        self._logger.debug('episode: {}'.format(self._episode))
+        self._logger.debug('bitrate: {}'.format(self._bitrate))
+        self._logger.debug('output path: {}'.format(self._output_path))
+        self._logger.debug('overwrite: {}'.format(self._overwrite))
+        self._logger.debug('timeout: {}'.format(self._timeout))
         self._init_download()
 
         # select appropriate stream for required bitrate
@@ -256,11 +278,13 @@ class Downloader:
                                                 os.path.dirname(stream.uri))
         self._segments = self._video_playlist.segments
         self._total_segments = len(self._segments)
+        self._logger.debug('parsed M3U8 file: {} total segments'.format(self._total_segments))
 
         # get decryption key
         uri = self._segments[0].key.uri
         r = self._do_request(uri)
         self._key = r.content
+        self._logger.debug('decryption key: {}'.format(self._key))
 
         # download segments
         self._notify_dl_start()
