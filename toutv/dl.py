@@ -62,6 +62,8 @@ class NoSpaceLeftError(DownloadError):
 
 
 class Downloader:
+    _seg_aes_iv = struct.Struct('>IIII')
+
     def __init__(self, episode, bitrate, output_dir=os.getcwd(),
                  filename=None, on_progress_update=None,
                  on_dl_start=None, overwrite=False, proxies=None,
@@ -196,7 +198,7 @@ class Downloader:
                 self._notify_progress_update()
             chunks_count += 1
 
-        aes_iv = struct.pack('>IIII', 0, 0, 0, count)
+        aes_iv = Downloader._seg_aes_iv.pack(0, 0, 0, count)
         aes = AES.new(self._key, AES.MODE_CBC, aes_iv)
         ts_segment = aes.decrypt(bytes(encrypted_ts_segment))
 
