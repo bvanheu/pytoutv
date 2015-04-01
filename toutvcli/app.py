@@ -70,7 +70,11 @@ class App:
 
         args = self._argparser.parse_args(self._args)
         self._verbose = args.verbose
-        no_cache = args.no_cache
+
+        if 'no_cache' not in args:
+            args.no_cache = False
+
+        no_cache = args.no_cache_global or args.no_cache
 
         if self._verbose:
             logging.basicConfig(level=logging.DEBUG)
@@ -135,6 +139,8 @@ class App:
         sp = p.add_subparsers(dest='command', help='Commands help')
 
         # version
+        p.add_argument('-n', '--no-cache', action='store_true',
+                       dest='no_cache_global', help='Disable cache')
         p.add_argument('-v', '--verbose', action='store_true',
                        help='Verbose output')
         p.add_argument('-V', '--version', action='version',
@@ -148,7 +154,7 @@ class App:
         pl.add_argument('-a', '--all', action='store_true',
                         help='List emissions without episodes')
         pl.add_argument('-n', '--no-cache', action='store_true',
-                        help='Disable cache')
+                        help=argparse.SUPPRESS)
         pl.set_defaults(func=self._command_list)
 
         # info command
@@ -159,7 +165,7 @@ class App:
         pi.add_argument('episode', action='store', nargs='?', type=str,
                         help='Episode name for which to get information')
         pi.add_argument('-n', '--no-cache', action='store_true',
-                        help='Disable cache')
+                        help=argparse.SUPPRESS)
         pi.add_argument('-u', '--url', action='store_true',
                         help='Get episode information using a TOU.TV URL')
         pi.set_defaults(func=self._command_info)
@@ -191,7 +197,7 @@ class App:
         pf.add_argument('-f', '--force', action='store_true',
                         help='Overwrite existing output file')
         pf.add_argument('-n', '--no-cache', action='store_true',
-                        help='Disable cache')
+                        help=argparse.SUPPRESS)
         pf.add_argument('-q', '--quality', action='store',
                         default=App.QUALITY_AVG, choices=quality_choices,
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
