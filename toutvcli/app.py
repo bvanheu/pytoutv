@@ -43,6 +43,10 @@ from toutvcli import __version__
 from toutvcli.progressbar import ProgressBar
 
 
+class CliError(RuntimeError):
+    pass
+
+
 class App:
     QUALITY_MIN = 'MIN'
     QUALITY_AVG = 'AVERAGE'
@@ -53,6 +57,7 @@ class App:
         self._args = args
         self._dl = None
         self._stop = False
+        self._logger = logging.getLogger(__name__)
 
     def run(self):
         # Errors are catched here and a corresponding error code is
@@ -79,7 +84,8 @@ class App:
         if self._verbose:
             logging.basicConfig(level=logging.DEBUG)
 
-        self._toutvclient = self._build_toutv_client(no_cache)
+        if args.build_client:
+            self._toutvclient = self._build_toutv_client(no_cache)
 
         try:
             args.func(args)
@@ -110,6 +116,9 @@ class App:
         except toutv.exceptions.NetworkError as e:
             print('Network error: {}'.format(e), file=sys.stderr)
             return 3
+        except CliError as e:
+            print('Command line error: {}'.format(e), file=sys.stderr)
+            return 1
         except Exception as e:
             print('Unknown exception: {}: {}'.format(type(e), e),
                   file=sys.stderr)
@@ -157,6 +166,7 @@ class App:
         pl.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
         pl.set_defaults(func=self._command_list)
+        pl.set_defaults(build_client=True)
 
         # info command
         pi = sp.add_parser('info',
@@ -170,6 +180,7 @@ class App:
         pi.add_argument('-u', '--url', action='store_true',
                         help='Get episode information using a TOU.TV URL')
         pi.set_defaults(func=self._command_info)
+        pi.set_defaults(build_client=True)
 
         # search command
         ps = sp.add_parser('search',
@@ -177,6 +188,7 @@ class App:
         ps.add_argument('query', action='store', type=str,
                         help='Search query')
         ps.set_defaults(func=self._command_search)
+        ps.set_defaults(build_client=True)
 
         # fetch command
         pf = sp.add_parser('fetch',
@@ -204,8 +216,16 @@ class App:
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
         pf.add_argument('-u', '--url', action='store_true',
                         help='Fetch an episode using a TOU.TV URL')
-
         pf.set_defaults(func=self._command_fetch)
+        pf.set_defaults(build_client=True)
+
+        # clean command
+        pc = sp.add_parser('clean', help='Clean temporary downloaded files')
+        pc.add_argument('directory', action='store', nargs='?',
+                        default=os.getcwd(),
+                        help='Directory to clean (default: CWD)')
+        pc.set_defaults(func=self._command_clean)
+        pc.set_defaults(build_client=False)
 
         return p
 
@@ -242,6 +262,24 @@ class App:
                 cache = toutv.cache.EmptyCache()
 
         return toutv.client.Client(cache=cache)
+
+    def _command_clean(self, args):
+        # make sure we have to clean a directory
+        if not os.path.isdir(args.directory):
+            raise CliError('"{}" is not an existing directory'.format(args.directory))
+
+        import glob
+
+        tmpdl = glob.glob(os.path.join(args.directory, '.toutv-*.*'))
+        tmpcomplete = glob.glob(os.path.join(args.directory, '*.ts.part'))
+
+        for f in tmpdl + tmpcomplete:
+            try:
+                self._logger.debug('removing file "{}"'.format(f))
+                os.remove(f)
+            except Exception as e:
+                # not the end of the world
+                self._logger.warn('could not remove file "{}": {}'.format(f, e))
 
     def _command_list(self, args):
         if args.emission:
