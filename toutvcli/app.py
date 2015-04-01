@@ -31,6 +31,7 @@ import argparse
 import os
 import sys
 import time
+import logging
 import textwrap
 import platform
 import toutv.dl
@@ -68,7 +69,11 @@ class App:
             return 10
 
         args = self._argparser.parse_args(self._args)
+        self._verbose = args.verbose
         no_cache = args.no_cache
+
+        if self._verbose:
+            logging.basicConfig(level=logging.DEBUG)
 
         self._toutvclient = self._build_toutv_client(no_cache)
 
@@ -130,6 +135,8 @@ class App:
         sp = p.add_subparsers(dest='command', help='Commands help')
 
         # version
+        p.add_argument('-v', '--verbose', action='store_true',
+                       help='Verbose output')
         p.add_argument('-V', '--version', action='version',
                        version='%(prog)s v{}'.format(__version__))
 
@@ -472,6 +479,9 @@ class App:
         return closest.bitrate
 
     def _print_cur_pb(self, done_segments, done_bytes, force):
+        if self._verbose:
+            return
+
         cur_time = time.time()
 
         # ensure 100% is printed
