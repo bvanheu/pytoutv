@@ -250,8 +250,9 @@ class Downloader:
 
         try:
             os.remove(segpath)
-        except Exception as e:
-            raise DownloadError('Cannot remove segment file "{}": {}'.format(segpath, e))
+        except:
+            # not the end of the world...
+            self._logger.warn('cannot remove segment file "{}"'.format(segpath))
 
     def _remove_segment_files(self):
         self._logger.debug('removing {} segment files'.format(len(self._segments)))
