@@ -31,6 +31,7 @@ import argparse
 import os
 import sys
 import time
+import logging
 import textwrap
 import platform
 import toutv.dl
@@ -40,6 +41,10 @@ import toutv.config
 from toutv import m3u8
 from toutvcli import __version__
 from toutvcli.progressbar import ProgressBar
+
+
+class CliError(RuntimeError):
+    pass
 
 
 class App:
@@ -52,55 +57,71 @@ class App:
         self._args = args
         self._dl = None
         self._stop = False
+        self._logger = logging.getLogger(__name__)
 
     def run(self):
+        # Errors are catched here and a corresponding error code is
+        # returned. The codes are:
+        #
+        #   * 0: all okay
+        #   * 1: client error
+        #   * 2: download error (cancelled, file exists, no space left, etc.)
+        #   * 3: network error (timeout, bad HTTP request, etc.)
+        #   * 10: bad argument
+        #   * 100: unknown error
         if not self._args:
             self._argparser.print_help()
             return 10
 
         args = self._argparser.parse_args(self._args)
-        no_cache = False
-        if hasattr(args, 'no_cache'):
-            no_cache = args.no_cache
+        self._verbose = args.verbose
 
-        self._toutvclient = self._build_toutv_client(no_cache)
+        if 'no_cache' not in args:
+            args.no_cache = False
+
+        no_cache = args.no_cache_global or args.no_cache
+
+        if self._verbose:
+            logging.basicConfig(level=logging.DEBUG)
+
+        if args.build_client:
+            self._toutvclient = self._build_toutv_client(no_cache)
 
         try:
             args.func(args)
         except toutv.client.ClientError as e:
-            print('Error: {}'.format(e), file=sys.stderr)
+            print('Client error: {}'.format(e), file=sys.stderr)
             return 1
-        except toutv.dl.DownloaderError as e:
-            print('Download error: {}'.format(e), file=sys.stderr)
-            return 2
-        except toutv.dl.CancelledByUserException as e:
+        except toutv.dl.CancelledByUserError as e:
             print('Download cancelled by user', file=sys.stderr)
-            return 3
-        except toutv.dl.CancelledByNetworkErrorException as e:
-            msg = 'Download cancelled due to network error'
-            print(msg, file=sys.stderr)
-            return 3
-        except toutv.dl.FileExistsException as e:
+            return 2
+        except toutv.dl.FileExistsError as e:
             msg = 'Destination file exists (use -f to force)'
             print(msg, file=sys.stderr)
-            return 4
-        except toutv.exceptions.RequestTimeout as e:
-            timeout = e.get_timeout()
-            url = e.get_url()
-            tmpl = 'Timeout error ({} s for "{}")'
-            print(tmpl.format(timeout, url), file=sys.stderr)
-            return 5
-        except toutv.exceptions.UnexpectedHttpStatusCode as e:
-            status_code = e.get_status_code()
-            url = e.get_url()
-            tmpl = 'HTTP status code {} for "{}"'
-            print(tmpl.format(status_code, url), file=sys.stderr)
-            return 5
-        except toutv.dl.NoSpaceLeftException:
+            return 2
+        except toutv.dl.NoSpaceLeftError:
             print('No space left on device while downloading', file=sys.stderr)
-            return 6
+            return 2
+        except toutv.dl.DownloadError as e:
+            print('Download error: {}'.format(e), file=sys.stderr)
+            return 2
+        except toutv.exceptions.RequestTimeoutError as e:
+            tmpl = 'Timeout error ({} s for "{}")'
+            print(tmpl.format(e.timeout, e.url), file=sys.stderr)
+            return 3
+        except toutv.exceptions.UnexpectedHttpStatusCodeError as e:
+            tmpl = 'Bad HTTP status code ({}) for "{}"'
+            print(tmpl.format(e.status_code, e.url), file=sys.stderr)
+            return 3
+        except toutv.exceptions.NetworkError as e:
+            print('Network error: {}'.format(e), file=sys.stderr)
+            return 3
+        except CliError as e:
+            print('Command line error: {}'.format(e), file=sys.stderr)
+            return 1
         except Exception as e:
-            print('Unknown error: {}'.format(e), file=sys.stderr)
+            print('Unknown exception: {}: {}'.format(type(e), e),
+                  file=sys.stderr)
             return 100
 
         return 0
@@ -128,6 +149,10 @@ class App:
         sp = p.add_subparsers(dest='command', help='Commands help')
 
         # version
+        p.add_argument('-n', '--no-cache', action='store_true',
+                       dest='no_cache_global', help='Disable cache')
+        p.add_argument('-v', '--verbose', action='store_true',
+                       help='Verbose output')
         p.add_argument('-V', '--version', action='version',
                        version='%(prog)s v{}'.format(__version__))
 
@@ -139,8 +164,9 @@ class App:
         pl.add_argument('-a', '--all', action='store_true',
                         help='List emissions without episodes')
         pl.add_argument('-n', '--no-cache', action='store_true',
-                        help='Disable cache')
+                        help=argparse.SUPPRESS)
         pl.set_defaults(func=self._command_list)
+        pl.set_defaults(build_client=True)
 
         # info command
         pi = sp.add_parser('info',
@@ -150,10 +176,11 @@ class App:
         pi.add_argument('episode', action='store', nargs='?', type=str,
                         help='Episode name for which to get information')
         pi.add_argument('-n', '--no-cache', action='store_true',
-                        help='Disable cache')
+                        help=argparse.SUPPRESS)
         pi.add_argument('-u', '--url', action='store_true',
                         help='Get episode information using a TOU.TV URL')
         pi.set_defaults(func=self._command_info)
+        pi.set_defaults(build_client=True)
 
         # search command
         ps = sp.add_parser('search',
@@ -161,6 +188,7 @@ class App:
         ps.add_argument('query', action='store', type=str,
                         help='Search query')
         ps.set_defaults(func=self._command_search)
+        ps.set_defaults(build_client=True)
 
         # fetch command
         pf = sp.add_parser('fetch',
@@ -182,14 +210,22 @@ class App:
         pf.add_argument('-f', '--force', action='store_true',
                         help='Overwrite existing output file')
         pf.add_argument('-n', '--no-cache', action='store_true',
-                        help='Disable cache')
+                        help=argparse.SUPPRESS)
         pf.add_argument('-q', '--quality', action='store',
                         default=App.QUALITY_AVG, choices=quality_choices,
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
         pf.add_argument('-u', '--url', action='store_true',
                         help='Fetch an episode using a TOU.TV URL')
-
         pf.set_defaults(func=self._command_fetch)
+        pf.set_defaults(build_client=True)
+
+        # clean command
+        pc = sp.add_parser('clean', help='Clean temporary downloaded files')
+        pc.add_argument('directory', action='store', nargs='?',
+                        default=os.getcwd(),
+                        help='Directory to clean (default: CWD)')
+        pc.set_defaults(func=self._command_clean)
+        pc.set_defaults(build_client=False)
 
         return p
 
@@ -226,6 +262,24 @@ class App:
                 cache = toutv.cache.EmptyCache()
 
         return toutv.client.Client(cache=cache)
+
+    def _command_clean(self, args):
+        # make sure we have to clean a directory
+        if not os.path.isdir(args.directory):
+            raise CliError('"{}" is not an existing directory'.format(args.directory))
+
+        import glob
+
+        tmpdl = glob.glob(os.path.join(args.directory, '.toutv-*.*'))
+        tmpcomplete = glob.glob(os.path.join(args.directory, '*.ts.part'))
+
+        for f in tmpdl + tmpcomplete:
+            try:
+                self._logger.debug('removing file "{}"'.format(f))
+                os.remove(f)
+            except Exception as e:
+                # not the end of the world
+                self._logger.warn('could not remove file "{}": {}'.format(f, e))
 
     def _command_list(self, args):
         if args.emission:
@@ -470,6 +524,9 @@ class App:
         return closest.bitrate
 
     def _print_cur_pb(self, done_segments, done_bytes, force):
+        if self._verbose:
+            return
+
         cur_time = time.time()
 
         # ensure 100% is printed
@@ -555,30 +612,34 @@ class App:
 
         for episode in episodes.values():
             title = episode.get_title()
+
             if self._stop:
-                raise toutv.dl.CancelledByUserException()
+                raise toutv.dl.CancelledByUserError()
             try:
                 self._fetch_episode(episode, output_dir, bitrate, quality,
                                     overwrite)
                 sys.stdout.write('\n')
                 sys.stdout.flush()
-            except toutv.dl.CancelledByUserException as e:
-                raise e
-            except toutv.dl.CancelledByNetworkErrorException:
-                tmpl = 'Error: cannot fetch "{}": network error'
-                print(tmpl.format(title), file=sys.stderr)
-            except toutv.exceptions.RequestTimeout:
+            except toutv.exceptions.RequestTimeoutError:
                 tmpl = 'Error: cannot fetch "{}": request timeout'
                 print(tmpl.format(title), file=sys.stderr)
-            except toutv.exceptions.UnexpectedHttpStatusCode:
+            except toutv.exceptions.UnexpectedHttpStatusCodeError:
                 tmpl = 'Error: cannot fetch "{}": unexpected HTTP status code'
                 print(tmpl.format(title), file=sys.stderr)
-            except toutv.dl.FileExistsException as e:
+            except toutv.exceptions.NetworkError as e:
+                tmpl = 'Error: cannot fetch "{}": {}'
+                print(tmpl.format(title, e), file=sys.stderr)
+            except toutv.dl.FileExistsError as e:
                 tmpl = 'Error: cannot fetch "{}": destination file exists'
                 print(tmpl.format(title), file=sys.stderr)
-            except:
-                tmpl = 'Error: cannot fetch "{}"'
-                print(tmpl.format(title), file=sys.stderr)
+            except toutv.dl.CancelledByUserError as e:
+                raise e
+            except toutv.dl.DownloadError as e:
+                tmpl = 'Error: cannot fetch "{}": {}'
+                print(tmpl.format(title, e), file=sys.stderr)
+            except Exception as e:
+                tmpl = 'Error: cannot fetch "{}": {}'
+                print(tmpl.format(title, e), file=sys.stderr)
 
     def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
                                       quality, overwrite):

@@ -33,6 +33,7 @@ import re
 import requests
 import toutv.dl
 import toutv.config
+import toutv.m3u8
 
 
 def _clean_description(desc):
@@ -54,17 +55,17 @@ class _Bo:
 
         return self._proxies
 
-    def _do_request(self, url, timeout=None):
+    def _do_request(self, url, timeout=None, params=None):
         proxies = self.get_proxies()
 
         try:
-            r = requests.get(url, headers=toutv.config.HEADERS,
+            r = requests.get(url, params=params, headers=toutv.config.HEADERS,
                              proxies=proxies, timeout=timeout)
             if r.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCode(url,
-                                                                r.status_code)
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url,
+                                                                     r.status_code)
         except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeout(url, timeout)
+            raise toutv.exceptions.RequestTimeoutError(url, timeout)
 
         return r
 
@@ -475,10 +476,32 @@ class Episode(_Bo, _ThumbnailProvider):
 
         return qualities
 
+    def _get_playlist_url(self):
+        url = toutv.config.TOUTV_PLAYLIST_URL
+        params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
+        params['idMedia'] = self.PID
+        r = self._do_request(url, params=params)
+        response_obj = r.json()
+
+        if response_obj['errorCode']:
+            raise RuntimeError(response_obj['message'])
+
+        return response_obj['url']
+
+    def get_playlist_cookies(self):
+        url = self._get_playlist_url()
+        r = self._do_request(url)
+
+        # parse M3U8 file
+        m3u8_file = r.text
+        playlist = toutv.m3u8.parse(m3u8_file, os.path.dirname(url))
+
+        return playlist, r.cookies
+
     def get_available_qualities(self):
         # Get playlist
         proxies = self.get_proxies()
-        playlist = toutv.dl.Downloader.get_episode_playlist(self, proxies)
+        playlist, cookies = self.get_playlist_cookies()
 
         # Get video qualities
         qualities = Episode._get_video_qualities(playlist)

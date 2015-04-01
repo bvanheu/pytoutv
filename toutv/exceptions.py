@@ -24,15 +24,22 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-class RequestTimeout(Exception):
+class NetworkError(RuntimeError):
+    def __str__(self):
+        return 'Network error'
+
+
+class RequestTimeoutError(NetworkError):
     def __init__(self, url, timeout):
         self._url = url
         self._timeout = timeout
 
-    def get_url(self):
+    @property
+    def url(self):
         return self._url
 
-    def get_timeout(self):
+    @property
+    def timeout(self):
         return self._timeout
 
     def __str__(self):
@@ -40,15 +47,17 @@ class RequestTimeout(Exception):
         return tmpl.format(self._timeout, self._url)
 
 
-class UnexpectedHttpStatusCode(Exception):
+class UnexpectedHttpStatusCodeError(NetworkError):
     def __init__(self, url, status_code):
         self._url = url
         self._status_code = status_code
 
-    def get_url(self):
+    @property
+    def url(self):
         return self._url
 
-    def get_status_code(self):
+    @property
+    def status_code(self):
         return self._status_code
 
     def __str__(self):
