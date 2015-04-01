@@ -33,6 +33,7 @@ EXT_PREFIX = '#EXT'
 
 
 class Tags:
+
     """All possible M3U8 tags."""
 
     EXT_X_BYTERANGE = 'EXT-X-BYTERANGE'
@@ -53,6 +54,7 @@ class Tags:
 
 
 class Stream:
+
     """An M3U8 stream."""
 
     BANDWIDTH = 'BANDWIDTH'
@@ -90,6 +92,7 @@ class Stream:
 
 
 class Key:
+
     """An M3U8 cryptographic key."""
 
     METHOD = 'METHOD'
@@ -111,6 +114,7 @@ class Key:
 
 
 class Segment:
+
     """An M3U8 segment."""
 
     def __init__(self):
@@ -124,6 +128,7 @@ class Segment:
 
 
 class Playlist:
+
     """An M3U8 playlist."""
 
     def __init__(self, target_duration, media_sequence, allow_cache,

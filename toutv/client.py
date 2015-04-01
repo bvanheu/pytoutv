@@ -38,12 +38,14 @@ from toutv import m3u8
 
 
 class NoMatchException(Exception):
+
     def __init__(self, query, candidates=[]):
         self.query = query
         self.candidates = candidates
 
 
 class ClientError(RuntimeError):
+
     def __init__(self, msg):
         self._msg = msg
 
@@ -52,6 +54,7 @@ class ClientError(RuntimeError):
 
 
 class Client:
+
     def __init__(self, transport=toutv.transport.JsonTransport(),
                  cache=toutv.cache.EmptyCache(), proxies=None):
         self._transport = transport

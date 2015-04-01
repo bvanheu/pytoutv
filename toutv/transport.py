@@ -33,6 +33,7 @@ import toutv.bos as bos
 
 
 class Transport:
+
     def __init__(self):
         pass
 
@@ -53,6 +54,7 @@ class Transport:
 
 
 class JsonTransport(Transport):
+
     def __init__(self, proxies=None):
         self._mapper = toutv.mapper.JsonMapper()
 

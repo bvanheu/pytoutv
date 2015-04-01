@@ -31,6 +31,7 @@ from datetime import timedelta
 
 
 class Cache:
+
     def __init__(self):
         pass
 
@@ -57,6 +58,7 @@ class Cache:
 
 
 class EmptyCache(Cache):
+
     def get_emissions(self):
         return None
 
@@ -68,6 +70,7 @@ class EmptyCache(Cache):
 
 
 class ShelveCache(Cache):
+
     def __init__(self, shelve_filename):
         try:
             self.shelve = shelve.open(shelve_filename)

@@ -25,11 +25,13 @@
 
 
 class NetworkError(RuntimeError):
+
     def __str__(self):
         return 'Network error'
 
 
 class RequestTimeoutError(NetworkError):
+
     def __init__(self, url, timeout):
         self._url = url
         self._timeout = timeout
@@ -48,6 +50,7 @@ class RequestTimeoutError(NetworkError):
 
 
 class UnexpectedHttpStatusCodeError(NetworkError):
+
     def __init__(self, url, status_code):
         self._url = url
         self._status_code = status_code

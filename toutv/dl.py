@@ -40,6 +40,7 @@ import toutv.m3u8
 
 
 class DownloadError(RuntimeError):
+
     def __init__(self, msg):
         self._msg = msg
 
@@ -48,16 +49,19 @@ class DownloadError(RuntimeError):
 
 
 class CancelledByUserError(DownloadError):
+
     def __init__(self):
         super().__init__('Download cancelled by user')
 
 
 class FileExistsError(DownloadError):
+
     def __init__(self):
         super().__init__('File exists')
 
 
 class NoSpaceLeftError(DownloadError):
+
     def __init__(self):
         super().__init__('No space left on device')
 

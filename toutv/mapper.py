@@ -29,11 +29,13 @@ import toutv.bos as bos
 
 
 class Mapper:
+
     def create(self, klass):
         return klass()
 
 
 class JsonMapper(Mapper):
+
     def dto_to_bo(self, dto, klass):
         bo = self.create(klass)
         bo_vars = vars(bo)

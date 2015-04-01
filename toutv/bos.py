@@ -44,6 +44,7 @@ def _clean_description(desc):
 
 
 class _Bo:
+
     def set_proxies(self, proxies):
         self._proxies = proxies
 
@@ -71,6 +72,7 @@ class _Bo:
 
 
 class _ThumbnailProvider:
+
     def _cache_medium_thumb(self):
         if self.has_medium_thumb_data():
             # No need to download again
@@ -111,6 +113,7 @@ class _ThumbnailProvider:
 
 
 class _AbstractEmission(_Bo):
+
     def get_id(self):
         return self.Id
 
@@ -144,6 +147,7 @@ class _AbstractEmission(_Bo):
 
 
 class Emission(_AbstractEmission, _ThumbnailProvider):
+
     def __init__(self):
         self.CategoryURL = None
         self.ClassCategory = None
@@ -238,6 +242,7 @@ class Emission(_AbstractEmission, _ThumbnailProvider):
 
 
 class Genre(_Bo):
+
     def __init__(self):
         self.CategoryURL = None
         self.ClassCategory = None
@@ -259,7 +264,9 @@ class Genre(_Bo):
 
 
 class Episode(_Bo, _ThumbnailProvider):
+
     class Quality:
+
         def __init__(self, bitrate, xres, yres):
             self._bitrate = bitrate
             self._xres = xres
@@ -518,6 +525,7 @@ class Episode(_Bo, _ThumbnailProvider):
 
 
 class EmissionRepertoire(_AbstractEmission):
+
     def __init__(self):
         self.AnneeProduction = None
         self.CategorieDuree = None
@@ -550,6 +558,7 @@ class EmissionRepertoire(_AbstractEmission):
 
 
 class SearchResults(_Bo):
+
     def __init__(self):
         self.ModifiedQuery = None
         self.Results = None
@@ -562,6 +571,7 @@ class SearchResults(_Bo):
 
 
 class SearchResultData(_Bo):
+
     def __init__(self):
         self.Emission = None
         self.Episode = None
@@ -574,6 +584,7 @@ class SearchResultData(_Bo):
 
 
 class Repertoire(_Bo):
+
     def __init__(self):
         self.Emissions = None
         self.Genres = None
