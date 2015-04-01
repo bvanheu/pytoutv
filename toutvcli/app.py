@@ -375,20 +375,19 @@ class App:
         if all:
             emissions = self._toutvclient.get_emissions()
             emissions_keys = list(emissions.keys())
-            title_func = lambda ekey: emissions[ekey].get_title()
-            id_func = lambda ekey: ekey
+            def title_func(ekey):
+                return emissions[ekey].get_title()
         else:
             repertoire = self._toutvclient.get_page_repertoire()
             repertoire_emissions = repertoire.get_emissions()
             emissions_keys = list(repertoire_emissions.keys())
-            title_func = lambda ekey: repertoire_emissions[ekey].get_title()
-            id_func = lambda ekey: ekey
+            def title_func(ekey):
+                return repertoire_emissions[ekey].get_title()
 
         emissions_keys.sort(key=title_func)
         for ekey in emissions_keys:
-            emid = id_func(ekey)
             title = title_func(ekey)
-            print('{}: {}'.format(emid, title))
+            print('{}: {}'.format(ekey, title))
 
     def _print_list_episodes(self, emission):
         episodes = self._toutvclient.get_emission_episodes(emission)
@@ -398,7 +397,9 @@ class App:
             print('No available episodes')
             return
 
-        key_func = lambda key: episodes[key].get_sae()
+        def key_func(key):
+            return episodes[key].get_sae()
+
         episodes_keys = list(episodes.keys())
         episodes_keys.sort(key=key_func)
         for ekey in episodes_keys:
