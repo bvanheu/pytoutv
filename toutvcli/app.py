@@ -63,12 +63,7 @@ class App:
         if hasattr(args, 'no_cache'):
             no_cache = args.no_cache
 
-        try:
-            self._toutvclient = self._build_toutv_client(no_cache)
-        except Exception as e:
-            msg = 'Cannot create client: try disabling the cache using -n\n'
-            print(msg, file=sys.stderr)
-            return 15
+        self._toutvclient = self._build_toutv_client(no_cache)
 
         try:
             args.func(args)
@@ -223,7 +218,12 @@ class App:
         if no_cache:
             cache = toutv.cache.EmptyCache()
         else:
-            cache = App._build_cache()
+            try:
+                cache = App._build_cache()
+            except:
+                print('Warning: not using cache (multiple instances of toutv?)',
+                      file=sys.stderr)
+                cache = toutv.cache.EmptyCache()
 
         return toutv.client.Client(cache=cache)
 
