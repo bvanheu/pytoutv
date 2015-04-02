@@ -39,7 +39,10 @@ class ProgressBar:
 
     @staticmethod
     def _get_terminal_width():
-        return shutil.get_terminal_size()[0]
+        if hasattr(shutil, 'get_terminal_size'):
+            return shutil.get_terminal_size()[0]
+        else:
+            return 80
 
     def _get_bar_widget(self, width):
         total_segments = self._total_segments
