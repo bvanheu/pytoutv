@@ -72,4 +72,8 @@ setup(name='pytoutv',
       packages=packages,
       package_data=package_data,
       install_requires=install_requires,
-      entry_points=entry_points)
+      entry_points=entry_points,
+      # This allows to use "./setup.py test", although using
+      # "./setup nosetests" provides more features.
+      test_suite = 'nose.collector',
+)
