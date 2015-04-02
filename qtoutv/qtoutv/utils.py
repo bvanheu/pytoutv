@@ -2,7 +2,7 @@ import os.path
 from pkg_resources import resource_filename
 from PyQt4 import Qt
 from PyQt4 import uic
-from toutvqt import config
+from qtoutv import config
 
 
 class QCommonDialog(Qt.QDialog):

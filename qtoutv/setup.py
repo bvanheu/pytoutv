@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (c) 2014, Philippe Proulx <eepp.ca>
+# Copyright (c) 2015, Philippe Proulx <eepp.ca>
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -27,52 +27,52 @@
 
 import sys
 from setuptools import setup
-import toutv
 
 
 # Make sure we run Python 3.2+ here
 v = sys.version_info
+
 if v.major < 3 or v.minor < 2:
-    sys.stderr.write('Sorry, pytoutv needs Python 3.2+\n')
+    sys.stderr.write('Sorry, qtoutv needs Python 3.2+\n')
     sys.exit(1)
 
-entry_points = {
-    'console_scripts': [
-        'toutv = toutvcli.app:run'
-    ],
-    'gui_scripts': [
-        'qtoutv = toutvqt.app:run'
-    ]
-}
-packages = [
-    'toutv',
-    'toutvcli',
-    'toutvqt'
-]
-package_data = {
-    'toutvqt': [
-        'dat/ui/*.ui',
-        'dat/icons/*.png'
-    ]
-}
-install_requires = [
-    'pycrypto>=2.0.0',
-    'requests>=2.0.0',
-    'setuptools>=3.0'
-]
 
-setup(name='pytoutv',
-      version=toutv.__version__,
-      description='TOU.TV client library and user interfaces',
-      author='Benjamin Vanheuverzwijn',
-      author_email='bvanheu@gmail.com',
+if 'install' in sys.argv:
+  try:
+      import PyQt4
+  except ImportError:
+      print('Error: qtoutv needs PyQt4', file=sys.stderr)
+      sys.exit(1)
+
+
+import qtoutv
+
+
+setup(name='qtoutv',
+      version=qtoutv.__version__,
+      description='TOU.TV client Qt interface',
+      author='Simon Marchi',
+      author_email='simon.marchi@polymtl.ca',
       url='https://github.com/bvanheu/pytoutv',
       keywords='TOUTV',
       license="BSD",
-      packages=packages,
-      package_data=package_data,
-      install_requires=install_requires,
-      entry_points=entry_points,
+      packages=[
+          'qtoutv',
+      ],
+      package_data={
+          'qtoutv': [
+              'dat/ui/*.ui',
+              'dat/icons/*.png'
+          ]
+      },
+      install_requires=[
+          'toutvcore>=2.4.0',
+      ],
+      entry_points={
+          'gui_scripts': [
+              'qtoutv = qtoutv.app:run'
+          ]
+      },
       # This allows to use "./setup.py test", although using
       # "./setup nosetests" provides more features.
       test_suite = 'nose.collector',

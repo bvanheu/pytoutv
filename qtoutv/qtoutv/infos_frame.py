@@ -3,7 +3,7 @@ from PyQt4 import Qt
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 import webbrowser
-from toutvqt import utils
+from qtoutv import utils
 
 
 class QInfosFrame(Qt.QFrame):

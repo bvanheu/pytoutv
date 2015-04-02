@@ -3,18 +3,18 @@ import logging
 from PyQt4 import Qt
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from toutvqt.download_manager import QDownloadManager
-from toutvqt.downloads_tablemodel import QDownloadsTableModel
-from toutvqt.downloads_tableview import QDownloadsTableView
-from toutvqt.emissions_treeview import QEmissionsTreeView
-from toutvqt.emissions_treemodel import EmissionsTreeModel
-from toutvqt.about_dialog import QTouTvAboutDialog
-from toutvqt.preferences_dialog import QTouTvPreferencesDialog
-from toutvqt.choose_bitrate_dialog import QChooseBitrateDialog, SymbolicQuality,\
+from qtoutv.download_manager import QDownloadManager
+from qtoutv.downloads_tablemodel import QDownloadsTableModel
+from qtoutv.downloads_tableview import QDownloadsTableView
+from qtoutv.emissions_treeview import QEmissionsTreeView
+from qtoutv.emissions_treemodel import EmissionsTreeModel
+from qtoutv.about_dialog import QTouTvAboutDialog
+from qtoutv.preferences_dialog import QTouTvPreferencesDialog
+from qtoutv.choose_bitrate_dialog import QChooseBitrateDialog, SymbolicQuality,\
     QSymbolicQualityButton
-from toutvqt.choose_bitrate_dialog import QBitrateResQualityButton
-from toutvqt.infos_frame import QInfosFrame
-from toutvqt import utils
+from qtoutv.choose_bitrate_dialog import QBitrateResQualityButton
+from qtoutv.infos_frame import QInfosFrame
+from qtoutv import utils
 from toutv import exceptions
 
 

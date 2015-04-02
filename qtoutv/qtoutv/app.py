@@ -3,10 +3,10 @@ import sys
 import logging
 import platform
 from PyQt4 import Qt
-from toutvqt.main_window import QTouTvMainWindow
-from toutvqt.settings import QTouTvSettings
-from toutvqt.settings import SettingsKeys
-from toutvqt import config
+from qtoutv.main_window import QTouTvMainWindow
+from qtoutv.settings import QTouTvSettings
+from qtoutv.settings import SettingsKeys
+from qtoutv import config
 import toutv.client
 
 

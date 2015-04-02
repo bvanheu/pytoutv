@@ -1,9 +1,9 @@
 import logging
 from PyQt4 import Qt, QtCore
-from toutvqt.emissions_treemodel import EmissionsTreeModelEmission
-from toutvqt.emissions_treemodel import EmissionsTreeModelSeason
-from toutvqt.emissions_treemodel import EmissionsTreeModelEpisode
-from toutvqt.emissions_treemodel import LoadingItem
+from qtoutv.emissions_treemodel import EmissionsTreeModelEmission
+from qtoutv.emissions_treemodel import EmissionsTreeModelSeason
+from qtoutv.emissions_treemodel import EmissionsTreeModelEpisode
+from qtoutv.emissions_treemodel import LoadingItem
 
 
 class QEmissionsTreeViewStyleDelegate(Qt.QStyledItemDelegate):

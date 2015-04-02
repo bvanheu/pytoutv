@@ -1,6 +1,6 @@
 from PyQt4 import Qt
 from PyQt4 import QtCore
-from toutvqt import utils
+from qtoutv import utils
 from enum import Enum
 
 

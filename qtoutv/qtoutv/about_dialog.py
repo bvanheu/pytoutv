@@ -1,6 +1,6 @@
-from toutvqt import config
-from toutvqt import utils
-from toutvqt import __version__
+from qtoutv import config
+from qtoutv import utils
+from qtoutv import __version__
 
 
 class QTouTvAboutDialog(utils.QCommonDialog, utils.QtUiLoad):

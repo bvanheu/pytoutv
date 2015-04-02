@@ -1,7 +1,7 @@
 from PyQt4 import Qt, QtCore
-from toutvqt.downloads_itemdelegate import QDlItemDelegate
-from toutvqt.downloads_tablemodel import DownloadItemState
-from toutvqt import utils
+from qtoutv.downloads_itemdelegate import QDlItemDelegate
+from qtoutv.downloads_tablemodel import DownloadItemState
+from qtoutv import utils
 
 
 class QDownloadsTableView(Qt.QTreeView):

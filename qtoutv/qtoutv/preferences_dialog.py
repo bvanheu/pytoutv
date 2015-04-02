@@ -1,8 +1,8 @@
 import os.path
 from PyQt4 import QtCore
 from PyQt4 import QtGui
-from toutvqt import utils
-from toutvqt.settings import SettingsKeys
+from qtoutv import utils
+from qtoutv.settings import SettingsKeys
 
 
 class QTouTvPreferencesDialog(utils.QCommonDialog, utils.QtUiLoad):
