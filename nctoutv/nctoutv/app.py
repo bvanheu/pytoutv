@@ -148,9 +148,15 @@ class _MainFrame(urwid.Frame):
         super().__init__(body=self._obody, header=self._oheader_wrap,
                          footer=self._ofooter_wrap)
 
+    @staticmethod
+    def _get_version():
+        v = nctoutv.__version__.split('.')
+
+        return '.'.join(v[0:2])
+
     def _build_header(self):
         txt = [
-            ('header-title', 'nctoutv v{}'.format(nctoutv.__version__)),
+            ('header-title', 'nctoutv v{}'.format(_MainFrame._get_version())),
             '    Use the arrow keys to navigate, press ? for help'
         ]
         self._oheader = urwid.Text(txt)
