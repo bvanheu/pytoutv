@@ -6,6 +6,33 @@ import sys
 import os
 
 
+class MainFrame(urwid.Frame):
+    def __init__(self):
+        self._build_header()
+        self._build_body()
+        self._build_footer()
+        super().__init__(body=self._obody, header=self._oheader_wrap,
+                         footer=self._ofooter_wrap)
+
+    def _build_header(self):
+        txt = [
+            ('header-title', 'nctoutv v{}'.format(nctoutv.__version__)),
+            '    Use the arrow keys to navigate, press ? for help'
+        ]
+        self._oheader = urwid.Text(txt)
+        self._oheader_wrap = urwid.AttrMap(self._oheader, 'header')
+
+    def _build_body(self):
+        self._obody = urwid.Filler(urwid.Text('the body'), 'middle')
+
+    def _build_footer(self):
+        txt = 'the footer'
+        self._ofooter = urwid.Text(txt)
+        self._ofooter_wrap = urwid.AttrMap(self._ofooter, 'footer')
+
+    def test(self):
+        self._oheader.set_text('caca')
+
 class App:
     _palette = [
         ('header', 'white', 'dark blue'),
@@ -13,35 +40,22 @@ class App:
         ('footer', '', 'dark green')
     ]
 
-    def _build_main_frame_header(self):
-        txt = [
-            ('header-title', 'nctoutv v{}'.format(nctoutv.__version__)),
-            '    Use the arrow keys to navigate, press ? for help'
-        ]
-        self._main_frame_header = urwid.AttrMap(urwid.Text(txt), 'header')
-
-    def _build_main_frame_footer(self):
-        txt = 'the footer'
-        self._main_frame_footer = urwid.AttrMap(urwid.Text(txt), 'footer')
-
-    def _build_main_frame(self):
-        self._build_main_frame_header()
-        self._build_main_frame_footer()
-        body = urwid.Filler(urwid.Text('the body'), 'middle')
-        self._main_frame = urwid.Frame(body=body,
-                                       header=self._main_frame_header,
-                                       footer=self._main_frame_footer)
-
-    def _create_loop(self):
-        self._loop = urwid.MainLoop(self._main_frame, App._palette)
-
     def __init__(self):
         self._build_main_frame()
         self._create_loop()
 
-    @property
-    def loop(self):
-        return self._loop
+    def _build_main_frame(self):
+        self._main_frame = MainFrame()
+
+    def _create_loop(self):
+        self._loop = urwid.MainLoop(self._main_frame, App._palette,
+                                    unhandled_input=self._unhandled_input)
+
+    def _unhandled_input(self, key):
+        if key in ('q', 'Q'):
+            raise urwid.ExitMainLoop()
+        elif key == '?':
+            self._main_frame.test()
 
     def run(self):
         self._loop.run()
