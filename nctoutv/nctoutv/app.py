@@ -5,6 +5,7 @@ import signal
 import urwid
 import sys
 import os
+import re
 
 
 class _EpisodeWidget(urwid.Text):
@@ -120,6 +121,23 @@ class _ShowsLineBox(urwid.LineBox):
                 self._app.focus_episodes()
 
                 return None
+        elif re.match('[0-9a-zA-Z]$', key):
+            key_lc = key.lower()
+
+            # q quits
+            if key_lc == 'q':
+                return super().keypress(size, key)
+
+            for index, show_widget in enumerate(self._shows_widgets):
+                emission = show_widget.emission
+                title = emission.get_title().lower()
+
+                if key_lc == title[0]:
+                    # TODO: alternate instead of focussing on the first
+                    self._listbox.focus_position = index
+                    break
+
+            return None
         else:
             return super().keypress(size, key)
 
