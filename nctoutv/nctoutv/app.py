@@ -1,9 +1,12 @@
 import toutv.client
 import toutv.cache
+import threading
 import platform
 import nctoutv
 import signal
 import urwid
+import queue
+import time
 import sys
 import os
 import re
@@ -36,8 +39,13 @@ class _EpisodesLineBox(urwid.LineBox):
         self._walker = urwid.SimpleFocusListWalker([urwid.Text(txt)])
         self._listbox = urwid.ListBox(self._walker)
 
-    def set_emission(self, emission):
-        self._episodes = self._app.client.get_emission_episodes(emission)
+    def set_loading(self, show):
+        del self._walker[:]
+        fmt = 'Loading episodes of {}...'
+        self._walker.append(urwid.Text(fmt.format(show.get_title())))
+
+    def set_episodes(self, episodes):
+        self._episodes = episodes
 
         try:
             episodes = sorted(self._episodes.values(),
@@ -66,7 +74,7 @@ class _EpisodesLineBox(urwid.LineBox):
         return len(self._episodes_widgets) > 0
 
     def keypress(self, size, key):
-        if key == 'left' or key == 'escape':
+        if key == 'left' or key == 'esc':
             self._app.focus_shows()
 
             return None
@@ -75,15 +83,15 @@ class _EpisodesLineBox(urwid.LineBox):
 
 
 class _ShowWidget(urwid.Text):
-    def __init__(self, emission, **kwargs):
-        self._emission = emission
-        super().__init__(emission.get_title(), **kwargs)
+    def __init__(self, show, **kwargs):
+        self._emission = show
+        super().__init__(show.get_title(), **kwargs)
 
     def selectable(self):
         return True
 
     @property
-    def emission(self):
+    def show(self):
         return self._emission
 
     def keypress(self, size, key):
@@ -91,20 +99,20 @@ class _ShowWidget(urwid.Text):
 
 
 class _ShowsLineBox(urwid.LineBox):
-    def __init__(self, app):
+    def __init__(self, app, shows):
         self._app = app
+        self._shows = shows
         self._build_listbox()
         super().__init__(self._listbox, title='TOU.TV shows')
 
     def _build_listbox(self):
-        self._emissions = self._app.client.get_emissions()
-        emissions = sorted(self._emissions.values(),
-                           key=lambda e: e.get_title())
+        sorted_shows = sorted(self._shows.values(),
+                              key=lambda e: e.get_title())
         self._shows_widgets = []
         shows_widgets_wrapped = []
 
-        for emission in emissions:
-            show_widget = _ShowWidget(emission)
+        for show in sorted_shows:
+            show_widget = _ShowWidget(show)
             self._shows_widgets.append(show_widget)
             wrapper = urwid.AttrMap(show_widget, None, 'selected-item')
             shows_widgets_wrapped.append(wrapper)
@@ -118,8 +126,7 @@ class _ShowsLineBox(urwid.LineBox):
 
             if focus is not None:
                 show_widget = focus.original_widget
-                self._app.show_emission_episodes(show_widget.emission)
-                self._app.focus_episodes()
+                self._app.show_episodes(show_widget.show)
 
                 return None
         elif re.match('[0-9a-zA-Z]$', key):
@@ -130,11 +137,11 @@ class _ShowsLineBox(urwid.LineBox):
                 return super().keypress(size, key)
 
             for index, show_widget in enumerate(self._shows_widgets):
-                emission = show_widget.emission
-                title = emission.get_title().lower()
+                show = show_widget.show
+                title = show.get_title().lower()
 
                 if key_lc == title[0]:
-                    # TODO: alternate instead of focussing on the first
+                    # TODO: cycle instead of focussing on the first
                     self._listbox.focus_position = index
                     break
 
@@ -187,18 +194,15 @@ class _MainFrame(urwid.Frame):
         txt = urwid.Text('Loading TOU.TV shows...', align='center')
         self._obody = urwid.Filler(txt, 'middle')
 
-    def _build_body(self):
-        self._oshows_box = _ShowsLineBox(self._app)
-        self._oepisodes_box = _EpisodesLineBox(self._app)
-        self._obody = urwid.Columns([self._oshows_box, self._oepisodes_box])
-
     def _build_footer(self):
         txt = 'the footer'
         self._ofooter = urwid.Text(txt)
         self._ofooter_wrap = urwid.AttrMap(self._ofooter, 'footer')
 
-    def display_lists(self):
-        self._build_body()
+    def set_shows(self, shows):
+        self._oshows_box = _ShowsLineBox(self._app, shows)
+        self._oepisodes_box = _EpisodesLineBox(self._app)
+        self._obody = urwid.Columns([self._oshows_box, self._oepisodes_box])
         self.contents['body'] = (self._obody, None)
 
     def set_status_msg(self, msg):
@@ -207,8 +211,11 @@ class _MainFrame(urwid.Frame):
     def set_status_msg_okay(self):
         self._ofooter.set_text('Okay')
 
-    def show_emission_episodes(self, emission):
-        self._oepisodes_box.set_emission(emission)
+    def set_episodes(self, episodes):
+        self._oepisodes_box.set_episodes(episodes)
+
+    def set_episodes_loading(self, show):
+        self._oepisodes_box.set_loading(show)
 
     def focus_episodes(self):
         if self._oepisodes_box.show_has_episodes():
@@ -219,22 +226,6 @@ class _MainFrame(urwid.Frame):
     def focus_shows(self):
         self._oshows_box.unmark_current()
         self._obody.focus_position = 0
-
-
-class _MainLoop(urwid.MainLoop):
-    def __init__(self, app, **kwargs):
-        super().__init__(**kwargs)
-        self._app = app
-        self._inited = False
-
-    def entering_idle(self):
-        if not self._inited:
-            self._inited = True
-            self.draw_screen()
-            self._app.display_lists()
-
-        self._app.on_idle()
-        super().entering_idle()
 
 
 class _App:
@@ -248,9 +239,26 @@ class _App:
     ]
 
     def __init__(self):
-        self._build_client()
         self._build_main_frame()
         self._create_loop()
+        self._create_client_thread()
+
+    def _build_main_frame(self):
+        self._main_frame = _MainFrame(self)
+
+    def _create_loop(self):
+        self._loop = urwid.MainLoop(widget=self._main_frame,
+                                    palette=_App._palette,
+                                    unhandled_input=self._unhandled_input)
+
+    def _rt_wp_cb(self, unused=None):
+        if self._last_cmd == 'set-shows':
+            self._main_frame.set_shows(self._last_shows)
+            self.set_status_msg_okay()
+        elif self._last_cmd == 'set-episodes':
+            self._main_frame.set_episodes(self._last_episodes)
+            self._main_frame.focus_episodes()
+            self.set_status_msg_okay()
 
     @staticmethod
     def _get_cache():
@@ -279,16 +287,39 @@ class _App:
 
         return cache
 
-    def _build_client(self):
-        self._client = toutv.client.Client(cache=_App._get_cache())
+    @staticmethod
+    def _get_client():
+        try:
+            cache = _App._get_cache()
+        except:
+            cache = toutv.cache.EmptyCache()
 
-    def _build_main_frame(self):
-        self._main_frame = _MainFrame(self)
+        return toutv.client.Client(cache=cache)
 
-    def _create_loop(self):
-        self._loop = _MainLoop(self, widget=self._main_frame,
-                               palette=_App._palette,
-                               unhandled_input=self._unhandled_input)
+    @staticmethod
+    def _rt(app, q):
+        client = _App._get_client()
+
+        while True:
+            request = q.get()
+
+            # TODO: use request objects
+            if request[0] == 'get-shows':
+                shows = client.get_emissions()
+                app.set_shows(shows)
+            elif request[0] == 'get-episodes':
+                show = request[1]
+                episodes = client.get_emission_episodes(show)
+                app.set_episodes(episodes)
+            elif request[0] == 'quit':
+                return
+
+    def _create_client_thread(self):
+        self._rt_wp = self._loop.watch_pipe(self._rt_wp_cb)
+        self._rt_queue = queue.Queue()
+        self._rt = threading.Thread(target=_App._rt,
+                                    args=[self, self._rt_queue], daemon=True)
+        self._rt.start()
 
     def _unhandled_input(self, key):
         if key in ('q', 'Q'):
@@ -296,34 +327,47 @@ class _App:
         elif key == '?':
             self.set_status_msg('pop help')
 
-    @property
-    def client(self):
-        return self._client
-
-    def on_idle(self):
-        pass
-
-    def display_lists(self):
-        self._main_frame.display_lists()
-
     def set_status_msg(self, msg):
         self._main_frame.set_status_msg(msg)
 
     def set_status_msg_okay(self):
         self._main_frame.set_status_msg_okay()
 
-    def show_emission_episodes(self, emission):
-        self._main_frame.show_emission_episodes(emission)
-
-    def focus_episodes(self):
-        self._main_frame.focus_episodes()
+    def show_episodes(self, show):
+        self._main_frame.set_episodes_loading(show)
+        self._send_get_episodes_request(show)
 
     def focus_shows(self):
         self._main_frame.focus_shows()
 
+    def set_shows(self, shows):
+        self._last_shows = shows
+        self._last_cmd = 'set-shows'
+        os.write(self._rt_wp, 'lol'.encode())
+
+    def set_episodes(self, episodes):
+        self._last_episodes = episodes
+        self._last_cmd = 'set-episodes'
+        os.write(self._rt_wp, 'lol'.encode())
+
+    def _send_request(self, name, data=None):
+        if self._rt_queue.qsize() == 0:
+            self._rt_queue.put([name, data])
+
+            return True
+
+        return False
+
+    def _send_get_shows_request(self):
+        self._send_request('get-shows')
+
+    def _send_get_episodes_request(self, show):
+        if self._send_request('get-episodes', show):
+            self.set_status_msg('Loading episodes of {}...'.format(show.get_title()))
 
     def run(self):
-        self.set_status_msg_okay()
+        self.set_status_msg('Loading TOU.TV shows...')
+        self._send_get_shows_request()
         self._loop.run()
 
 
