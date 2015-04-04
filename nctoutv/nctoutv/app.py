@@ -128,7 +128,7 @@ class _ShowsLineBox(urwid.LineBox):
 
         if focus is not None:
             self._marked = focus
-            focus.set_attr_map({None: 'selected-item'})
+            focus.set_attr_map({None: 'current-show'})
 
     def unmark_current(self):
         if self._marked is not None:
@@ -225,6 +225,7 @@ class _App:
         ('header-key', 'white,bold', 'dark blue'),
         ('footer', '', 'dark green'),
         ('selected-item', 'white', 'dark red'),
+        ('current-show', 'light red,bold', ''),
     ]
 
     def __init__(self):
