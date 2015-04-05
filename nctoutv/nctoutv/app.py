@@ -62,7 +62,7 @@ def _get_client():
 
 def _request_thread(app, rq):
     def process_get_shows(request):
-        shows = client.get_emissions()
+        shows = client.get_page_repertoire().get_emissions()
         app.set_shows(shows)
 
     def process_get_episodes(request):
