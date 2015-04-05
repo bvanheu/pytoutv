@@ -321,7 +321,7 @@ class _MainFrame(urwid.Frame):
             ('header-key', 'F3'),
             ': next match    ',
             ('header-key', 'escape/enter'),
-            'finish search',
+            ': finish search',
         ]
         self._oheader_search = urwid.Text(txt)
         self._oheader_wrap = urwid.AttrMap(self._oheader_main, 'header')
