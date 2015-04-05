@@ -89,6 +89,8 @@ class _App:
         ('footer', 'black', 'dark green'),
         ('selected-item', 'default,standout', ''),
         ('current-show', 'white,bold', 'dark cyan'),
+        ('search-result', 'yellow', ''),
+        ('search-result-invalid', 'dark red', ''),
         ('show-title', 'default,bold', ''),
         ('key', 'default,bold', ''),
         ('sae', 'default,bold', ''),

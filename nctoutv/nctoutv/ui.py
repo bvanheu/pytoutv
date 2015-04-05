@@ -1,3 +1,4 @@
+import collections
 import re
 import urwid
 
@@ -248,16 +249,32 @@ class _ShowsLineBox(urwid.LineBox):
         if self._marked is not None:
             self._marked.set_attr_map({None: None})
 
-    def do_search(self, query):
-        query = query.lower()
+    def finish_search(self):
+        self._listbox.focus.set_attr_map({None: None})
 
-        for index, show_widget in enumerate(self._shows_widgets):
+    def do_search(self, query, next=False):
+        # reset the previous search result
+        self._listbox.focus.set_attr_map({None: None})
+
+        query = query.lower().strip()
+        if len(query) == 0:
+            return
+
+        # start the search at the current element (next one if next is True)
+        next = 1 if next else 0
+        items = collections.deque(enumerate(self._shows_widgets))
+        items.rotate(-(self._listbox.focus_position + next))
+
+        for index, show_widget in items:
             show = show_widget.show
             show_title = show.get_title().lower()
 
             if query in show_title:
                 self._listbox.focus_position = index
-                break
+                self._listbox.focus.set_attr_map({None: 'search-result'})
+                return
+
+        self._listbox.focus.set_attr_map({None: 'search-result-invalid'})
 
 
 class _MainFrame(urwid.Frame):
@@ -290,8 +307,21 @@ class _MainFrame(urwid.Frame):
             ('header-key', '?'),
             ': help',
         ]
-        self._oheader = urwid.Text(txt)
-        self._oheader_wrap = urwid.AttrMap(self._oheader, 'header')
+        self._oheader_main = urwid.Text(txt)
+
+        txt = [
+            ('header-title', 'search'),
+            '    ',
+            ('header-key', 'F3'),
+            ': next match    ',
+            ('header-key', 'escape/enter'),
+            'finish search',
+        ]
+        self._oheader_search = urwid.Text(txt)
+        self._oheader_wrap = urwid.AttrMap(self._oheader_main, 'header')
+
+    def _set_header(self, header):
+        self._oheader_wrap.original_widget = header
 
     def _build_loading_body(self):
         txt = urwid.Text('Loading TOU.TV shows...', align='center')
@@ -302,6 +332,8 @@ class _MainFrame(urwid.Frame):
         self._ofooter_text = urwid.Text(txt)
         self._ofooter_search = urwid.Edit('/')
         self._ofooter_wrap = urwid.AttrMap(self._ofooter_text, 'footer')
+        urwid.connect_signal(self._ofooter_search, 'change',
+                             self._search_input_changed)
 
     def _build_info_box(self):
         self._oinfo_box_text = urwid.Text('info...')
@@ -356,25 +388,21 @@ class _MainFrame(urwid.Frame):
         self._ofooter_search.set_edit_text('')
         self._ofooter_wrap.original_widget = self._ofooter_search
         self.focus_position = 'footer'
+        self._set_header(self._oheader_search)
         self._invalidate()
 
-    def _cancel_search(self):
+    def _finish_search(self):
         self._in_search = False
+        self._oshows_box.finish_search()
         self.set_status_msg_okay()
         self._ofooter_wrap.original_widget = self._ofooter_text
         self.focus_position = 'body'
+        self._set_header(self._oheader_main)
         self._invalidate()
 
-    def _do_search(self):
-        self._cancel_search()
-        query = self._ofooter_search.edit_text.strip()
-
-        if len(query) == 0:
-            return
-
-        self.focus_shows()
-        self._oshows_box.do_search(query)
-        self._invalidate()
+    def _search_input_changed(self, _, new_text):
+        assert(self._in_search)
+        self._oshows_box.do_search(new_text)
 
     def keypress(self, size, key):
         if key == '/' and not self._in_search:
@@ -382,12 +410,16 @@ class _MainFrame(urwid.Frame):
                 self._init_search()
 
             return None
+        elif key == 'f3' and self._in_search:
+            self._oshows_box.do_search(self._ofooter_search.edit_text, next=True)
+
+            return None
         elif key == 'enter' and self._in_search:
-            self._do_search()
+            self._finish_search()
 
             return None
         elif key == 'esc' and self._in_search:
-            self._cancel_search()
+            self._finish_search()
 
             return None
         else:
