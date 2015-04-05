@@ -102,7 +102,8 @@ class _App:
     def _create_loop(self):
         self._loop = urwid.MainLoop(widget=self._main_frame,
                                     palette=_App._palette,
-                                    unhandled_input=self._unhandled_input)
+                                    unhandled_input=self._unhandled_input,
+                                    handle_mouse=False)
 
     def _rt_wp_cb(self, unused=None):
         if self._last_cmd == 'set-shows':
