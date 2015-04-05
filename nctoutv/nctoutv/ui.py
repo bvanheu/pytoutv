@@ -28,6 +28,18 @@ class _EpisodeWidget(urwid.Text):
         return key
 
 
+class _EnhancedListBox(urwid.ListBox):
+    def keypress(self, size, key):
+        if key == 'home':
+            self.focus_position = 0
+            self._invalidate()
+        elif key == 'end':
+            self.focus_position = len(self.body) - 1
+            self._invalidate()
+
+        return super().keypress(size, key)
+
+
 class _EpisodesContents(urwid.WidgetWrap):
     def __init__(self):
         self._episodes_widgets = []
@@ -57,7 +69,7 @@ class _EpisodesContents(urwid.WidgetWrap):
 
     def _build_listbox(self):
         self._walker = urwid.SimpleFocusListWalker([])
-        self._listbox = urwid.ListBox(self._walker)
+        self._listbox = _EnhancedListBox(self._walker)
 
     def set_episodes(self, episodes, show):
         self._episodes = episodes
@@ -170,7 +182,7 @@ class _ShowsLineBox(urwid.LineBox):
             shows_widgets_wrapped.append(wrapper)
 
         walker = urwid.SimpleListWalker(shows_widgets_wrapped)
-        self._listbox = urwid.ListBox(walker)
+        self._listbox = _EnhancedListBox(walker)
 
     def keypress(self, size, key):
         if key in ['right', 'enter']:
