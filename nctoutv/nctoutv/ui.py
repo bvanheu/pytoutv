@@ -302,10 +302,7 @@ class _MainFrame(urwid.Frame):
                          footer=self._ofooter_wrap)
 
     def _get_version(self):
-        version = self._app.get_version()
-        v = version.split('.')
-
-        return '.'.join(v[0:2])
+        return self._app.get_version()
 
     def get_title_and_version(self):
         return 'nctoutv v{}'.format(self._get_version())
