@@ -115,14 +115,18 @@ class _App:
             self.set_status_msg_okay()
         elif self._last_cmd == 'set-episodes':
             self._main_frame.set_episodes(self._last_episodes, self._last_show)
+            self._main_frame.set_current_show(self._last_show)
             self._main_frame.focus_episodes()
             self.set_status_msg_okay()
+
+        self._request_sent = False
 
     def _create_client_thread(self):
         self._rt_wp = self._loop.watch_pipe(self._rt_wp_cb)
         self._rt_queue = queue.Queue()
         self._rt = threading.Thread(target=_request_thread,
                                     args=[self, self._rt_queue], daemon=True)
+        self._request_sent = False
         self._rt.start()
 
     def _unhandled_input(self, key):
@@ -138,7 +142,6 @@ class _App:
         self._main_frame.set_status_msg_okay()
 
     def show_episodes(self, show):
-        self._main_frame.set_episodes_info_loading(show)
         self._send_get_episodes_request(show)
 
     def focus_shows(self):
@@ -159,7 +162,8 @@ class _App:
         self._main_frame.show_show_info(show)
 
     def _send_request(self, request):
-        if self._rt_queue.qsize() == 0:
+        if not self._request_sent:
+            self._request_sent = True
             self._rt_queue.put(request)
 
             return True
@@ -171,6 +175,7 @@ class _App:
 
     def _send_get_episodes_request(self, show):
         if self._send_request(_GetEpisodesRequest(show)):
+            self._main_frame.set_episodes_info_loading(show)
             fmt = 'Loading episodes of {}...'
             self.set_status_msg(fmt.format(show.get_title()))
 

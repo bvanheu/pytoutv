@@ -248,6 +248,13 @@ class _ShowsLineBox(urwid.LineBox):
         if self._marked is not None:
             self._marked.set_attr_map({None: None})
 
+    def set_current_show(self, show):
+        for index, show_widget in enumerate(self._shows_widgets):
+            show_candidate = show_widget.show
+            if show_candidate is show:
+                self._listbox.focus_position = index
+                break
+
     def do_search(self, query):
         query = query.lower()
 
@@ -336,6 +343,9 @@ class _MainFrame(urwid.Frame):
 
     def set_episodes_info_loading(self, show):
         self._oepisodes_box.set_info_loading(show)
+
+    def set_current_show(self, show):
+        self._oshows_box.set_current_show(show)
 
     def _set_episodes_info_select(self):
         self._oepisodes_box.set_info_select()
