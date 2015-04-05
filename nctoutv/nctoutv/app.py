@@ -1,4 +1,4 @@
-from nctoutv.ui import _MainFrame
+from nctoutv.ui import _MainFrame, _PopUpLauncher
 import toutv.client
 import toutv.cache
 import threading
@@ -97,17 +97,21 @@ class _App:
 
     def __init__(self):
         self._build_main_frame()
+        self._build_popup_launcher()
         self._create_loop()
         self._create_client_thread()
 
     def _build_main_frame(self):
         self._main_frame = _MainFrame(self)
 
+    def _build_popup_launcher(self):
+        self._popup_launcher = _PopUpLauncher(self._main_frame)
+
     def _create_loop(self):
-        self._loop = urwid.MainLoop(widget=self._main_frame,
+        self._loop = urwid.MainLoop(widget=self._popup_launcher,
                                     palette=_App._palette,
                                     unhandled_input=self._unhandled_input,
-                                    handle_mouse=False)
+                                    handle_mouse=False, pop_ups=True)
 
     def _rt_wp_cb(self, unused=None):
         if self._last_cmd == 'set-shows':
@@ -132,8 +136,6 @@ class _App:
     def _unhandled_input(self, key):
         if key in ('q', 'Q', 'esc'):
             raise urwid.ExitMainLoop()
-        elif key == '?':
-            self.set_status_msg('pop help')
 
     def set_status_msg(self, msg):
         self._main_frame.set_status_msg(msg)
