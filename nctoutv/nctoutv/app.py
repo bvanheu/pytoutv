@@ -220,12 +220,19 @@ class _App:
         p = argparse.ArgumentParser(description='TOU.TV TUI client')
         p.add_argument('--debug', action='store_true',
                        help='Debug (logs to standard error stream)')
+        p.add_argument('-d', '--directory', default=os.getcwd(),
+                       help='Download directory (default: CWD)')
         p.add_argument('-n', '--no-cache', action='store_true',
                        help='Disable cache')
         p.add_argument('-V', '--version', action='version',
                        version='%(prog)s v{}'.format(nctoutv.__version__))
 
         self._args = p.parse_args()
+
+        if not os.path.isdir(self._args.directory):
+            fmt = 'Error: "{}" is not a valid directory'
+            print(fmt.format(self._args.directory), file=sys.stderr)
+            sys.exit(1)
 
     def _init(self):
         logger_name = '{}.{}'.format(__name__, self.__class__.__name__)
