@@ -114,10 +114,12 @@ class _EpisodesContents(urwid.WidgetWrap):
 
 
 class _EpisodesLineBox(urwid.LineBox):
+    _DEFAULT_TITLE = 'Episodes'
+
     def __init__(self, app):
         self._app = app
         self._contents = _EpisodesContents()
-        super().__init__(self._contents, title='Episodes')
+        super().__init__(self._contents, title=_EpisodesLineBox._DEFAULT_TITLE)
 
     def keypress(self, size, key):
         if key in ['left', 'esc', 'backspace']:
@@ -128,10 +130,15 @@ class _EpisodesLineBox(urwid.LineBox):
         else:
             return super().keypress(size, key)
 
+    def _set_default_title(self):
+        self.set_title(_EpisodesLineBox._DEFAULT_TITLE)
+
     def set_info_loading(self, show):
+        self._set_default_title()
         self._contents.set_info_loading(show)
 
     def set_info_select(self):
+        self._set_default_title()
         self._contents.set_info_select()
 
     def set_episodes(self, episodes, show):
@@ -141,7 +148,7 @@ class _EpisodesLineBox(urwid.LineBox):
             plural = '' if len(episodes) == 1 else 's'
             self.set_title('{} episode{}'.format(len(episodes), plural))
         else:
-            self.set_title('Episodes')
+            self._set_default_title()
 
     def has_episodes(self):
         return self._contents.has_episodes()
