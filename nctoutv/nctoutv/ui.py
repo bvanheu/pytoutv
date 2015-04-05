@@ -249,6 +249,13 @@ class _ShowsLineBox(urwid.LineBox):
         if self._marked is not None:
             self._marked.set_attr_map({None: None})
 
+    def set_current_show(self, show):
+        for index, show_widget in enumerate(self._shows_widgets):
+            show_candidate = show_widget.show
+            if show_candidate is show:
+                self._listbox.focus_position = index
+                break
+
     def finish_search(self):
         self._listbox.focus.set_attr_map({None: None})
 
@@ -294,18 +301,17 @@ class _MainFrame(urwid.Frame):
 
         return '.'.join(v[0:2])
 
+    def get_title_and_version(self):
+        return 'nctoutv v{}'.format(self._get_version())
+
     def _build_header(self):
         txt = [
-            ('header-title', 'nctoutv v{}'.format(self._get_version())),
+            ('header-title', self.get_title_and_version()),
             '    ',
-            ('header-key', 'arrows'),
-            ': nav    ',
-            ('header-key', 'Enter'),
-            ': view/action    ',
-            ('header-key', 'Q'),
-            ': quit    ',
-            ('header-key', '?'),
-            ': help',
+            ('header-key', 'arrows'), ': nav    ',
+            ('header-key', 'Enter'), ': view/action    ',
+            ('header-key', 'Q'), ': quit    ',
+            ('header-key', '?'), ': help',
         ]
         self._oheader_main = urwid.Text(txt)
 
@@ -369,6 +375,9 @@ class _MainFrame(urwid.Frame):
     def set_episodes_info_loading(self, show):
         self._oepisodes_box.set_info_loading(show)
 
+    def set_current_show(self, show):
+        self._oshows_box.set_current_show(show)
+
     def _set_episodes_info_select(self):
         self._oepisodes_box.set_info_select()
 
@@ -420,6 +429,71 @@ class _MainFrame(urwid.Frame):
             return None
         elif key == 'esc' and self._in_search:
             self._finish_search()
+
+            return None
+        else:
+            return super().keypress(size, key)
+
+
+class _PopUpHelpText(urwid.Text):
+    def __init__(self, popup_launcher):
+        self._popup_launcher = popup_launcher
+        super().__init__(self._get_markup())
+
+    def _get_markup(self):
+        return [
+            ' ', ('header-key', 'F1'), ':     toggle selected show/episode info\n',
+            ' ', ('header-key', 'F9'), ':     toggle downloads\n',
+            '\n',
+            ' ', ('header-key', '/'), ':      search show\n',
+            ' ', ('header-key', 'F3'), ':     next search result\n',
+            ' ', ('header-key', 'Escape'), ': exit search',
+        ]
+
+    def keypress(self, size, key):
+        if key in ['q', 'Q', 'esc', '?']:
+            self._popup_launcher.close_pop_up()
+
+        return None
+
+
+class _PopUpLauncher(urwid.PopUpLauncher):
+    def __init__(self, frame):
+        self._opened_popup = None
+        super().__init__(frame)
+
+    def create_pop_up(self):
+        filler = urwid.Filler(_PopUpHelpText(self), 'top')
+
+        return urwid.AttrMap(filler, 'header')
+
+    def get_pop_up_parameters(self):
+        params = {
+            'left': len(self.original_widget.get_title_and_version()) + 3,
+            'top': 1,
+            'overlay_width': 57,
+            'overlay_height': 6,
+        }
+
+        return params
+
+    def close_pop_up(self):
+        self._opened_popup = None
+        super().close_pop_up()
+
+    def keypress(self, size, key):
+        if key == '?':
+            if self._opened_popup is None:
+                self._opened_popup = 'help'
+                self.open_pop_up()
+            else:
+                self._opened_popup = None
+                self.close_pop_up()
+
+            return None
+        elif key in ['q', 'Q', 'esc'] and self._opened_popup is not None:
+            self._opened_popup = None
+            self.close_pop_up()
 
             return None
         else:

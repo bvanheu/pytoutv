@@ -1,4 +1,4 @@
-from nctoutv.ui import _MainFrame
+from nctoutv.ui import _MainFrame, _PopUpLauncher
 import toutv.client
 import toutv.cache
 import threading
@@ -99,17 +99,21 @@ class _App:
 
     def __init__(self):
         self._build_main_frame()
+        self._build_popup_launcher()
         self._create_loop()
         self._create_client_thread()
 
     def _build_main_frame(self):
         self._main_frame = _MainFrame(self)
 
+    def _build_popup_launcher(self):
+        self._popup_launcher = _PopUpLauncher(self._main_frame)
+
     def _create_loop(self):
-        self._loop = urwid.MainLoop(widget=self._main_frame,
+        self._loop = urwid.MainLoop(widget=self._popup_launcher,
                                     palette=_App._palette,
                                     unhandled_input=self._unhandled_input,
-                                    handle_mouse=False)
+                                    handle_mouse=False, pop_ups=True)
 
     def _rt_wp_cb(self, unused=None):
         if self._last_cmd == 'set-shows':
@@ -117,21 +121,23 @@ class _App:
             self.set_status_msg_okay()
         elif self._last_cmd == 'set-episodes':
             self._main_frame.set_episodes(self._last_episodes, self._last_show)
+            self._main_frame.set_current_show(self._last_show)
             self._main_frame.focus_episodes()
             self.set_status_msg_okay()
+
+        self._request_sent = False
 
     def _create_client_thread(self):
         self._rt_wp = self._loop.watch_pipe(self._rt_wp_cb)
         self._rt_queue = queue.Queue()
         self._rt = threading.Thread(target=_request_thread,
                                     args=[self, self._rt_queue], daemon=True)
+        self._request_sent = False
         self._rt.start()
 
     def _unhandled_input(self, key):
         if key in ('q', 'Q', 'esc'):
             raise urwid.ExitMainLoop()
-        elif key == '?':
-            self.set_status_msg('pop help')
 
     def set_status_msg(self, msg):
         self._main_frame.set_status_msg(msg)
@@ -140,7 +146,6 @@ class _App:
         self._main_frame.set_status_msg_okay()
 
     def show_episodes(self, show):
-        self._main_frame.set_episodes_info_loading(show)
         self._send_get_episodes_request(show)
 
     def focus_shows(self):
@@ -161,7 +166,8 @@ class _App:
         self._main_frame.show_show_info(show)
 
     def _send_request(self, request):
-        if self._rt_queue.qsize() == 0:
+        if not self._request_sent:
+            self._request_sent = True
             self._rt_queue.put(request)
 
             return True
@@ -173,6 +179,7 @@ class _App:
 
     def _send_get_episodes_request(self, show):
         if self._send_request(_GetEpisodesRequest(show)):
+            self._main_frame.set_episodes_info_loading(show)
             fmt = 'Loading episodes of {}...'
             self.set_status_msg(fmt.format(show.get_title()))
 
