@@ -233,7 +233,7 @@ class _App:
         ('header', 'white', 'dark blue'),
         ('header-title', 'yellow,bold', 'dark blue'),
         ('header-key', 'white,bold', 'dark blue'),
-        ('footer', '', 'dark green'),
+        ('footer', 'black', 'dark green'),
         ('selected-item', 'white', 'dark red'),
         ('current-show', 'light red,bold', ''),
     ]
