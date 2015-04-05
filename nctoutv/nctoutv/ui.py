@@ -348,8 +348,13 @@ class _MainFrame(urwid.Frame):
 
     def _do_search(self):
         self._cancel_search()
+        query = self._ofooter_search.edit_text.strip()
+
+        if len(query) == 0:
+            return
+
         self.focus_shows()
-        self._oshows_box.do_search(self._ofooter_search.edit_text.strip())
+        self._oshows_box.do_search(query)
         self._invalidate()
 
     def keypress(self, size, key):
