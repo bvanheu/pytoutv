@@ -1,3 +1,4 @@
+from nctoutv.ui import _MainFrame
 import toutv.client
 import toutv.cache
 import threading
@@ -9,7 +10,75 @@ import queue
 import sys
 import os
 
-from nctoutv.ui import _MainFrame
+
+class _Request:
+    pass
+
+
+class _GetShowsRequest(_Request):
+    pass
+
+
+class _GetEpisodesRequest(_Request):
+    def __init__(self, show):
+        self.show = show
+
+
+def _get_cache():
+    cache_name = '.toutv_cache'
+    cache_path = cache_name
+
+    if platform.system() == 'Linux':
+        try:
+            cache_dir = os.environ['XDG_CACHE_DIR']
+            xdg_cache_path = os.path.join(cache_dir, 'toutv')
+
+            if not os.path.exists(xdg_cache_path):
+                os.makedirs(xdg_cache_path)
+
+            cache_path = os.path.join(xdg_cache_path, cache_name)
+        except KeyError:
+            home_dir = os.environ['HOME']
+            home_cache_path = os.path.join(home_dir, '.cache', 'toutv')
+
+            if not os.path.exists(home_cache_path):
+                os.makedirs(home_cache_path)
+
+            cache_path = os.path.join(home_cache_path, cache_name)
+
+    cache = toutv.cache.ShelveCache(cache_path)
+
+    return cache
+
+
+def _get_client():
+    try:
+        cache = _get_cache()
+    except:
+        cache = toutv.cache.EmptyCache()
+
+    return toutv.client.Client(cache=cache)
+
+
+def _request_thread(app, rq):
+    def process_get_shows(request):
+        shows = client.get_emissions()
+        app.set_shows(shows)
+
+    def process_get_episodes(request):
+        show = request.show
+        episodes = client.get_emission_episodes(show)
+        app.set_episodes(episodes)
+
+    client = _get_client()
+    rq_cb = {
+        _GetShowsRequest: process_get_shows,
+        _GetEpisodesRequest: process_get_episodes,
+    }
+
+    while True:
+        request = rq.get()
+        rq_cb[type(request)](request)
 
 
 class _App:
@@ -44,64 +113,10 @@ class _App:
             self._main_frame.focus_episodes()
             self.set_status_msg_okay()
 
-    @staticmethod
-    def _get_cache():
-        cache_name = '.toutv_cache'
-        cache_path = cache_name
-
-        if platform.system() == 'Linux':
-            try:
-                cache_dir = os.environ['XDG_CACHE_DIR']
-                xdg_cache_path = os.path.join(cache_dir, 'toutv')
-
-                if not os.path.exists(xdg_cache_path):
-                    os.makedirs(xdg_cache_path)
-
-                cache_path = os.path.join(xdg_cache_path, cache_name)
-            except KeyError:
-                home_dir = os.environ['HOME']
-                home_cache_path = os.path.join(home_dir, '.cache', 'toutv')
-
-                if not os.path.exists(home_cache_path):
-                    os.makedirs(home_cache_path)
-
-                cache_path = os.path.join(home_cache_path, cache_name)
-
-        cache = toutv.cache.ShelveCache(cache_path)
-
-        return cache
-
-    @staticmethod
-    def _get_client():
-        try:
-            cache = _App._get_cache()
-        except:
-            cache = toutv.cache.EmptyCache()
-
-        return toutv.client.Client(cache=cache)
-
-    @staticmethod
-    def _rt(app, q):
-        client = _App._get_client()
-
-        while True:
-            request = q.get()
-
-            # TODO: use request objects
-            if request[0] == 'get-shows':
-                shows = client.get_emissions()
-                app.set_shows(shows)
-            elif request[0] == 'get-episodes':
-                show = request[1]
-                episodes = client.get_emission_episodes(show)
-                app.set_episodes(episodes)
-            elif request[0] == 'quit':
-                return
-
     def _create_client_thread(self):
         self._rt_wp = self._loop.watch_pipe(self._rt_wp_cb)
         self._rt_queue = queue.Queue()
-        self._rt = threading.Thread(target=_App._rt,
+        self._rt = threading.Thread(target=_request_thread,
                                     args=[self, self._rt_queue], daemon=True)
         self._rt.start()
 
@@ -134,21 +149,21 @@ class _App:
         self._last_cmd = 'set-episodes'
         os.write(self._rt_wp, 'lol'.encode())
 
-    def _send_request(self, name, data=None):
+    def _send_request(self, request):
         if self._rt_queue.qsize() == 0:
-            self._rt_queue.put([name, data])
+            self._rt_queue.put(request)
 
             return True
 
         return False
 
     def _send_get_shows_request(self):
-        self._send_request('get-shows')
+        self._send_request(_GetShowsRequest())
 
     def _send_get_episodes_request(self, show):
-        if self._send_request('get-episodes', show):
-            self.set_status_msg('Loading episodes of {}...'.format(
-                show.get_title()))
+        if self._send_request(_GetEpisodesRequest(show)):
+            fmt = 'Loading episodes of {}...'
+            self.set_status_msg(fmt.format(show.get_title()))
 
     def run(self):
         self.set_status_msg('Loading TOU.TV shows...')
