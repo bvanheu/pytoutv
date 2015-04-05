@@ -345,11 +345,11 @@ class _MainFrame(urwid.Frame):
         if self._oepisodes_box.has_episodes():
             # mark current show widget
             self._oshows_box.mark_current()
-            self._obody.focus_position = 1
+            self._olists.focus_position = 1
 
     def focus_shows(self):
         self._oshows_box.unmark_current()
-        self._obody.focus_position = 0
+        self._olists.focus_position = 0
         self._set_episodes_info_select()
 
     def _init_search(self):
