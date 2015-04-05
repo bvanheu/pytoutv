@@ -257,7 +257,6 @@ class _ShowsLineBox(urwid.LineBox):
 
             if query in show_title:
                 self._listbox.focus_position = index
-                self._app.show_episodes(show)
                 break
 
 
