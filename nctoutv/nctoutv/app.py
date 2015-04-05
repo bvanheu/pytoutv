@@ -68,7 +68,7 @@ def _request_thread(app, rq):
     def process_get_episodes(request):
         show = request.show
         episodes = client.get_emission_episodes(show)
-        app.set_episodes(episodes)
+        app.set_episodes(episodes, show)
 
     client = _get_client()
     rq_cb = {
@@ -89,6 +89,10 @@ class _App:
         ('footer', 'black', 'dark green'),
         ('selected-item', 'default,standout', ''),
         ('current-show', 'white,bold', 'dark cyan'),
+        ('show-title', 'default,bold', ''),
+        ('key', 'default,bold', ''),
+        ('sae', 'default,bold', ''),
+        ('sae-selected', 'default,bold,standout', ''),
     ]
 
     def __init__(self):
@@ -110,7 +114,7 @@ class _App:
             self._main_frame.set_shows(self._last_shows)
             self.set_status_msg_okay()
         elif self._last_cmd == 'set-episodes':
-            self._main_frame.set_episodes(self._last_episodes)
+            self._main_frame.set_episodes(self._last_episodes, self._last_show)
             self._main_frame.focus_episodes()
             self.set_status_msg_okay()
 
@@ -134,19 +138,21 @@ class _App:
         self._main_frame.set_status_msg_okay()
 
     def show_episodes(self, show):
-        self._main_frame.set_episodes_loading(show)
+        self._main_frame.set_episodes_info_loading(show)
         self._send_get_episodes_request(show)
 
     def focus_shows(self):
         self._main_frame.focus_shows()
+        self._main_frame.set_episodes_info_select()
 
     def set_shows(self, shows):
         self._last_shows = shows
         self._last_cmd = 'set-shows'
         os.write(self._rt_wp, 'lol'.encode())
 
-    def set_episodes(self, episodes):
+    def set_episodes(self, episodes, show):
         self._last_episodes = episodes
+        self._last_show = show
         self._last_cmd = 'set-episodes'
         os.write(self._rt_wp, 'lol'.encode())
 

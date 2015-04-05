@@ -5,7 +5,17 @@ import urwid
 class _EpisodeWidget(urwid.Text):
     def __init__(self, episode, **kwargs):
         self._episode = episode
-        super().__init__(episode.get_title(), **kwargs)
+        markup = []
+
+        if episode.SeasonAndEpisode is not None:
+            markup += [
+                '[',
+                ('sae', episode.SeasonAndEpisode.upper()),
+                '] ',
+            ]
+
+        markup.append(episode.get_title())
+        super().__init__(markup, **kwargs)
 
     def selectable(self):
         return True
@@ -18,28 +28,43 @@ class _EpisodeWidget(urwid.Text):
         return key
 
 
-class _EpisodesLineBox(urwid.LineBox):
-    def __init__(self, app):
-        self._app = app
+class _EpisodesContents(urwid.WidgetWrap):
+    def __init__(self):
+        self._episodes_widgets = None
         self._build_listbox()
-        super().__init__(self._listbox, title="Selected show's episodes")
+        super().__init__(urwid.Text(''))
+        self.set_info_select()
+
+    def _set_info(self, markup):
+        text = urwid.Text(markup, align='center')
+        filler = urwid.Filler(text, 'middle')
+        self._set_w(filler)
+
+    def set_info_loading(self, show):
+        markup = [
+            'Loading episodes of ',
+            ('show-title', show.get_title()),
+            '...'
+        ]
+        self._set_info(markup)
+
+    def set_info_select(self):
+        markup = [
+            'Select a show and press ',
+            ('key', 'Enter'),
+        ]
+        self._set_info(markup)
 
     def _build_listbox(self):
-        txt = 'Please select a show and press Enter'
-        self._walker = urwid.SimpleFocusListWalker([urwid.Text(txt)])
+        self._walker = urwid.SimpleFocusListWalker([])
         self._listbox = urwid.ListBox(self._walker)
 
-    def set_loading(self, show):
-        del self._walker[:]
-        fmt = 'Loading episodes of {}...'
-        self._walker.append(urwid.Text(fmt.format(show.get_title())))
-
-    def set_episodes(self, episodes):
+    def set_episodes(self, episodes, show):
         self._episodes = episodes
 
         try:
             episodes = sorted(self._episodes.values(),
-                              key=lambda e: e.DateSeasonEpisode)
+                              key=lambda e: e.AirDateFormated)
         except:
             episodes = sorted(self._episodes.values(),
                               key=lambda e: e.get_title())
@@ -50,26 +75,62 @@ class _EpisodesLineBox(urwid.LineBox):
         for episode in episodes:
             episode_widget = _EpisodeWidget(episode)
             self._episodes_widgets.append(episode_widget)
-            wrapper = urwid.AttrMap(episode_widget, None, 'selected-item')
+            normal_map = {
+                'sae': 'sae',
+            }
+            focus_map= {
+                'sae': 'sae-selected',
+                None: 'selected-item',
+            }
+            wrapper = urwid.AttrMap(episode_widget, normal_map, focus_map)
             episodes_widgets_wrapped.append(wrapper)
 
-        del self._walker[:]
-
         if episodes_widgets_wrapped:
+            del self._walker[:]
             self._walker += episodes_widgets_wrapped
+            self._set_w(self._listbox)
         else:
-            self._walker.append(urwid.Text('This show has no episodes'))
+            markup = [
+                ('show-title', show.get_title()),
+                ' has no episodes'
+            ]
+            self._set_info(markup)
 
-    def show_has_episodes(self):
+    def has_episodes(self):
         return len(self._episodes_widgets) > 0
 
+
+class _EpisodesLineBox(urwid.LineBox):
+    def __init__(self, app):
+        self._app = app
+        self._contents = _EpisodesContents()
+        super().__init__(self._contents, title='Episodes')
+
     def keypress(self, size, key):
-        if key == 'left' or key == 'esc':
+        if key in ['left', 'esc', 'backspace']:
             self._app.focus_shows()
+            self.set_title('Episodes')
 
             return None
         else:
             return super().keypress(size, key)
+
+    def set_info_loading(self, show):
+        self._contents.set_info_loading(show)
+
+    def set_info_select(self):
+        self._contents.set_info_select()
+
+    def set_episodes(self, episodes, show):
+        self._contents.set_episodes(episodes, show)
+
+        if episodes:
+            self.set_title('{} episodes'.format(len(episodes)))
+        else:
+            self.set_title('Episodes')
+
+    def has_episodes(self):
+        return self._contents.has_episodes()
 
 
 class _ShowWidget(urwid.Text):
@@ -201,14 +262,17 @@ class _MainFrame(urwid.Frame):
     def set_status_msg_okay(self):
         self._ofooter.set_text('Okay')
 
-    def set_episodes(self, episodes):
-        self._oepisodes_box.set_episodes(episodes)
+    def set_episodes(self, episodes, show):
+        self._oepisodes_box.set_episodes(episodes, show)
 
-    def set_episodes_loading(self, show):
-        self._oepisodes_box.set_loading(show)
+    def set_episodes_info_loading(self, show):
+        self._oepisodes_box.set_info_loading(show)
+
+    def set_episodes_info_select(self):
+        self._oepisodes_box.set_info_select()
 
     def focus_episodes(self):
-        if self._oepisodes_box.show_has_episodes():
+        if self._oepisodes_box.has_episodes():
             # mark current show widget
             self._oshows_box.mark_current()
             self._obody.focus_position = 1
