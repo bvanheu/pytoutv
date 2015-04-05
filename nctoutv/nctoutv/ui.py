@@ -416,18 +416,16 @@ class _MainFrame(urwid.Frame):
     def keypress(self, size, key):
         if key == '/' and not self._in_search:
             if self.contents['body'] == (self._olists, None):
+                self.focus_shows()
                 self._init_search()
 
             return None
         elif key == 'f3' and self._in_search:
-            self._oshows_box.do_search(self._ofooter_search.edit_text, next=True)
+            self._oshows_box.do_search(self._ofooter_search.edit_text,
+                                       next=True)
 
             return None
-        elif key == 'enter' and self._in_search:
-            self._finish_search()
-
-            return None
-        elif key == 'esc' and self._in_search:
+        elif key in ['enter', 'esc'] and self._in_search:
             self._finish_search()
 
             return None
