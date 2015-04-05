@@ -2,7 +2,9 @@ from nctoutv.ui import _MainFrame, _PopUpLauncher
 import toutv.client
 import toutv.cache
 import threading
+import argparse
 import platform
+import logging
 import nctoutv
 import signal
 import urwid
@@ -68,26 +70,33 @@ def _get_cache():
     return cache
 
 
-def _get_client():
-    try:
-        cache = _get_cache()
-    except:
+def _get_client(no_cache):
+    if no_cache:
         cache = toutv.cache.EmptyCache()
+    else:
+        try:
+            cache = _get_cache()
+        except:
+            cache = toutv.cache.EmptyCache()
 
     return toutv.client.Client(cache=cache)
 
 
-def _request_thread(app, rq):
+def _request_thread(app, rq, no_cache):
+    logger = logging.getLogger('{}.{}'.format(__name__, '_request_thread'))
+
     def process_get_shows(request):
         shows = client.get_page_repertoire().get_emissions()
-        app.handle_response(_GetShowsResponse(request, shows))
+
+        return _GetShowsResponse(request, shows)
 
     def process_get_episodes(request):
         show = request.show
         episodes = client.get_emission_episodes(show)
-        app.handle_response(_GetEpisodesResponse(request, episodes))
 
-    client = _get_client()
+        return _GetEpisodesResponse(request, episodes)
+
+    client = _get_client(no_cache)
     rq_cb = {
         _GetShowsRequest: process_get_shows,
         _GetEpisodesRequest: process_get_episodes,
@@ -95,7 +104,10 @@ def _request_thread(app, rq):
 
     while True:
         request = rq.get()
-        rq_cb[type(request)](request)
+        logger.debug('got request {}'.format(request))
+        response = rq_cb[type(request)](request)
+        logger.debug('sending response {}'.format(response))
+        app.handle_response(response)
 
 
 class _App:
@@ -116,10 +128,6 @@ class _App:
     ]
 
     def __init__(self):
-        self._build_main_frame()
-        self._build_popup_launcher()
-        self._create_loop()
-        self._create_client_thread()
         self._response_handlers = {
             _GetShowsResponse: self._handle_get_shows_response,
             _GetEpisodesResponse: self._handle_get_episodes_response,
@@ -152,15 +160,18 @@ class _App:
         self._request_sent = False
 
     def _create_client_thread(self):
+        self._logger.debug('creating client thread')
         self._rt_wp = self._loop.watch_pipe(self._rt_wp_cb)
         self._rt_queue = queue.Queue()
-        self._rt = threading.Thread(target=_request_thread,
-                                    args=[self, self._rt_queue], daemon=True)
+        args = [self, self._rt_queue, self._args.no_cache]
+        self._rt = threading.Thread(target=_request_thread, args=args,
+                                    daemon=True)
         self._request_sent = False
         self._rt.start()
 
     def _unhandled_input(self, key):
         if key in ('q', 'Q', 'esc'):
+            self._logger.info('quitting')
             raise urwid.ExitMainLoop()
 
     def set_status_msg(self, msg):
@@ -176,6 +187,7 @@ class _App:
         self._main_frame.focus_shows()
 
     def handle_response(self, response):
+        self._logger.debug('handling response {}'.format(response))
         self._last_response = response
         os.write(self._rt_wp, 'lol'.encode())
 
@@ -186,24 +198,57 @@ class _App:
         if not self._request_sent:
             self._request_sent = True
             self._rt_queue.put(request)
+            self._logger.debug('request sent ({})'.format(request))
 
             return True
 
         return False
 
     def _send_get_shows_request(self):
+        self._logger.debug('sending "get shows" request')
         self._send_request(_GetShowsRequest())
 
     def _send_get_episodes_request(self, show):
+        self._logger.debug('sending "get episodes" request for show: {}'.format(show))
+
         if self._send_request(_GetEpisodesRequest(show)):
             self._main_frame.set_episodes_info_loading(show)
             fmt = 'Loading episodes of {}...'
             self.set_status_msg(fmt.format(show.get_title()))
 
-    def run(self):
+    def _parse_args(self):
+        p = argparse.ArgumentParser(description='TOU.TV TUI client')
+        p.add_argument('--debug', action='store_true',
+                       help='Debug (logs to standard error stream)')
+        p.add_argument('-n', '--no-cache', action='store_true',
+                       help='Disable cache')
+        p.add_argument('-V', '--version', action='version',
+                       version='%(prog)s v{}'.format(nctoutv.__version__))
+
+        self._args = p.parse_args()
+
+    def _init(self):
+        logger_name = '{}.{}'.format(__name__, self.__class__.__name__)
+        self._logger = logging.getLogger(logger_name)
+        self._build_main_frame()
+        self._build_popup_launcher()
+        self._create_loop()
+        self._create_client_thread()
         self.set_status_msg('Loading TOU.TV shows...')
         self._send_get_shows_request()
+
+        self._logger.info('starting main loop')
         self._loop.run()
+
+    def run(self):
+        self._parse_args()
+
+        if self._args.debug:
+            logging.basicConfig(level=logging.DEBUG)
+
+        self._init()
+
+        return 0
 
     def get_version(self):
         return nctoutv.__version__
@@ -222,4 +267,5 @@ def _register_sigint(app):
 def run():
     app = _App()
     _register_sigint(app)
-    app.run()
+
+    return app.run()
