@@ -87,8 +87,8 @@ class _App:
         ('header-title', 'yellow,bold', 'dark blue'),
         ('header-key', 'white,bold', 'dark blue'),
         ('footer', 'black', 'dark green'),
-        ('selected-item', 'white', 'dark red'),
-        ('current-show', 'light red,bold', ''),
+        ('selected-item', 'default,standout', ''),
+        ('current-show', 'white,bold', 'dark cyan'),
     ]
 
     def __init__(self):
