@@ -155,6 +155,9 @@ class _App:
         self._last_cmd = 'set-episodes'
         os.write(self._rt_wp, 'lol'.encode())
 
+    def show_show_info(self, show):
+        self._main_frame.show_show_info(show)
+
     def _send_request(self, request):
         if self._rt_queue.qsize() == 0:
             self._rt_queue.put(request)

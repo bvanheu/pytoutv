@@ -231,6 +231,9 @@ class _ShowsLineBox(urwid.LineBox):
                     break
 
             return None
+        elif key == 'f1':
+            cur_show = self._listbox.focus.original_widget.show
+            self._app.show_show_info(cur_show)
         else:
             return super().keypress(size, key)
 
@@ -263,9 +266,10 @@ class _MainFrame(urwid.Frame):
         self._app = app
         self._build_header()
         self._build_loading_body()
+        self._build_info_box()
         self._build_footer()
         self._in_search = False
-        super().__init__(body=self._obody, header=self._oheader_wrap,
+        super().__init__(body=self._oloading_body, header=self._oheader_wrap,
                          footer=self._ofooter_wrap)
 
     def _get_version(self):
@@ -292,7 +296,7 @@ class _MainFrame(urwid.Frame):
 
     def _build_loading_body(self):
         txt = urwid.Text('Loading TOU.TV shows...', align='center')
-        self._obody = urwid.Filler(txt, 'middle')
+        self._oloading_body = urwid.Filler(txt, 'middle')
 
     def _build_footer(self):
         txt = 'the footer'
@@ -300,11 +304,27 @@ class _MainFrame(urwid.Frame):
         self._ofooter_search = urwid.Edit('/')
         self._ofooter_wrap = urwid.AttrMap(self._ofooter_text, 'footer')
 
+    def _build_info_box(self):
+        self._oinfo_box_text = urwid.Text('info...')
+        filler = urwid.Filler(self._oinfo_box_text, 'top')
+        self._oinfo_box = urwid.LineBox(filler, title='Info')
+
     def set_shows(self, shows):
         self._oshows_box = _ShowsLineBox(self._app, shows)
         self._oepisodes_box = _EpisodesLineBox(self._app)
-        self._obody = urwid.Columns([self._oshows_box, self._oepisodes_box])
-        self.contents['body'] = (self._obody, None)
+        self._olists = urwid.Columns([self._oshows_box, self._oepisodes_box])
+        self._show_lists()
+
+    def _show_info(self):
+        self.contents['body'] = (self._oinfo_box, None)
+
+    def _show_lists(self):
+        self.contents['body'] = (self._olists, None)
+
+    def show_show_info(self, show):
+        self._oinfo_box.set_title(show.get_title())
+        self._oinfo_box_text.set_text('title: {}'.format(show.get_title()))
+        self._show_info()
 
     def set_status_msg(self, msg):
         self._ofooter_text.set_text(msg)
@@ -359,7 +379,8 @@ class _MainFrame(urwid.Frame):
 
     def keypress(self, size, key):
         if key == '/' and not self._in_search:
-            self._init_search()
+            if self.contents['body'] is self._olists:
+                self._init_search()
 
             return None
         elif key == 'enter' and self._in_search:
