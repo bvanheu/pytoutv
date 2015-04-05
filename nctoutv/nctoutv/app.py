@@ -87,6 +87,7 @@ class _App:
         ('header-title', 'yellow,bold', 'dark blue'),
         ('header-key', 'white,bold', 'dark blue'),
         ('footer', 'black', 'dark green'),
+        ('footer-not-found', 'light red,bold', 'dark green'),
         ('selected-item', 'default,standout', ''),
         ('current-show', 'white,bold', 'dark cyan'),
         ('search-result', 'yellow', ''),

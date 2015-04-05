@@ -262,10 +262,10 @@ class _ShowsLineBox(urwid.LineBox):
     def do_search(self, query, next=False):
         # reset the previous search result
         self._listbox.focus.set_attr_map({None: None})
-
         query = query.lower().strip()
+
         if len(query) == 0:
-            return
+            return True
 
         # start the search at the current element (next one if next is True)
         next = 1 if next else 0
@@ -279,9 +279,11 @@ class _ShowsLineBox(urwid.LineBox):
             if query in show_title:
                 self._listbox.focus_position = index
                 self._listbox.focus.set_attr_map({None: 'search-result'})
-                return
+                return True
 
-        self._listbox.focus.set_attr_map({None: 'search-result-invalid'})
+        self._listbox.focus.set_attr_map({None: None})
+
+        return False
 
 
 class _MainFrame(urwid.Frame):
@@ -337,6 +339,8 @@ class _MainFrame(urwid.Frame):
         txt = 'the footer'
         self._ofooter_text = urwid.Text(txt)
         self._ofooter_search = urwid.Edit('/')
+        self._ofooter_search_wrap = urwid.AttrMap(self._ofooter_search,
+                                                  {None: None})
         self._ofooter_wrap = urwid.AttrMap(self._ofooter_text, 'footer')
         urwid.connect_signal(self._ofooter_search, 'change',
                              self._search_input_changed)
@@ -395,7 +399,7 @@ class _MainFrame(urwid.Frame):
     def _init_search(self):
         self._in_search = True
         self._ofooter_search.set_edit_text('')
-        self._ofooter_wrap.original_widget = self._ofooter_search
+        self._ofooter_wrap.original_widget = self._ofooter_search_wrap
         self.focus_position = 'footer'
         self._set_header(self._oheader_search)
         self._invalidate()
@@ -411,7 +415,15 @@ class _MainFrame(urwid.Frame):
 
     def _search_input_changed(self, _, new_text):
         assert(self._in_search)
-        self._oshows_box.do_search(new_text)
+        found = self._oshows_box.do_search(new_text)
+
+        if found:
+            attr_map = {None: None}
+        else:
+            # TODO: do not highlight the caption (/)
+            attr_map = {None: 'footer-not-found'}
+
+        self._ofooter_search_wrap.set_attr_map(attr_map)
 
     def keypress(self, size, key):
         if key == '/' and not self._in_search:
