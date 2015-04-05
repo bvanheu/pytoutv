@@ -170,15 +170,15 @@ class _ShowWidget(urwid.Text):
         return key
 
 
-class _ShowsLineBox(urwid.LineBox):
+class _ShowsListBox(_EnhancedListBox):
     def __init__(self, app, shows):
         self._app = app
         self._shows = shows
         self._marked = None
-        self._build_listbox()
-        super().__init__(self._listbox, title='TOU.TV shows')
+        self._build_walker()
+        super().__init__(self._walker)
 
-    def _build_listbox(self):
+    def _build_walker(self):
         sorted_shows = sorted(self._shows.values(),
                               key=lambda e: e.get_title())
         self._shows_widgets = []
@@ -190,15 +190,15 @@ class _ShowsLineBox(urwid.LineBox):
             wrapper = urwid.AttrMap(show_widget, None, 'selected-item')
             shows_widgets_wrapped.append(wrapper)
 
-        walker = urwid.SimpleListWalker(shows_widgets_wrapped)
-        self._listbox = _EnhancedListBox(walker)
+        self._walker = urwid.SimpleListWalker(shows_widgets_wrapped)
+
+    def _get_focussed_show(self):
+        return self.focus.original_widget.show
 
     def keypress(self, size, key):
         if key in ['right', 'enter']:
-            focus = self._listbox.focus
-
-            if focus is not None:
-                show_widget = focus.original_widget
+            if self.focus is not None:
+                show_widget = self.focus.original_widget
                 self._app.show_episodes(show_widget.show)
 
                 return None
@@ -210,7 +210,7 @@ class _ShowsLineBox(urwid.LineBox):
                 return super().keypress(size, key)
 
             # if the focussed widget already starts with this letter, cycle
-            cur_show = self._listbox.focus.original_widget.show
+            cur_show = self._get_focussed_show()
             cur_show_title = cur_show.get_title()
 
             if cur_show_title[0].lower() == key_lc:
@@ -226,7 +226,7 @@ class _ShowsLineBox(urwid.LineBox):
                     next_show_title = next_show.get_title()
 
                     if next_show_title[0].lower() == key_lc:
-                        self._listbox.focus_position = next_show_index
+                        self.focus_position = next_show_index
                         return None
 
             for index, show_widget in enumerate(self._shows_widgets):
@@ -235,22 +235,19 @@ class _ShowsLineBox(urwid.LineBox):
 
                 if key_lc == title[0]:
                     # TODO: cycle instead of focussing on the first
-                    self._listbox.focus_position = index
+                    self.focus_position = index
                     break
 
             return None
         elif key == 'f1':
-            cur_show = self._listbox.focus.original_widget.show
-            self._app.show_show_info(cur_show)
+            self._app.show_show_info(self._get_focussed_show())
         else:
             return super().keypress(size, key)
 
     def mark_current(self):
-        focus = self._listbox.focus
-
-        if focus is not None:
-            self._marked = focus
-            focus.set_attr_map({None: 'current-show'})
+        if self.focus is not None:
+            self._marked = self.focus
+            self.focus.set_attr_map({None: 'current-show'})
 
     def unmark_current(self):
         if self._marked is not None:
@@ -260,15 +257,15 @@ class _ShowsLineBox(urwid.LineBox):
         for index, show_widget in enumerate(self._shows_widgets):
             show_candidate = show_widget.show
             if show_candidate is show:
-                self._listbox.focus_position = index
+                self.focus_position = index
                 break
 
     def finish_search(self):
-        self._listbox.focus.set_attr_map({None: None})
+        self.focus.set_attr_map({None: None})
 
     def do_search(self, query, next=False):
         # reset the previous search result
-        self._listbox.focus.set_attr_map({None: None})
+        self.focus.set_attr_map({None: None})
         query = query.lower().strip()
 
         if len(query) == 0:
@@ -277,18 +274,18 @@ class _ShowsLineBox(urwid.LineBox):
         # start the search at the current element (next one if next is True)
         next = 1 if next else 0
         items = collections.deque(enumerate(self._shows_widgets))
-        items.rotate(-(self._listbox.focus_position + next))
+        items.rotate(-(self.focus_position + next))
 
         for index, show_widget in items:
             show = show_widget.show
             show_title = show.get_title().lower()
 
             if query in show_title:
-                self._listbox.focus_position = index
-                self._listbox.focus.set_attr_map({None: 'search-result'})
+                self.focus_position = index
+                self.focus.set_attr_map({None: 'search-result'})
                 return True
 
-        self._listbox.focus.set_attr_map({None: None})
+        self.focus.set_attr_map({None: None})
 
         return False
 
@@ -358,7 +355,9 @@ class _MainFrame(urwid.Frame):
         self._oinfo_box = urwid.LineBox(filler, title='Info')
 
     def set_shows(self, shows):
-        self._oshows_box = _ShowsLineBox(self._app, shows)
+        self._oshows_list = _ShowsListBox(self._app, shows)
+        self._oshows_box = urwid.LineBox(self._oshows_list,
+                                         title='TOU.TV shows')
         self._oepisodes_box = _EpisodesLineBox(self._app)
         self._olists = urwid.Columns([self._oshows_box, self._oepisodes_box])
         self._show_lists()
@@ -387,7 +386,7 @@ class _MainFrame(urwid.Frame):
         self._oepisodes_box.set_info_loading(show)
 
     def set_current_show(self, show):
-        self._oshows_box.set_current_show(show)
+        self._oshows_list.set_current_show(show)
 
     def _set_episodes_info_select(self):
         self._oepisodes_box.set_info_select()
@@ -395,11 +394,11 @@ class _MainFrame(urwid.Frame):
     def focus_episodes(self):
         if self._oepisodes_box.has_episodes():
             # mark current show widget
-            self._oshows_box.mark_current()
+            self._oshows_list.mark_current()
             self._olists.focus_position = 1
 
     def focus_shows(self):
-        self._oshows_box.unmark_current()
+        self._oshows_list.unmark_current()
         self._olists.focus_position = 0
         self._set_episodes_info_select()
 
@@ -413,7 +412,7 @@ class _MainFrame(urwid.Frame):
 
     def _finish_search(self):
         self._in_search = False
-        self._oshows_box.finish_search()
+        self._oshows_list.finish_search()
         self.set_status_msg_okay()
         self._ofooter_wrap.original_widget = self._ofooter_text
         self.focus_position = 'body'
@@ -422,7 +421,7 @@ class _MainFrame(urwid.Frame):
 
     def _search_input_changed(self, _, new_text):
         assert(self._in_search)
-        found = self._oshows_box.do_search(new_text)
+        found = self._oshows_list.do_search(new_text)
 
         if found:
             attr_map = {None: None}
@@ -440,7 +439,7 @@ class _MainFrame(urwid.Frame):
 
             return None
         elif key == 'f3' and self._in_search:
-            self._oshows_box.do_search(self._ofooter_search.edit_text,
+            self._oshows_list.do_search(self._ofooter_search.edit_text,
                                        next=True)
 
             return None
