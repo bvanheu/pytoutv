@@ -126,7 +126,7 @@ class _App:
         self._rt.start()
 
     def _unhandled_input(self, key):
-        if key in ('q', 'Q'):
+        if key in ('q', 'Q', 'esc'):
             raise urwid.ExitMainLoop()
         elif key == '?':
             self.set_status_msg('pop help')

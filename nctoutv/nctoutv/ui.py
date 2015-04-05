@@ -232,9 +232,11 @@ class _MainFrame(urwid.Frame):
             ('header-title', 'nctoutv v{}'.format(self._get_version())),
             '    ',
             ('header-key', 'arrows'),
-            ': navigate    ',
+            ': nav    ',
             ('header-key', 'Enter'),
             ': view/action    ',
+            ('header-key', 'Q'),
+            ': quit    ',
             ('header-key', '?'),
             ': help',
         ]
