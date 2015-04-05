@@ -452,8 +452,8 @@ class _PopUpHelpText(urwid.Text):
 
     def _get_markup(self):
         return [
-            ' ', ('header-key', 'F1'), ':     toggle selected show/episode info\n',
-            ' ', ('header-key', 'F9'), ':     toggle downloads\n',
+            ' ', ('header-key', 'F1'), ':     toggle selected show/episode info window\n',
+            ' ', ('header-key', 'F9'), ':     toggle downloads window\n',
             '\n',
             ' ', ('header-key', '/'), ':      search show\n',
             ' ', ('header-key', 'F3'), ':     next search result\n',
