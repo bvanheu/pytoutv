@@ -166,6 +166,7 @@ class _ShowsLineBox(urwid.LineBox):
     def __init__(self, app, shows):
         self._app = app
         self._shows = shows
+        self._marked = None
         self._build_listbox()
         super().__init__(self._listbox, title='TOU.TV shows')
 
@@ -244,6 +245,18 @@ class _ShowsLineBox(urwid.LineBox):
         if self._marked is not None:
             self._marked.set_attr_map({None: None})
 
+    def do_search(self, query):
+        query = query.lower()
+
+        for index, show_widget in enumerate(self._shows_widgets):
+            show = show_widget.show
+            show_title = show.get_title().lower()
+
+            if query in show_title:
+                self._listbox.focus_position = index
+                self._app.show_episodes(show)
+                break
+
 
 class _MainFrame(urwid.Frame):
     def __init__(self, app):
@@ -251,6 +264,7 @@ class _MainFrame(urwid.Frame):
         self._build_header()
         self._build_loading_body()
         self._build_footer()
+        self._in_search = False
         super().__init__(body=self._obody, header=self._oheader_wrap,
                          footer=self._ofooter_wrap)
 
@@ -282,8 +296,9 @@ class _MainFrame(urwid.Frame):
 
     def _build_footer(self):
         txt = 'the footer'
-        self._ofooter = urwid.Text(txt)
-        self._ofooter_wrap = urwid.AttrMap(self._ofooter, 'footer')
+        self._ofooter_text = urwid.Text(txt)
+        self._ofooter_search = urwid.Edit('/')
+        self._ofooter_wrap = urwid.AttrMap(self._ofooter_text, 'footer')
 
     def set_shows(self, shows):
         self._oshows_box = _ShowsLineBox(self._app, shows)
@@ -292,10 +307,10 @@ class _MainFrame(urwid.Frame):
         self.contents['body'] = (self._obody, None)
 
     def set_status_msg(self, msg):
-        self._ofooter.set_text(msg)
+        self._ofooter_text.set_text(msg)
 
     def set_status_msg_okay(self):
-        self._ofooter.set_text('Okay')
+        self._ofooter_text.set_text('Okay')
 
     def set_episodes(self, episodes, show):
         self._oepisodes_box.set_episodes(episodes, show)
@@ -303,7 +318,7 @@ class _MainFrame(urwid.Frame):
     def set_episodes_info_loading(self, show):
         self._oepisodes_box.set_info_loading(show)
 
-    def set_episodes_info_select(self):
+    def _set_episodes_info_select(self):
         self._oepisodes_box.set_info_select()
 
     def focus_episodes(self):
@@ -315,3 +330,40 @@ class _MainFrame(urwid.Frame):
     def focus_shows(self):
         self._oshows_box.unmark_current()
         self._obody.focus_position = 0
+        self._set_episodes_info_select()
+
+    def _init_search(self):
+        self._in_search = True
+        self._ofooter_search.set_edit_text('')
+        self._ofooter_wrap.original_widget = self._ofooter_search
+        self.focus_position = 'footer'
+        self._invalidate()
+
+    def _cancel_search(self):
+        self._in_search = False
+        self.set_status_msg_okay()
+        self._ofooter_wrap.original_widget = self._ofooter_text
+        self.focus_position = 'body'
+        self._invalidate()
+
+    def _do_search(self):
+        self._cancel_search()
+        self.focus_shows()
+        self._oshows_box.do_search(self._ofooter_search.edit_text.strip())
+        self._invalidate()
+
+    def keypress(self, size, key):
+        if key == '/' and not self._in_search:
+            self._init_search()
+
+            return None
+        elif key == 'enter' and self._in_search:
+            self._do_search()
+
+            return None
+        elif key == 'esc' and self._in_search:
+            self._cancel_search()
+
+            return None
+        else:
+            return super().keypress(size, key)

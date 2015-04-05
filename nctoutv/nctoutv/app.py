@@ -143,7 +143,6 @@ class _App:
 
     def focus_shows(self):
         self._main_frame.focus_shows()
-        self._main_frame.set_episodes_info_select()
 
     def set_shows(self, shows):
         self._last_shows = shows
