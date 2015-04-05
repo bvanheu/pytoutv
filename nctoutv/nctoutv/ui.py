@@ -7,10 +7,10 @@ class _EpisodeWidget(urwid.Text):
         self._episode = episode
         markup = []
 
-        if episode.SeasonAndEpisode is not None:
+        if episode.get_sae() is not None:
             markup += [
                 '[',
-                ('sae', episode.SeasonAndEpisode.upper()),
+                ('sae', episode.get_sae()),
                 '] ',
             ]
 
