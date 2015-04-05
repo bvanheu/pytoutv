@@ -24,6 +24,23 @@ class _GetEpisodesRequest(_Request):
         self.show = show
 
 
+class _Response:
+    def __init__(self, request):
+        self.request = request
+
+
+class _GetShowsResponse(_Response):
+    def __init__(self, request, shows):
+        self.shows = shows
+        super().__init__(request)
+
+
+class _GetEpisodesResponse(_Response):
+    def __init__(self, request, episodes):
+        self.episodes = episodes
+        super().__init__(request)
+
+
 def _get_cache():
     cache_name = '.toutv_cache'
     cache_path = cache_name
@@ -63,12 +80,12 @@ def _get_client():
 def _request_thread(app, rq):
     def process_get_shows(request):
         shows = client.get_page_repertoire().get_emissions()
-        app.set_shows(shows)
+        app.handle_response(_GetShowsResponse(request, shows))
 
     def process_get_episodes(request):
         show = request.show
         episodes = client.get_emission_episodes(show)
-        app.set_episodes(episodes, show)
+        app.handle_response(_GetEpisodesResponse(request, episodes))
 
     client = _get_client()
     rq_cb = {
@@ -103,6 +120,10 @@ class _App:
         self._build_popup_launcher()
         self._create_loop()
         self._create_client_thread()
+        self._response_handlers = {
+            _GetShowsResponse: self._handle_get_shows_response,
+            _GetEpisodesResponse: self._handle_get_episodes_response,
+        }
 
     def _build_main_frame(self):
         self._main_frame = _MainFrame(self)
@@ -116,16 +137,18 @@ class _App:
                                     unhandled_input=self._unhandled_input,
                                     handle_mouse=False, pop_ups=True)
 
-    def _rt_wp_cb(self, unused=None):
-        if self._last_cmd == 'set-shows':
-            self._main_frame.set_shows(self._last_shows)
-            self.set_status_msg_okay()
-        elif self._last_cmd == 'set-episodes':
-            self._main_frame.set_episodes(self._last_episodes, self._last_show)
-            self._main_frame.set_current_show(self._last_show)
-            self._main_frame.focus_episodes()
-            self.set_status_msg_okay()
+    def _handle_get_shows_response(self, response):
+        self._main_frame.set_shows(response.shows)
+        self.set_status_msg_okay()
 
+    def _handle_get_episodes_response(self, response):
+        self._main_frame.set_episodes(response.episodes, response.request.show)
+        self._main_frame.set_current_show(response.request.show)
+        self._main_frame.focus_episodes()
+        self.set_status_msg_okay()
+
+    def _rt_wp_cb(self, unused=None):
+        self._response_handlers[type(self._last_response)](self._last_response)
         self._request_sent = False
 
     def _create_client_thread(self):
@@ -152,15 +175,8 @@ class _App:
     def focus_shows(self):
         self._main_frame.focus_shows()
 
-    def set_shows(self, shows):
-        self._last_shows = shows
-        self._last_cmd = 'set-shows'
-        os.write(self._rt_wp, 'lol'.encode())
-
-    def set_episodes(self, episodes, show):
-        self._last_episodes = episodes
-        self._last_show = show
-        self._last_cmd = 'set-episodes'
+    def handle_response(self, response):
+        self._last_response = response
         os.write(self._rt_wp, 'lol'.encode())
 
     def show_show_info(self, show):
