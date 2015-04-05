@@ -379,7 +379,7 @@ class _MainFrame(urwid.Frame):
 
     def keypress(self, size, key):
         if key == '/' and not self._in_search:
-            if self.contents['body'] is self._olists:
+            if self.contents['body'] == (self._olists, None):
                 self._init_search()
 
             return None
