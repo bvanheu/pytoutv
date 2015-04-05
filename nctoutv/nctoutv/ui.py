@@ -30,7 +30,7 @@ class _EpisodeWidget(urwid.Text):
 
 class _EpisodesContents(urwid.WidgetWrap):
     def __init__(self):
-        self._episodes_widgets = None
+        self._episodes_widgets = []
         self._build_listbox()
         super().__init__(urwid.Text(''))
         self.set_info_select()
@@ -173,7 +173,7 @@ class _ShowsLineBox(urwid.LineBox):
         self._listbox = urwid.ListBox(walker)
 
     def keypress(self, size, key):
-        if key == 'right' or key == 'enter':
+        if key in ['right', 'enter']:
             focus = self._listbox.focus
 
             if focus is not None:
@@ -187,6 +187,26 @@ class _ShowsLineBox(urwid.LineBox):
             # q quits
             if key_lc == 'q':
                 return super().keypress(size, key)
+
+            # if the focussed widget already starts with this letter, cycle
+            cur_show = self._listbox.focus.original_widget.show
+            cur_show_title = cur_show.get_title()
+
+            if cur_show_title[0].lower() == key_lc:
+                # find show index
+                for index, show_widget in enumerate(self._shows_widgets):
+                    if show_widget.show is cur_show:
+                        cur_show_index = index
+                        break
+
+                if cur_show_index != (len(self._shows_widgets) - 1):
+                    next_show_index = cur_show_index + 1
+                    next_show = self._shows_widgets[next_show_index].show
+                    next_show_title = next_show.get_title()
+
+                    if next_show_title[0].lower() == key_lc:
+                        self._listbox.focus_position = next_show_index
+                        return None
 
             for index, show_widget in enumerate(self._shows_widgets):
                 show = show_widget.show
