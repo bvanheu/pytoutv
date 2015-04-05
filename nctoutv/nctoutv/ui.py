@@ -125,7 +125,8 @@ class _EpisodesLineBox(urwid.LineBox):
         self._contents.set_episodes(episodes, show)
 
         if episodes:
-            self.set_title('{} episodes'.format(len(episodes)))
+            plural = '' if len(episodes) == 1 else 's'
+            self.set_title('{} episode{}'.format(len(episodes), plural))
         else:
             self.set_title('Episodes')
 
