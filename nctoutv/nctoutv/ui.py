@@ -290,6 +290,23 @@ class _ShowsListBox(_EnhancedListBox):
         return False
 
 
+class _SearchEdit(urwid.Edit):
+    def __init__(self, frame):
+        self._frame = frame
+        super().__init__('/')
+
+    def keypress(self, size, key):
+        if key == 'f3':
+            self._frame.do_search_next(self._ofooter_search.edit_text)
+        elif key in ['enter', 'esc']:
+            self._frame.finish_search()
+        else:
+            # unhandled keys; we do not return to stop propagation here
+            super().keypress(size, key)
+
+        return None
+
+
 class _MainFrame(urwid.Frame):
     def __init__(self, app):
         self._app = app
@@ -339,7 +356,7 @@ class _MainFrame(urwid.Frame):
     def _build_footer(self):
         txt = 'the footer'
         self._ofooter_text = urwid.Text(txt)
-        self._ofooter_search = urwid.Edit('/')
+        self._ofooter_search = _SearchEdit(self)
         self._ofooter_search_wrap = urwid.AttrMap(self._ofooter_search,
                                                   {None: None})
         self._ofooter_wrap = urwid.AttrMap(self._ofooter_text, 'footer')
@@ -407,7 +424,7 @@ class _MainFrame(urwid.Frame):
         self._set_header(self._oheader_search)
         self._invalidate()
 
-    def _finish_search(self):
+    def finish_search(self):
         self._in_search = False
         self._oshows_list.finish_search()
         self.set_status_msg_okay()
@@ -415,6 +432,9 @@ class _MainFrame(urwid.Frame):
         self.focus_position = 'body'
         self._set_header(self._oheader_main)
         self._invalidate()
+
+    def do_search_next(self, query):
+        self._oshows_list.do_search(new_text, next=True)
 
     def _search_input_changed(self, _, new_text):
         assert(self._in_search)
@@ -433,15 +453,6 @@ class _MainFrame(urwid.Frame):
             if self.contents['body'] == (self._olists, None):
                 self.focus_shows()
                 self._init_search()
-
-            return None
-        elif key == 'f3' and self._in_search:
-            self._oshows_list.do_search(self._ofooter_search.edit_text,
-                                       next=True)
-
-            return None
-        elif key in ['enter', 'esc'] and self._in_search:
-            self._finish_search()
 
             return None
         else:
@@ -495,6 +506,8 @@ class _PopUpLauncher(urwid.PopUpLauncher):
         super().close_pop_up()
 
     def keypress(self, size, key):
+        key = super().keypress(size, key)
+
         if key == '?':
             if self._opened_popup is None:
                 self._opened_popup = 'help'
@@ -502,12 +515,8 @@ class _PopUpLauncher(urwid.PopUpLauncher):
             else:
                 self._opened_popup = None
                 self.close_pop_up()
-
-            return None
         elif key in ['q', 'Q', 'esc'] and self._opened_popup is not None:
             self._opened_popup = None
             self.close_pop_up()
 
-            return None
-        else:
-            return super().keypress(size, key)
+        return key
