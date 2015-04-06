@@ -321,7 +321,7 @@ class _SearchEdit(urwid.Edit):
 
     def keypress(self, size, key):
         if key == 'f3':
-            self._frame.do_search_next(self._ofooter_search.edit_text)
+            self._frame.do_search_next(self.edit_text)
         elif key in ['enter', 'esc']:
             self._frame.finish_search()
         else:
@@ -458,7 +458,7 @@ class _MainFrame(urwid.Frame):
         self._invalidate()
 
     def do_search_next(self, query):
-        self._oshows_list.do_search(new_text, next=True)
+        self._oshows_list.do_search(query, next=True)
 
     def _search_input_changed(self, _, new_text):
         assert(self._in_search)
