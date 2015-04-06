@@ -291,39 +291,55 @@ class _ShowsListBox(_EnhancedListBox):
 
 
 class _ShowInfo(urwid.LineBox):
-
     def __init__(self, frame):
         self._frame = frame
-        self._title_text = urwid.Text('')
-        self._year_text = urwid.Text('')
-        self._network_text = urwid.Text('')
-        self._country_text = urwid.Text('')
-        self._desc_text = urwid.Text('')
-        pile = urwid.Pile([
-            ('pack', self._title_text),
-            ('pack', self._year_text),
-            ('pack', self._network_text),
-            ('pack', self._country_text),
-            ('pack', self._desc_text),
-        ])
-        super(_ShowInfo, self).__init__(pile, title='Info')
+        self._text = urwid.Text('')
+        filler = urwid.Filler(self._text, 'top')
+        wrap = urwid.WidgetWrap(filler)
+        super().__init__(wrap, title='Info')
 
     def keypress(self, size, key):
-        if key == 'esc' or key == 'q':
+        if key in ['q', 'Q', 'esc']:
             self._frame.close_show_info()
 
-        return None
+            return None
+
+        return super().keypress(size, key)
 
     def selectable(self):
         return True
 
     def set_show(self, show):
         self.set_title(show.get_title())
-        self._title_text.set_text('title: {}'.format(show.get_title()))
-        self._year_text.set_text('year: {}'.format(show.get_year()))
-        self._network_text.set_text('network: {}'.format(show.get_network()))
-        self._country_text.set_text('country: {}'.format(show.get_country()))
-        self._desc_text.set_text('description: {}'.format(show.get_description()))
+        network = show.get_network()
+
+        if network is None:
+            network = 'unknown'
+
+        country = show.get_country()
+
+        if country is None:
+            country = 'unknown'
+
+        year = show.get_year()
+        year_markup = []
+
+        if year is not None:
+            year_markup = ['(', year, ')']
+
+        markup = [
+            ('show-info-title', show.get_title())
+        ]
+        markup += year_markup
+        markup += [
+            '\n',
+            '\n',
+            ('show-info', 'Network'), ': ', network, '\n',
+            ('show-info', 'Country'), ': ', country, '\n',
+            '\n',
+            show.get_description(),
+        ]
+        self._text.set_text(markup)
 
 
 class _SearchEdit(urwid.Edit):

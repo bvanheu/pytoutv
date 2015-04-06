@@ -125,6 +125,8 @@ class _App:
         ('key', 'default,bold', ''),
         ('sae', 'default,bold', ''),
         ('sae-selected', 'default,bold,standout', ''),
+        ('show-info-title', 'light blue,bold', ''),
+        ('show-info', 'default,bold', ''),
     ]
 
     def __init__(self):
