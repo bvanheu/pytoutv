@@ -295,8 +295,16 @@ class _ShowInfo(urwid.LineBox):
     def __init__(self, frame):
         self._frame = frame
         self._title_text = urwid.Text('')
+        self._year_text = urwid.Text('')
+        self._network_text = urwid.Text('')
+        self._country_text = urwid.Text('')
+        self._desc_text = urwid.Text('')
         pile = urwid.Pile([
             ('pack', self._title_text),
+            ('pack', self._year_text),
+            ('pack', self._network_text),
+            ('pack', self._country_text),
+            ('pack', self._desc_text),
         ])
         super(_ShowInfo, self).__init__(pile, title='Info')
 
@@ -312,6 +320,10 @@ class _ShowInfo(urwid.LineBox):
     def set_show(self, show):
         self.set_title(show.get_title())
         self._title_text.set_text('title: {}'.format(show.get_title()))
+        self._year_text.set_text('year: {}'.format(show.get_year()))
+        self._network_text.set_text('network: {}'.format(show.get_network()))
+        self._country_text.set_text('country: {}'.format(show.get_country()))
+        self._desc_text.set_text('description: {}'.format(show.get_description()))
 
 
 class _SearchEdit(urwid.Edit):
