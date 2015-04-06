@@ -290,6 +290,30 @@ class _ShowsListBox(_EnhancedListBox):
         return False
 
 
+class _ShowInfo(urwid.LineBox):
+
+    def __init__(self, frame):
+        self._frame = frame
+        self._title_text = urwid.Text('')
+        pile = urwid.Pile([
+            ('pack', self._title_text),
+        ])
+        super(_ShowInfo, self).__init__(pile, title='Info')
+
+    def keypress(self, size, key):
+        if key == 'esc' or key == 'q':
+            self._frame.close_show_info()
+
+        return None
+
+    def selectable(self):
+        return True
+
+    def set_show(self, show):
+        self.set_title(show.get_title())
+        self._title_text.set_text('title: {}'.format(show.get_title()))
+
+
 class _SearchEdit(urwid.Edit):
     def __init__(self, frame):
         self._frame = frame
@@ -364,9 +388,7 @@ class _MainFrame(urwid.Frame):
                              self._search_input_changed)
 
     def _build_info_box(self):
-        self._oinfo_box_text = urwid.Text('info...')
-        filler = urwid.Filler(self._oinfo_box_text, 'top')
-        self._oinfo_box = urwid.LineBox(filler, title='Info')
+        self._oinfo_box = _ShowInfo(self)
 
     def set_shows(self, shows):
         self._oshows_list = _ShowsListBox(self._app, shows)
@@ -383,9 +405,11 @@ class _MainFrame(urwid.Frame):
         self.contents['body'] = (self._olists, None)
 
     def show_show_info(self, show):
-        self._oinfo_box.set_title(show.get_title())
-        self._oinfo_box_text.set_text('title: {}'.format(show.get_title()))
+        self._oinfo_box.set_show(show)
         self._show_info()
+
+    def close_show_info(self):
+        self._show_lists()
 
     def set_status_msg(self, msg):
         self._ofooter_text.set_text(msg)
