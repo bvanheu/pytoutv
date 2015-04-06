@@ -174,6 +174,16 @@ class _App:
             self._logger.info('quitting')
             raise urwid.ExitMainLoop()
 
+    def _create_exit_pipe(self):
+        self._exit_pipe = self._loop.watch_pipe(self._do_exit)
+
+    def _do_exit(self, _):
+        raise urwid.ExitMainLoop()
+
+    def request_exit(self):
+        os.write(self._exit_pipe, b'boom')
+        print("done")
+
     def set_status_msg(self, msg):
         self._main_frame.set_status_msg(msg)
 
@@ -241,6 +251,7 @@ class _App:
         self._build_popup_launcher()
         self._create_loop()
         self._create_client_thread()
+        self._create_exit_pipe()
         self.set_status_msg('Loading TOU.TV shows...')
         self._send_get_shows_request()
 
@@ -264,9 +275,7 @@ class _App:
 def _register_sigint(app):
     if platform.system() == 'Linux':
         def handler(signal, frame):
-            # TODO: find a better way to reset the terminal (using urwid)
-            os.system('reset')
-            sys.exit(1)
+            app.request_exit()
 
         signal.signal(signal.SIGINT, handler)
 
