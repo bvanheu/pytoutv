@@ -369,7 +369,7 @@ class _BasicList(urwid.LineBox):
         self._inactive_text = urwid.Filler(urwid.Text(inactive_text,
                                                       align='center'))
         self._wrap = urwid.WidgetWrap(self._inactive_text)
-        super(_BasicList, self).__init__(self._wrap)
+        super(_BasicList, self).__init__(self._wrap, title=title)
 
     def set_content(self, content):
         self._walker.clear()
