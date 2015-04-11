@@ -173,13 +173,13 @@ class _App:
 
     def _unhandled_input(self, key):
         if key in ('q', 'Q', 'esc'):
-            self._logger.info('quitting')
-            raise urwid.ExitMainLoop()
+            self._do_exit()
 
     def _create_exit_pipe(self):
         self._exit_pipe = self._loop.watch_pipe(self._do_exit)
 
-    def _do_exit(self, _):
+    def _do_exit(self, _=None):
+        self._logger.info('quitting')
         raise urwid.ExitMainLoop()
 
     def request_exit(self):
@@ -255,7 +255,7 @@ class _App:
         self._create_client_thread()
         self._create_exit_pipe()
         self.set_status_msg('Loading TOU.TV shows...')
-        self._send_get_shows_request()
+        #self._send_get_shows_request()
 
         self._logger.info('starting main loop')
         self._loop.run()

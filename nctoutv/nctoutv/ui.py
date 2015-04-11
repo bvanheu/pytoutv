@@ -2,7 +2,7 @@ import collections
 import re
 import urwid
 
-
+"""
 class _EpisodeWidget(urwid.Text):
     def __init__(self, episode, **kwargs):
         self._episode = episode
@@ -39,7 +39,7 @@ class _EnhancedListBox(urwid.ListBox):
             self._invalidate()
 
         return super().keypress(size, key)
-
+"""
 
 class _EpisodesContents(urwid.WidgetWrap):
     def __init__(self):
@@ -169,7 +169,7 @@ class _ShowWidget(urwid.Text):
     def keypress(self, size, key):
         return key
 
-
+"""
 class _ShowsListBox(_EnhancedListBox):
     def __init__(self, app, shows):
         self._app = app
@@ -341,7 +341,7 @@ class _ShowInfo(urwid.LineBox):
         ]
         self._text.set_text(markup)
 
-
+"""
 class _SearchEdit(urwid.Edit):
     def __init__(self, frame):
         self._frame = frame
@@ -359,15 +359,96 @@ class _SearchEdit(urwid.Edit):
         return None
 
 
+class _BasicList(urwid.LineBox):
+    '''Base for Shows and Episodes lists'''
+
+    def __init__(self, title, inactive_text):
+        self._walker = urwid.SimpleListWalker([])
+        self._list = urwid.ListBox(self._walker)
+
+        self._inactive_text = urwid.Filler(urwid.Text(inactive_text,
+                                                      align='center'))
+        self._wrap = urwid.WidgetWrap(self._inactive_text)
+        super(_BasicList, self).__init__(self._wrap)
+
+    def set_content(self, content):
+        self._walker.clear()
+        self._walker.extend(content)
+
+    def show_list(self):
+        self._wrap.original_widget = self._list
+
+    def show_inactive_text(self):
+        self._wrap.original_widget = self._inactive_text
+
+
+class _ShowsList(_BasicList):
+
+    def __init__(self):
+        super(_ShowsList, self).__init__('Shows', 'Loading shows...')
+
+
+class _EpisodesList(_BasicList):
+
+    def __init__(self):
+        super(_EpisodesList, self).__init__('Episodes', 'Please select a show.')
+
+class _EpisodesBrowser(urwid.Columns):
+    def __init__(self, app):
+        self._shows_list = _ShowsList()
+        self._episodes_list = _EpisodesList()
+        super(_EpisodesBrowser, self).__init__([self._shows_list,
+                                                self._episodes_list])
+
+class _BottomPane(urwid.LineBox):
+    def __init__(self, app):
+        self._build_pages()
+        self._wrap = urwid.WidgetPlaceholder(None)
+        super(_BottomPane, self).__init__(self._wrap)
+        self.show_page('downloads')
+        self._app = app
+
+    def _build_pages(self):
+        self._pages = {}
+        self._build_page_info()
+        self._build_page_downloads()
+
+    def _build_page_info(self):
+        txt = urwid.Filler(urwid.Text('INFO :D'))
+        self._pages['info'] = (txt, 'Information')
+
+    def _build_page_downloads(self):
+        txt = urwid.Filler(urwid.Text('DOWNLOADS :D'))
+        self._pages['downloads'] = (txt, 'Downloads')
+
+    def show_page(self, page_name):
+        if page_name in self._pages:
+            page = self._pages[page_name]
+            self.set_title(page[1])
+            self._wrap.original_widget = page[0]
+        else:
+            # TODO: log
+            pass
+
+
+class _AppBody(urwid.Pile):
+    def __init__(self, app):
+        self._app = app
+        self._episodes_browser = _EpisodesBrowser(app)
+        self._bottom_pane = _BottomPane(app)
+        super(_AppBody, self).__init__([('weight', 3, self._episodes_browser),
+                                        ('weight', 1, self._bottom_pane)])
+
+
 class _MainFrame(urwid.Frame):
     def __init__(self, app):
         self._app = app
         self._build_header()
-        self._build_loading_body()
-        self._build_info_box()
+        self._build_body()
         self._build_footer()
         self._in_search = False
-        super().__init__(body=self._oloading_body, header=self._oheader_wrap,
+        super().__init__(header=self._oheader_wrap,
+                         body=self._obody,
                          footer=self._ofooter_wrap)
 
     def _get_version(self):
@@ -415,8 +496,8 @@ class _MainFrame(urwid.Frame):
         urwid.connect_signal(self._ofooter_search, 'change',
                              self._search_input_changed)
 
-    def _build_info_box(self):
-        self._oinfo_box = _ShowInfo(self)
+    def _build_body(self):
+        self._obody = _AppBody(self._app)
 
     def set_shows(self, shows):
         self._oshows_list = _ShowsListBox(self._app, shows)
@@ -424,19 +505,6 @@ class _MainFrame(urwid.Frame):
                                          title='TOU.TV shows')
         self._oepisodes_box = _EpisodesLineBox(self._app)
         self._olists = urwid.Columns([self._oshows_box, self._oepisodes_box])
-        self._show_lists()
-
-    def _show_info(self):
-        self.contents['body'] = (self._oinfo_box, None)
-
-    def _show_lists(self):
-        self.contents['body'] = (self._olists, None)
-
-    def show_show_info(self, show):
-        self._oinfo_box.set_show(show)
-        self._show_info()
-
-    def close_show_info(self):
         self._show_lists()
 
     def set_status_msg(self, msg):
