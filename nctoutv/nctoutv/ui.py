@@ -405,20 +405,23 @@ class _BottomPane(urwid.LineBox):
         self._build_pages()
         self._wrap = urwid.WidgetPlaceholder(None)
         super(_BottomPane, self).__init__(self._wrap)
-        self.show_page('downloads')
+        self.show_page(self._get_first_page_name())
         self._app = app
 
+    def _get_first_page_name(self):
+        return list(self._pages.keys())[0]
+
     def _build_pages(self):
-        self._pages = {}
+        self._pages = collections.OrderedDict()
         self._build_page_info()
         self._build_page_downloads()
 
     def _build_page_info(self):
-        txt = urwid.Filler(urwid.Text('INFO :D'))
+        txt = urwid.Filler(urwid.Text('INFO :D'), valign='top')
         self._pages['info'] = (txt, 'Information')
 
     def _build_page_downloads(self):
-        txt = urwid.Filler(urwid.Text('DOWNLOADS :D'))
+        txt = urwid.Filler(urwid.Text('DOWNLOADS :D'), valign='top')
         self._pages['downloads'] = (txt, 'Downloads')
 
     def show_page(self, page_name):
@@ -439,6 +442,9 @@ class _AppBody(urwid.Pile):
         super(_AppBody, self).__init__([('weight', 3, self._episodes_browser),
                                         ('weight', 1, self._bottom_pane)])
 
+    @property
+    def bottom_pane(self):
+        return self._bottom_pane
 
 class _MainFrame(urwid.Frame):
     def __init__(self, app):
@@ -575,6 +581,10 @@ class _MainFrame(urwid.Frame):
                 self._init_search()
 
             return None
+        elif key == 'f5':
+            self._obody.bottom_pane.show_page('info')
+        elif key == 'f6':
+            self._obody.bottom_pane.show_page('downloads')
         else:
             return super().keypress(size, key)
 
