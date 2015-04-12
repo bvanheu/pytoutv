@@ -230,8 +230,8 @@ class _App:
 
     def _parse_args(self):
         p = argparse.ArgumentParser(description='TOU.TV TUI client')
-        p.add_argument('--debug', action='store_true',
-                       help='Debug (logs to standard error stream)')
+        p.add_argument('--debug', const='', nargs='?', metavar='dest',
+                       help='Debug (logs to DEST or stderr if DEST is omitted.')
         p.add_argument('-d', '--directory', default=os.getcwd(),
                        help='Download directory (default: CWD)')
         p.add_argument('-n', '--no-cache', action='store_true',
@@ -263,8 +263,11 @@ class _App:
     def run(self):
         self._parse_args()
 
-        if self._args.debug:
-            logging.basicConfig(level=logging.DEBUG)
+        if self._args.debug is not None:
+            if len(self._args.debug) > 0:
+                logging.basicConfig(level=logging.DEBUG, filename=self._args.debug)
+            else:
+                logging.basicConfig(level=logging.DEBUG)
 
         self._init()
 
