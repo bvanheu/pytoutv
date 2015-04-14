@@ -103,7 +103,7 @@ def _request_thread(app, rq, no_cache):
     }
 
     while True:
-        request = rq.get()
+        request = request_queue.get()
         logger.debug('got request {}'.format(request))
         response = rq_cb[type(request)](request)
         logger.debug('sending response {}'.format(response))
