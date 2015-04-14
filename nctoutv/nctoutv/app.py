@@ -82,7 +82,7 @@ def _get_client(no_cache):
     return toutv.client.Client(cache=cache)
 
 
-def _request_thread(app, rq, no_cache):
+def _request_thread(app, request_queue, no_cache):
     logger = logging.getLogger('{}.{}'.format(__name__, '_request_thread'))
 
     def process_get_shows(request):
