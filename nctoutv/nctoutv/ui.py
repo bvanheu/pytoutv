@@ -192,7 +192,7 @@ class _ShowsListBox(_EnhancedListBox):
 
         self._walker = urwid.SimpleListWalker(shows_widgets_wrapped)
 
-    def _get_focussed_show(self):
+    def _get_focused_show(self):
         return self.focus.original_widget.show
 
     def keypress(self, size, key):
@@ -209,8 +209,8 @@ class _ShowsListBox(_EnhancedListBox):
             if key_lc == 'q':
                 return super().keypress(size, key)
 
-            # if the focussed widget already starts with this letter, cycle
-            cur_show = self._get_focussed_show()
+            # if the focused widget already starts with this letter, cycle
+            cur_show = self._get_focused_show()
             cur_show_title = cur_show.get_title()
 
             if cur_show_title[0].lower() == key_lc:
@@ -240,7 +240,7 @@ class _ShowsListBox(_EnhancedListBox):
 
             return None
         elif key == 'f1':
-            self._app.show_show_info(self._get_focussed_show())
+            self._app.show_show_info(self._get_focused_show())
         else:
             return super().keypress(size, key)
 
@@ -487,11 +487,11 @@ class _BottomPane(urwid.LineBox):
 class _InfoPane(urwid.Filler):
     def __init__(self, app):
         self._app = app
-        self._app.subscribe('show-focussed', self._show_focussed)
+        self._app.subscribe('show-focused', self._show_focused)
         self._text = urwid.Text('Nothing selected')
         super().__init__(self._text, valign='top')
 
-    def _show_focussed(self, show):
+    def _show_focused(self, show):
         self._text.set_text(str(show))
 
 
