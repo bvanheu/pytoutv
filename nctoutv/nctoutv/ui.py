@@ -368,45 +368,95 @@ class _BasicList(urwid.LineBox):
 
         self._inactive_text = urwid.Filler(urwid.Text(inactive_text,
                                                       align='center'))
-        self._wrap = urwid.WidgetWrap(self._inactive_text)
+        self._wrap = urwid.WidgetPlaceholder(self._inactive_text)
         super(_BasicList, self).__init__(self._wrap, title=title)
 
     def set_content(self, content):
         self._walker.clear()
         self._walker.extend(content)
+        self._show_list()
+        self._focus_changed()
 
-    def show_list(self):
+    def _show_list(self):
         self._wrap.original_widget = self._list
 
     def show_inactive_text(self):
         self._wrap.original_widget = self._inactive_text
 
+    def _focus_changed(self):
+        ''' To be overriden by child classes. '''
+        pass
+
+    def keypress(self, size, key):
+        ret = super().keypress(size, key)
+        if key in ['up', 'down']:
+            self._focus_changed()
+        return ret
+
+
+class _ShowsListItem(urwid.Text):
+
+    def __init__(self, show):
+        super().__init__(show.get_title())
+        self._show = show
+
+    def selectable(self):
+        return True
+
+    @property
+    def show(self):
+        return self._show
+
+    def keypress(self, size, key):
+        return key
 
 class _ShowsList(_BasicList):
 
-    def __init__(self):
+    def __init__(self, app):
         super(_ShowsList, self).__init__('Shows', 'Loading shows...')
+        self._app = app
 
+    def _focus_changed(self):
+        show = self._list.body[self._list.focus_position].original_widget.show
+        self._app.publish('show-focussed', show)
 
 class _EpisodesList(_BasicList):
 
     def __init__(self):
         super(_EpisodesList, self).__init__('Episodes', 'Please select a show.')
 
+
 class _EpisodesBrowser(urwid.Columns):
     def __init__(self, app):
-        self._shows_list = _ShowsList()
+        self._shows_list = _ShowsList(app)
         self._episodes_list = _EpisodesList()
+        app.subscribe('new-shows', self._new_shows)
         super(_EpisodesBrowser, self).__init__([self._shows_list,
                                                 self._episodes_list])
+    def _new_shows(self, shows):
+        sorted_shows = sorted(shows.values(),
+                              key=lambda e: e.get_title())
+        shows_items = []
+        #shows_widgets_wrapped = []
+
+        for show in sorted_shows:
+            show_widget = _ShowsListItem(show)
+            wrapped = urwid.AttrMap(show_widget, None, 'selected-item')
+            shows_items.append(wrapped)
+            #wrapper = urwid.AttrMap(show_widget, None, 'selected-item')
+            #shows_widgets_wrapped.append(wrapper)
+
+        self._shows_list.set_content(shows_items)
+        #self._walker = urwid.SimpleListWalker(shows_widgets_wrapped)
+
 
 class _BottomPane(urwid.LineBox):
     def __init__(self, app):
+        self._app = app
         self._build_pages()
         self._wrap = urwid.WidgetPlaceholder(None)
         super(_BottomPane, self).__init__(self._wrap)
         self.show_page(self._get_first_page_name())
-        self._app = app
 
     def _get_first_page_name(self):
         return list(self._pages.keys())[0]
@@ -417,8 +467,8 @@ class _BottomPane(urwid.LineBox):
         self._build_page_downloads()
 
     def _build_page_info(self):
-        txt = urwid.Filler(urwid.Text('INFO :D'), valign='top')
-        self._pages['info'] = (txt, 'Information')
+        page = _InfoPane(self._app)
+        self._pages['info'] = (page, 'Information')
 
     def _build_page_downloads(self):
         txt = urwid.Filler(urwid.Text('DOWNLOADS :D'), valign='top')
@@ -432,6 +482,17 @@ class _BottomPane(urwid.LineBox):
         else:
             # TODO: log
             pass
+
+
+class _InfoPane(urwid.Filler):
+    def __init__(self, app):
+        self._app = app
+        self._app.subscribe('show-focussed', self._show_focussed)
+        self._text = urwid.Text('Nothing selected')
+        super().__init__(self._text, valign='top')
+
+    def _show_focussed(self, show):
+        self._text.set_text(str(show))
 
 
 class _AppBody(urwid.Pile):

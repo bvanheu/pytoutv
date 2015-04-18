@@ -84,10 +84,12 @@ def _get_client(no_cache):
 
 def _request_thread(app, request_queue, no_cache):
     logger = logging.getLogger('{}.{}'.format(__name__, '_request_thread'))
+    logger.debug('starting')
 
     def process_get_shows(request):
+        logger.debug('about to get shows')
         shows = client.get_page_repertoire().get_emissions()
-
+        logger.debug('done getting shows')
         return _GetShowsResponse(request, shows)
 
     def process_get_episodes(request):
@@ -135,6 +137,20 @@ class _App:
             _GetEpisodesResponse: self._handle_get_episodes_response,
         }
 
+        self._listeners = {}
+
+    def subscribe(self, event, callback):
+        l = self._listeners.get(event, [])
+        l.append(callback)
+        self._listeners[event] = l
+
+    def publish(self, event, *args, **kwargs):
+        if event not in self._listeners:
+            return
+
+        for cb in self._listeners[event]:
+            cb(*args, **kwargs)
+
     def _build_main_frame(self):
         self._main_frame = _MainFrame(self)
 
@@ -148,8 +164,9 @@ class _App:
                                     handle_mouse=False, pop_ups=True)
 
     def _handle_get_shows_response(self, response):
-        self._main_frame.set_shows(response.shows)
-        self.set_status_msg_okay()
+        #self._main_frame.set_shows(response.shows)
+        #self.set_status_msg_okay()
+        self.publish('new-shows', response.shows)
 
     def _handle_get_episodes_response(self, response):
         self._main_frame.set_episodes(response.episodes, response.request.show)
@@ -255,10 +272,10 @@ class _App:
         self._create_client_thread()
         self._create_exit_pipe()
         self.set_status_msg('Loading TOU.TV shows...')
-        #self._send_get_shows_request()
+        #
 
         self._logger.info('starting main loop')
-        self._loop.run()
+
 
     def run(self):
         self._parse_args()
@@ -270,6 +287,8 @@ class _App:
                 logging.basicConfig(level=logging.DEBUG)
 
         self._init()
+        self._send_get_shows_request()
+        self._loop.run()
 
         return 0
 
