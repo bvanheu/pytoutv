@@ -359,23 +359,38 @@ class _SearchEdit(urwid.Edit):
         return None
 
 
+class _EnhancedListBox(urwid.ListBox):
+
+    def keypress(self, size, key):
+        if key == 'home':
+            self.focus_position = 0
+            #self._invalidate()
+            return None
+        elif key == 'end':
+            self.focus_position = len(self.body) - 1
+            #self._invalidate()
+            return None
+
+        return super().keypress(size, key)
+
+
 class _BasicList(urwid.LineBox):
     '''Base for Shows and Episodes lists'''
 
     def __init__(self, title, inactive_text):
         self._walker = urwid.SimpleListWalker([])
-        self._list = urwid.ListBox(self._walker)
-
+        self._list = _EnhancedListBox(self._walker)
         self._inactive_text = urwid.Filler(urwid.Text(inactive_text,
                                                       align='center'))
         self._wrap = urwid.WidgetPlaceholder(self._inactive_text)
         super(_BasicList, self).__init__(self._wrap, title=title)
 
     def set_content(self, content):
+        content = [urwid.AttrMap(x, None, 'selected-item') for x in content]
         self._walker.clear()
         self._walker.extend(content)
         self._show_list()
-        self._focus_changed()
+        self._focus_changed(self._list.focus.original_widget)
 
     def _show_list(self):
         self._wrap.original_widget = self._list
@@ -383,25 +398,39 @@ class _BasicList(urwid.LineBox):
     def show_inactive_text(self):
         self._wrap.original_widget = self._inactive_text
 
-    def _focus_changed(self):
+    def _focus_changed(self, item):
+        ''' To be overriden by child classes. '''
+        pass
+
+    def _item_selected(self, item):
         ''' To be overriden by child classes. '''
         pass
 
     def keypress(self, size, key):
+        if key in ['enter']:
+            self._item_selected(self._list.focus.original_widget)
+            return None
+
         ret = super().keypress(size, key)
-        if key in ['up', 'down']:
-            self._focus_changed()
+        if key in ['up', 'down', 'page up', 'page down', 'home', 'end']:
+            self._focus_changed(self._list.focus.original_widget)
         return ret
 
 
-class _ShowsListItem(urwid.Text):
+class _BasicListItem(urwid.Text):
+
+    def __init__(self, markup):
+        super().__init__(markup)
+
+    def selectable(self):
+        return True
+
+
+class _ShowsListItem(_BasicListItem):
 
     def __init__(self, show):
         super().__init__(show.get_title())
         self._show = show
-
-    def selectable(self):
-        return True
 
     @property
     def show(self):
@@ -410,44 +439,79 @@ class _ShowsListItem(urwid.Text):
     def keypress(self, size, key):
         return key
 
+
+class _EpisodesListItem(_BasicListItem):
+
+    def __init__(self, episode):
+        markup = []
+
+        if episode.get_sae() is not None:
+            markup += ['[', ('sae', episode.get_sae()), '] ',]
+
+        markup.append(episode.get_title())
+
+        super().__init__(markup)
+        self._episode = episode
+
+    @property
+    def episode(self):
+        return self._episode
+
+    def keypress(self, size, key):
+        return key
+
+
 class _ShowsList(_BasicList):
 
     def __init__(self, app):
         super(_ShowsList, self).__init__('Shows', 'Loading shows...')
         self._app = app
+        self._app.subscribe('new-shows', self._new_shows)
 
-    def _focus_changed(self):
-        show = self._list.body[self._list.focus_position].original_widget.show
-        self._app.publish('show-focussed', show)
+    def _focus_changed(self, item):
+        self._app.publish('show-focused', item.show)
+
+    def _item_selected(self, item):
+        self._app._send_get_episodes_request(item.show)
+
+    def _new_shows(self, shows):
+        shows = sorted(shows.values(), key=lambda e: e.get_title())
+        shows_items = [_ShowsListItem(x) for x in shows]
+        self.set_content(shows_items)
+
 
 class _EpisodesList(_BasicList):
 
-    def __init__(self):
+    def __init__(self, app):
         super(_EpisodesList, self).__init__('Episodes', 'Please select a show.')
+        self._app = app
+        self._app.subscribe('new-episodes', self._new_episodes)
+
+    def _new_episodes(self, show, episodes):
+        self._app._logger.debug("New episodes of {}!".format(show))
+        try:
+            episodes_sorted = sorted(episodes.values(),
+                              key=lambda e: e.AirDateFormated)
+        except:
+            episodes_sorted = sorted(episodes.values(),
+                              key=lambda e: e.get_title())
+        episodes_items = [_EpisodesListItem(x) for x in episodes_sorted]
+        self.set_content(episodes_items)
+
+    def _focus_changed(self, item):
+        self._app.publish('episode-focused', item.episode)
+
+    def _item_selected(self, item):
+        self._app._logger.debug("Selected episode: {}".format(item.episode))
 
 
 class _EpisodesBrowser(urwid.Columns):
+
     def __init__(self, app):
         self._shows_list = _ShowsList(app)
-        self._episodes_list = _EpisodesList()
-        app.subscribe('new-shows', self._new_shows)
+        self._episodes_list = _EpisodesList(app)
         super(_EpisodesBrowser, self).__init__([self._shows_list,
                                                 self._episodes_list])
-    def _new_shows(self, shows):
-        sorted_shows = sorted(shows.values(),
-                              key=lambda e: e.get_title())
-        shows_items = []
-        #shows_widgets_wrapped = []
-
-        for show in sorted_shows:
-            show_widget = _ShowsListItem(show)
-            wrapped = urwid.AttrMap(show_widget, None, 'selected-item')
-            shows_items.append(wrapped)
-            #wrapper = urwid.AttrMap(show_widget, None, 'selected-item')
-            #shows_widgets_wrapped.append(wrapper)
-
-        self._shows_list.set_content(shows_items)
-        #self._walker = urwid.SimpleListWalker(shows_widgets_wrapped)
 
 
 class _BottomPane(urwid.LineBox):

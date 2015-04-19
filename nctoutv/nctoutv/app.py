@@ -169,10 +169,11 @@ class _App:
         self.publish('new-shows', response.shows)
 
     def _handle_get_episodes_response(self, response):
-        self._main_frame.set_episodes(response.episodes, response.request.show)
-        self._main_frame.set_current_show(response.request.show)
-        self._main_frame.focus_episodes()
-        self.set_status_msg_okay()
+        self.publish('new-episodes', response.request.show, response.episodes)
+        #self._main_frame.set_episodes(response.episodes, response.request.show)
+        #self._main_frame.set_current_show(response.request.show)
+        #self._main_frame.focus_episodes()
+        #self.set_status_msg_okay()
 
     def _rt_wp_cb(self, unused=None):
         self._response_handlers[type(self._last_response)](self._last_response)
@@ -241,9 +242,10 @@ class _App:
         self._logger.debug('sending "get episodes" request for show: {}'.format(show))
 
         if self._send_request(_GetEpisodesRequest(show)):
-            self._main_frame.set_episodes_info_loading(show)
-            fmt = 'Loading episodes of {}...'
-            self.set_status_msg(fmt.format(show.get_title()))
+            #self._main_frame.set_episodes_info_loading(show)
+            #fmt = 'Loading episodes of {}...'
+            #self.set_status_msg(fmt.format(show.get_title()))
+            pass
 
     def _parse_args(self):
         p = argparse.ArgumentParser(description='TOU.TV TUI client')
