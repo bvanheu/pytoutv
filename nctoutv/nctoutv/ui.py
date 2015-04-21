@@ -466,7 +466,6 @@ class _ShowsList(_BasicList):
     def __init__(self, app):
         super(_ShowsList, self).__init__('Shows', 'Loading shows...')
         self._app = app
-        self._app.subscribe('new-shows', self._new_shows)
 
     def _focus_changed(self, item):
         self._app.publish('show-focused', item.show)
@@ -474,29 +473,12 @@ class _ShowsList(_BasicList):
     def _item_selected(self, item):
         self._app._send_get_episodes_request(item.show)
 
-    def _new_shows(self, shows):
-        shows = sorted(shows.values(), key=lambda e: e.get_title())
-        shows_items = [_ShowsListItem(x) for x in shows]
-        self.set_content(shows_items)
-
 
 class _EpisodesList(_BasicList):
 
     def __init__(self, app):
         super(_EpisodesList, self).__init__('Episodes', 'Please select a show.')
         self._app = app
-        self._app.subscribe('new-episodes', self._new_episodes)
-
-    def _new_episodes(self, show, episodes):
-        self._app._logger.debug("New episodes of {}!".format(show))
-        try:
-            episodes_sorted = sorted(episodes.values(),
-                              key=lambda e: e.AirDateFormated)
-        except:
-            episodes_sorted = sorted(episodes.values(),
-                              key=lambda e: e.get_title())
-        episodes_items = [_EpisodesListItem(x) for x in episodes_sorted]
-        self.set_content(episodes_items)
 
     def _focus_changed(self, item):
         self._app.publish('episode-focused', item.episode)
@@ -508,11 +490,58 @@ class _EpisodesList(_BasicList):
 class _EpisodesBrowser(urwid.Columns):
 
     def __init__(self, app):
+        self._app = app
         self._shows_list = _ShowsList(app)
         self._episodes_list = _EpisodesList(app)
         super(_EpisodesBrowser, self).__init__([self._shows_list,
                                                 self._episodes_list])
 
+        self._app.subscribe('new-shows', self._new_shows)
+        self._app.subscribe('new-episodes', self._new_episodes)
+
+    def _focus_episodes(self):
+        self.focus_position = 1
+
+    def _focus_shows(self):
+        self.focus_position = 0
+
+    def _in_shows(self):
+        return self.focus_position == 0
+
+    def _in_episodes(self):
+        return self.focus_position == 1
+
+    def _new_episodes(self, show, episodes):
+        self._app._logger.debug("New episodes of {}!".format(show))
+        try:
+            episodes_sorted = sorted(episodes.values(),
+                              key=lambda e: e.AirDateFormated)
+        except:
+            episodes_sorted = sorted(episodes.values(),
+                              key=lambda e: e.get_title())
+        episodes_items = [_EpisodesListItem(x) for x in episodes_sorted]
+        self._episodes_list.set_content(episodes_items)
+
+        self._focus_episodes()
+
+    def _new_shows(self, shows):
+        self._app._logger.debug('New shows')
+        shows = sorted(shows.values(), key=lambda e: e.get_title())
+        shows_items = [_ShowsListItem(x) for x in shows]
+        self._shows_list.set_content(shows_items)
+
+    def _keypress_shows(self, key):
+
+    def keypress(self, size, key):
+        # We want to pass keypresses to children, but never use Column's
+        # default behaviour, which allows navigating between columns.
+        if self._in_shows():
+            return self._shows_list.keypress(size, key)
+        else:
+            return self._episodes_list.keypress(size, key)
+        #if
+        #self._app._logger.debug("got key {} {}".format(key, type(key)))
+        #return super().keypress(size, key)
 
 class _BottomPane(urwid.LineBox):
     def __init__(self, app):
