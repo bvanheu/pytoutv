@@ -466,6 +466,7 @@ class _ShowsList(_BasicList):
     def __init__(self, app):
         super(_ShowsList, self).__init__('Shows', 'Loading shows...')
         self._app = app
+        self._marked = None
 
     def _focus_changed(self, item):
         self._app.publish('show-focused', item.show)
@@ -473,6 +474,17 @@ class _ShowsList(_BasicList):
     def _item_selected(self, item):
         self._app._send_get_episodes_request(item.show)
 
+    def mark(self):
+        self._app._logger.debug("Trying to mark {}".format(self._list.focus))
+        if self._list.focus is not None:
+            self._app._logger.debug("marking!")
+            self._marked = self._list.focus
+            self._list.focus.set_attr_map({None: 'current-show'})
+
+    def unmark(self):
+        if self._marked is not None:
+            self._marked.set_attr_map({None: None})
+            self._marked = None
 
 class _EpisodesList(_BasicList):
 
@@ -500,10 +512,12 @@ class _EpisodesBrowser(urwid.Columns):
         self._app.subscribe('new-episodes', self._new_episodes)
 
     def _focus_episodes(self):
+        self._shows_list.mark()
         self.focus_position = 1
 
     def _focus_shows(self):
         self.focus_position = 0
+        self._shows_list.unmark()
 
     def _in_shows(self):
         return self.focus_position == 0
@@ -540,9 +554,9 @@ class _EpisodesBrowser(urwid.Columns):
         # We want to pass keypresses to children, but never use Column's
         # default behaviour, which allows navigating between columns.
         if self._in_shows():
-            self._keypress_shows(size, key)
+            return self._keypress_shows(size, key)
         else:
-            self._keypress_episodes(size, key)
+            return self._keypress_episodes(size, key)
 
 class _BottomPane(urwid.LineBox):
     def __init__(self, app):
