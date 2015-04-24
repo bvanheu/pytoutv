@@ -530,18 +530,19 @@ class _EpisodesBrowser(urwid.Columns):
         shows_items = [_ShowsListItem(x) for x in shows]
         self._shows_list.set_content(shows_items)
 
-    def _keypress_shows(self, key):
+    def _keypress_shows(self, size, key):
+        return self._shows_list.keypress(size, key)
+
+    def _keypress_episodes(self, size, key):
+        return self._episodes_list.keypress(size, key)
 
     def keypress(self, size, key):
         # We want to pass keypresses to children, but never use Column's
         # default behaviour, which allows navigating between columns.
         if self._in_shows():
-            return self._shows_list.keypress(size, key)
+            self._keypress_shows(size, key)
         else:
-            return self._episodes_list.keypress(size, key)
-        #if
-        #self._app._logger.debug("got key {} {}".format(key, type(key)))
-        #return super().keypress(size, key)
+            self._keypress_episodes(size, key)
 
 class _BottomPane(urwid.LineBox):
     def __init__(self, app):
