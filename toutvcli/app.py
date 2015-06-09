@@ -36,10 +36,12 @@ import time
 import logging
 import textwrap
 import platform
+import getpass
 import toutv.dl
 import toutv.client
 import toutv.cache
 import toutv.config
+import toutv.auth
 import toutv.exceptions
 from toutvcli import __version__
 from toutvcli.progressbar import ProgressBar
@@ -233,11 +235,19 @@ class App:
         pc.set_defaults(func=self._command_clean)
         pc.set_defaults(build_client=False)
 
+        # login command
+        pn = sp.add_parser('login', help='Login to have access to extra content')
+        pn.add_argument('username', action='store', type=str,
+                        help='Tou.tv user email')
+        pn.add_argument('password', action='store', nargs='?', type=str,
+                        help='Tou.tv user password')
+        pn.set_defaults(func=self._command_login)
+        pn.set_defaults(build_client=False)
+
         return p
 
     @staticmethod
-    def _build_cache():
-        cache_name = '.toutv_cache'
+    def _build_cache_path(cache_name):
         cache_path = cache_name
         if platform.system() in ['Linux', 'Darwin']:
             try:
@@ -252,9 +262,22 @@ class App:
                 if not os.path.exists(home_cache_path):
                     os.makedirs(home_cache_path)
                 cache_path = os.path.join(home_cache_path, cache_name)
-        cache = toutv.cache.ShelveCache(cache_path)
 
-        return cache
+        return cache_path
+
+    def _build_cache():
+        return toutv.cache.ShelveCache(App._build_cache_path('.toutv_cache'))
+
+    def _build_auth():
+        auth = None
+
+        try:
+            with open(App._build_cache_path(toutv.config.TOUTV_AUTH_TOKEN_PATH), 'r') as token_file:
+                auth = toutv.auth.Auth(token_file.read())
+        except:
+            pass
+
+        return auth
 
     @staticmethod
     def _build_toutv_client(no_cache):
@@ -268,7 +291,7 @@ class App:
                       file=sys.stderr)
                 cache = toutv.cache.EmptyCache()
 
-        return toutv.client.Client(cache=cache)
+        return toutv.client.Client(cache=cache, auth=auth)
 
     def _command_clean(self, args):
         # make sure we have to clean a directory
@@ -287,6 +310,25 @@ class App:
             except Exception as e:
                 # not the end of the world
                 self._logger.warn('could not remove file "{}": {}'.format(f, e))
+
+    def _command_login(self, args):
+        auth = toutv.auth.Auth()
+
+        password = args.password
+        if password is None:
+            password = getpass.getpass()
+
+        try:
+            auth.login(args.username, password)
+            token = auth.get_token()
+
+            print('Login successful')
+            print('Token: {}'.format(token))
+
+            with open(App._build_cache_path(toutv.config.TOUTV_AUTH_TOKEN_PATH), 'w') as token_file:
+                token_file.write(token)
+        except Exception as e:
+            print('Unable to login "{}"'.format(e))
 
     def _command_list(self, args):
         if args.emission:
