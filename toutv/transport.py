@@ -55,20 +55,32 @@ class Transport:
 
 class JsonTransport(Transport):
 
-    def __init__(self, proxies=None):
+    def __init__(self, proxies=None, auth=None):
         self._mapper = toutv.mapper.JsonMapper()
 
         self.set_proxies(proxies)
+        self.set_auth(auth)
 
     def set_proxies(self, proxies):
         self._proxies = proxies
+
+    def set_auth(self, auth):
+        self._auth = auth
 
     def _do_query(self, endpoint, params={}):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
         timeout = 10
 
         try:
-            r = requests.get(url, params=params, headers=toutv.config.HEADERS,
+            headers = toutv.config.HEADERS
+
+            # FIXME - is there a way to fetch EXTRA content using
+            #         the JSON API?
+            #token = self._auth.get_token()
+            #params['claims'] = self._auth.get_claims(token)
+            #headers['Authorization'] = "Bearer " + token
+
+            r = requests.get(url, params=params, headers=headers,
                              proxies=self._proxies, timeout=timeout)
             if r.status_code != 200:
                 code = r.status_code

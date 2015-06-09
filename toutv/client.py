@@ -56,15 +56,20 @@ class ClientError(RuntimeError):
 class Client:
 
     def __init__(self, transport=toutv.transport.JsonTransport(),
-                 cache=toutv.cache.EmptyCache(), proxies=None):
+                 cache=toutv.cache.EmptyCache(), proxies=None, auth=None):
         self._transport = transport
         self._cache = cache
 
         self.set_proxies(proxies)
+        self.set_auth(auth)
 
     def set_proxies(self, proxies):
         self._proxies = proxies
         self._transport.set_proxies(proxies)
+
+    def set_auth(self, auth):
+        self._auth = auth
+        self._transport.set_auth(auth)
 
     def _set_bo_proxies(self, bo):
         bo.set_proxies(self._proxies)
@@ -73,6 +78,13 @@ class Client:
         for bo in bos:
             self._set_bo_proxies(bo)
 
+    def _set_bo_auth(self, bo):
+        bo.set_auth(self._auth)
+
+    def _set_bos_auth(self, bos):
+        for bo in bos:
+            self._set_bo_auth(bo)
+
     def get_emissions(self):
         emissions = self._cache.get_emissions()
         if emissions is None:
@@ -80,6 +92,7 @@ class Client:
             self._cache.set_emissions(emissions)
 
         self._set_bos_proxies(emissions.values())
+        self._set_bos_auth(emissions.values())
 
         return emissions
 
@@ -90,6 +103,7 @@ class Client:
             self._cache.set_emission_episodes(emission, episodes)
 
         self._set_bos_proxies(episodes.values())
+        self._set_bos_auth(episodes.values())
 
         return episodes
 
@@ -110,6 +124,7 @@ class Client:
 
         # Set proxies
         self._set_bos_proxies(emissions.values())
+        self._set_bos_auth(emissions.values())
 
         return page_repertoire
 

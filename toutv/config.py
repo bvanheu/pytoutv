@@ -32,8 +32,9 @@ HEADERS = {
     'User-Agent': USER_AGENT
 }
 TOUTV_PLAYLIST_URL = 'http://api.radio-canada.ca/validationMedia/v1/Validation.html'
+TOUTV_AUTH_PLAYLIST_URL = 'https://services.radio-canada.ca/media/validation/v2/'
 TOUTV_PLAYLIST_PARAMS = {
-    'appCode': 'thePlatform',
+    'appCode': 'toutv',
     'deviceType': 'iphone4',
     'connectionType': 'wifi',
     'output': 'json'
@@ -41,3 +42,9 @@ TOUTV_PLAYLIST_PARAMS = {
 TOUTV_JSON_URL_PREFIX = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'
 TOUTV_BASE_URL = 'http://ici.tou.tv'
 EMISSION_THUMB_URL_TMPL = 'http://images.tou.tv/w_400,c_scale,r_5/v1/emissions/16x9/{}.jpg'
+
+TOUTV_AUTH_SESSION_URL = "https://services.radio-canada.ca/auth/oauth/v2/authorize?response_type=token&client_id=d6f8e3b1-1f48-45d7-9e28-a25c4c514c60&scope=oob+openid+profile+email+id.write+media-validation.read.privileged&state=authCode&redirect_uri=http://ici.tou.tv/profiling/callback"
+TOUTV_AUTH_TOKEN_URL = "https://services.radio-canada.ca/auth/oauth/v2/authorize"
+TOUTV_AUTH_CLAIMS_URL = "https://services.radio-canada.ca/media/validation/v2/GetClaims?token={}"
+
+TOUTV_AUTH_TOKEN_PATH = ".toutv_token"

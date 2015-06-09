@@ -45,6 +45,17 @@ def _clean_description(desc):
 
 class _Bo:
 
+    def set_auth(self, auth):
+        self._auth = auth
+
+    def get_auth(self):
+        if hasattr(self, '_auth'):
+            return self._auth
+
+        self._auth = None
+
+        return self._auth
+
     def set_proxies(self, proxies):
         self._proxies = proxies
 
@@ -58,9 +69,19 @@ class _Bo:
 
     def _do_request(self, url, timeout=None, params=None):
         proxies = self.get_proxies()
+        auth = self.get_auth()
 
         try:
-            r = requests.get(url, params=params, headers=toutv.config.HEADERS,
+            headers = dict(toutv.config.HEADERS)
+
+            if auth and params:
+                url = toutv.config.TOUTV_AUTH_PLAYLIST_URL
+                token = auth.get_token()
+                params['claims'] = auth.get_claims(token)
+                headers['Authorization'] = "Bearer " + token
+                headers['Host'] = "services.radio-canada.ca"
+
+            r = requests.get(url, params=params, headers=headers,
                              proxies=proxies, timeout=timeout)
             if r.status_code != 200:
                 raise toutv.exceptions.UnexpectedHttpStatusCodeError(url,
@@ -487,6 +508,7 @@ class Episode(_Bo, _ThumbnailProvider):
         url = toutv.config.TOUTV_PLAYLIST_URL
         params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
         params['idMedia'] = self.PID
+
         r = self._do_request(url, params=params)
         response_obj = r.json()
 
