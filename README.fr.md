@@ -199,6 +199,12 @@ Exemples
 
 Voici quelques exemples d'utilisation de l'interface en ligne de commande.
 
+### Se connecter à la section extra de Tou.tv
+
+    $ toutv login <USERNAME>
+    Password: <PASSWORD>
+    Login successful
+    Token: c3458d85-6094-4030-9454-114380b2dec0
 
 ### Liste de toutes les émissions
 
@@ -346,7 +352,6 @@ Voici quelques exemples d'utilisation de l'interface en ligne de commande.
       Moreau, Claude Landré et Clémence DesRochers.
 
     ...
-
 
 Bogues
 ======

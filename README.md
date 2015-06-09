@@ -204,6 +204,12 @@ Examples
 
 Here are a few CLI usage examples.
 
+### Login to the extra section of Tou.tv
+
+     $ toutv login <USERNAME>
+     Password: <PASSWORD>
+     Login successful
+     Token: c3458d85-6094-4030-9454-114380b2dec0
 
 ### Listing all emissions
 
