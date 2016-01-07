@@ -61,6 +61,8 @@ class App:
         self._logger = logging.getLogger(__name__)
 
     def run(self):
+        locale.setlocale(locale.LC_ALL, '')
+        
         # Errors are catched here and a corresponding error code is
         # returned. The codes are:
         #
@@ -380,7 +382,6 @@ class App:
             emissions = repertoire.get_emissions()
 
         emissions_keys = list(emissions.keys())
-        locale.setlocale(locale.LC_ALL, "")
         def title_sort_func(ekey):
             return locale.strxfrm(emissions[ekey].get_title())
 
