@@ -5,9 +5,9 @@ from toutvcli import app
 
 class ToutvCliAppTest(unittest.TestCase):
     def testApp(self):
-        filename = 'Strobosketch.S01E01.Épisode.1.559kbps.ts'
-        expected_size = 6888768
-        args = ['fetch', '-f', '-q', 'MIN', 'Strobosketch', 'S01E01']
+        filename = 'Projet-M.S01E01.Episode.1.560kbps.ts'
+        expected_size = 55874560
+        args = ['fetch', '-f', '-q', 'MIN', 'Projet-M', 'S01E01']
         a = app.App(args)
         rc = a.run()
         self.assertEquals(rc, 0)
