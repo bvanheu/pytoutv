@@ -39,7 +39,6 @@ import toutv.dl
 import toutv.client
 import toutv.cache
 import toutv.config
-from toutv import m3u8
 from toutvcli import __version__
 from toutvcli.progressbar import ProgressBar
 
@@ -382,6 +381,7 @@ class App:
             emissions = repertoire.get_emissions()
 
         emissions_keys = list(emissions.keys())
+
         def title_sort_func(ekey):
             return locale.strxfrm(emissions[ekey].get_title())
 
