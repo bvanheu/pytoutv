@@ -28,6 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import locale
 import os
 import sys
 import time
@@ -60,6 +61,8 @@ class App:
         self._logger = logging.getLogger(__name__)
 
     def run(self):
+        locale.setlocale(locale.LC_ALL, '')
+        
         # Errors are catched here and a corresponding error code is
         # returned. The codes are:
         #
@@ -374,19 +377,17 @@ class App:
     def _print_list_emissions(self, all=False):
         if all:
             emissions = self._toutvclient.get_emissions()
-            emissions_keys = list(emissions.keys())
-            def title_func(ekey):
-                return emissions[ekey].get_title()
         else:
             repertoire = self._toutvclient.get_page_repertoire()
-            repertoire_emissions = repertoire.get_emissions()
-            emissions_keys = list(repertoire_emissions.keys())
-            def title_func(ekey):
-                return repertoire_emissions[ekey].get_title()
+            emissions = repertoire.get_emissions()
 
-        emissions_keys.sort(key=title_func)
+        emissions_keys = list(emissions.keys())
+        def title_sort_func(ekey):
+            return locale.strxfrm(emissions[ekey].get_title())
+
+        emissions_keys.sort(key=title_sort_func)
         for ekey in emissions_keys:
-            title = title_func(ekey)
+            title = emissions[ekey].get_title()
             print('{} - {}'.format(ekey, title))
 
     def _print_list_episodes(self, emission):
