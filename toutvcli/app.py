@@ -62,7 +62,7 @@ class App:
 
     def run(self):
         locale.setlocale(locale.LC_ALL, '')
-        
+
         # Errors are catched here and a corresponding error code is
         # returned. The codes are:
         #
