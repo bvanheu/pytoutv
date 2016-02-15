@@ -28,6 +28,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import argparse
+import distutils.version
 import locale
 import os
 import sys
@@ -399,7 +400,7 @@ class App:
             return
 
         def key_func(key):
-            return episodes[key].get_sae()
+            return distutils.version.LooseVersion(episodes[key].get_sae())
 
         episodes_keys = list(episodes.keys())
         episodes_keys.sort(key=key_func)
