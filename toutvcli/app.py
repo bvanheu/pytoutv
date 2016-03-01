@@ -399,11 +399,10 @@ class App:
             print('No available episodes')
             return
 
-        for ekey in App._sort_episodes(episodes):
-            episode = episodes[ekey]
+        for episode in App._sort_episodes(episodes):
             sae = episode.get_sae()
             title = episode.get_title()
-            print('  * {} - {} - {}'.format(ekey, sae, title))
+            print('  * {} - {} - {}'.format(episode.Id, sae, title))
 
     def _print_list_episodes_name(self, emission_name):
         try:
@@ -601,8 +600,7 @@ class App:
             print('No episodes available for emission "{}"'.format(title))
             return
 
-        for ekey in App._sort_episodes(episodes):
-            episode = episodes[ekey]
+        for episode in App._sort_episodes(episodes):
             title = episode.get_title()
 
             if self._stop:
@@ -646,10 +644,10 @@ class App:
 
     @staticmethod
     def _sort_episodes(episodes):
-        def key_func(key):
-            return distutils.version.LooseVersion(episodes[key].get_sae())
+        def episode_sort_func(episode):
+            return distutils.version.LooseVersion(episode.get_sae())
 
-        return sorted(episodes.keys(), key=key_func)
+        return sorted(episodes.values(), key=episode_sort_func)
 
 
 def _register_sigint(app):
