@@ -606,7 +606,13 @@ class App:
             print('No episodes available for emission "{}"'.format(title))
             return
 
-        for episode in episodes.values():
+        def key_func(key):
+            return distutils.version.LooseVersion(episodes[key].get_sae())
+
+        episodes_keys = list(episodes.keys())
+        episodes_keys.sort(key=key_func)
+        for ekey in episodes_keys:
+            episode = episodes[ekey]
             title = episode.get_title()
 
             if self._stop:
