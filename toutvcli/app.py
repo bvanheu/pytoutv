@@ -649,10 +649,7 @@ class App:
         def key_func(key):
             return distutils.version.LooseVersion(episodes[key].get_sae())
 
-        episodes_keys = list(episodes.keys())
-        episodes_keys.sort(key=key_func)
-
-        return episodes_keys
+        return sorted(episodes.keys(), key=key_func)
 
 
 def _register_sigint(app):
