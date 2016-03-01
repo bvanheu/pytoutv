@@ -399,12 +399,7 @@ class App:
             print('No available episodes')
             return
 
-        def key_func(key):
-            return distutils.version.LooseVersion(episodes[key].get_sae())
-
-        episodes_keys = list(episodes.keys())
-        episodes_keys.sort(key=key_func)
-        for ekey in episodes_keys:
+        for ekey in App._sort_episodes(episodes):
             episode = episodes[ekey]
             sae = episode.get_sae()
             title = episode.get_title()
@@ -606,12 +601,7 @@ class App:
             print('No episodes available for emission "{}"'.format(title))
             return
 
-        def key_func(key):
-            return distutils.version.LooseVersion(episodes[key].get_sae())
-
-        episodes_keys = list(episodes.keys())
-        episodes_keys.sort(key=key_func)
-        for ekey in episodes_keys:
+        for ekey in App._sort_episodes(episodes):
             episode = episodes[ekey]
             title = episode.get_title()
 
@@ -653,6 +643,16 @@ class App:
 
         self._fetch_emission_episodes(emission, output_dir, bitrate, quality,
                                       overwrite)
+
+    @staticmethod
+    def _sort_episodes(episodes):
+        def key_func(key):
+            return distutils.version.LooseVersion(episodes[key].get_sae())
+
+        episodes_keys = list(episodes.keys())
+        episodes_keys.sort(key=key_func)
+
+        return episodes_keys
 
 
 def _register_sigint(app):
