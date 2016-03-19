@@ -7,3 +7,4 @@
 *.ts
 *.ts.part
 /virt
+*.egg-info
