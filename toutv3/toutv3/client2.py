@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # Copyright (c) 2016, Philippe Proulx <eepp.ca>
 # All rights reserved.
 #
@@ -25,32 +23,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import sys
-from setuptools import setup
+class Client:
+    def __init__(self, user, password):
+        self._user = user
+        self._password = password
 
+    @property
+    def user_infos(self):
+        return self._user_infos
 
-# Make sure we run Python 3.2+ here
-v = sys.version_info
+    @property
+    def shows(self):
+        # request, cache, stuff
+        return self._shows
 
-if v.major < 3 or v.minor < 2:
-    sys.stderr.write('Sorry, toutv3 needs Python 3.2+\n')
-    sys.exit(1)
-
-
-import toutv3
-
-
-setup(name='toutv3',
-      version=toutv3.__version__,
-      description='TOU.TV client library',
-      author='Benjamin Vanheuverzwijn',
-      author_email='bvanheu@gmail.com',
-      url='https://github.com/bvanheu/pytoutv',
-      keywords='TOUTV',
-      license="BSD",
-      packages=['toutv3'],
-      install_requires=[
-          'pycrypto',
-          'requests',
-          'beautifulsoup4',
-      ])
+    @property
+    def sections(self):
+        # request, cache, stuff
+        return self._sections
