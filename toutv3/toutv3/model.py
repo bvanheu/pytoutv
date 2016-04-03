@@ -23,9 +23,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Base model object.
+class _Base:
+    def __init__(self, agent):
+        self._agent = agent
+
+
 # A key, used to uniquely represent a show, an episode, etc.
-class Key:
-    def __init__(self, key):
+class Key(_Base):
+    def __init__(self, agent, key):
+        super().__init__(agent)
         self._key = key
 
     @property
@@ -45,8 +52,9 @@ class Key:
 
 
 # A user bookmark.
-class Bookmark:
-    def __init__(self, key, creation_date):
+class Bookmark(_Base):
+    def __init__(self, agent, key, creation_date):
+        super().__init__(agent)
         self._key = key
         self._creation_date = creation_date
 
@@ -71,9 +79,10 @@ class Bookmark:
 # this deal offers (just another format for the HD/premium flags).
 #
 # show_ads tells the app whether or not it should display ads.
-class UserInfos:
-    def __init__(self, ban_level, name, email, is_hd, bookmarks,
+class UserInfos(_Base):
+    def __init__(self, agent, ban_level, name, email, is_hd, bookmarks,
                  stats_metas, rc_telco, rc_features, is_premium, show_ads):
+        super().__init__(agent)
         self._ban_level = ban_level
         self._name = name
         self._email = email
@@ -131,8 +140,9 @@ class UserInfos:
 # This is just an association between a section ID and its title.
 # Sections on TOU.TV are the top containers of shows, like "À la une",
 # "Rattrapage télé", "Extra", "Jeunesse", etc.
-class SectionSummary:
-    def __init__(self, section_id, title):
+class SectionSummary(_Base):
+    def __init__(self, agent, section_id, title):
+        super().__init__(agent)
         self._section_id = section_id
         self._title = title
 
@@ -158,9 +168,10 @@ class SectionSummary:
 #
 # url is the link, relative to the TOU.TV domain name, to access the
 # show page.
-class SearchShowSummary:
-    def __init__(self, is_free, image_url, key, searchable_text,
+class SearchShowSummary(_Base):
+    def __init__(self, agent, is_free, image_url, key, searchable_text,
                  url, is_media, is_geolocatized, title):
+        super().__init__(agent)
         self._is_free = is_free
         self._image_url = image_url
         self._key = key
@@ -204,10 +215,11 @@ class SearchShowSummary:
 
 
 # A show lineup item.
-class ShowLineupItem:
-    def __init__(self, key, description, image_url, is_active, is_drm,
+class ShowLineupItem(_Base):
+    def __init__(self, agent, key, description, image_url, is_active, is_drm,
                  is_free, is_geolocalized, length_text, share_url, template,
                  title, url):
+        super().__init__(agent)
         self._key = key
         self._description = description
         self._image_url = image_url
@@ -271,8 +283,9 @@ class ShowLineupItem:
 
 
 # A subsection lineup.
-class SubsectionLineup:
-    def __init__(self, name, title, is_free, items):
+class SubsectionLineup(_Base):
+    def __init__(self, agent, name, title, is_free, items):
+        super().__init__(agent)
         self._name = name
         self._title = title
         self._is_free = is_free
@@ -296,8 +309,9 @@ class SubsectionLineup:
 
 
 # A section.
-class Section:
-    def __init__(self, name, title, subsection_lineups, stats_metas):
+class Section(_Base):
+    def __init__(self, agent, name, title, subsection_lineups, stats_metas):
+        super().__init__(agent)
         self._name = name
         self._title = title
         self._subsection_lineups = subsection_lineups
@@ -321,8 +335,9 @@ class Section:
 
 
 # A network.
-class Network:
-    def __init__(self, name, image_url, url, title):
+class Network(_Base):
+    def __init__(self, agent, name, image_url, url, title):
+        super().__init__(agent)
         self._name = name
         self._image_url = image_url
         self._url = url
@@ -346,8 +361,9 @@ class Network:
 
 
 # Some credits.
-class Credits:
-    def __init__(self, role, names):
+class Credits(_Base):
+    def __init__(self, agent, role, names):
+        super().__init__(agent)
         self._role = role
         self._names = names
 
@@ -361,11 +377,12 @@ class Credits:
 
 
 # The details of an item (show or episode).
-class Details:
-    def __init__(self, rating, air_date_text, original_title, credits,
+class Details(_Base):
+    def __init__(self, agent, rating, air_date_text, original_title, credits,
                  copyright, description, country, length_text,
                  length, production_year, details_type,
                  image_url, networks):
+        super().__init__(agent)
         self._rating = rating
         self._air_date_text = air_date_text
         self._original_title = original_title
@@ -434,9 +451,10 @@ class Details:
 
 
 # A show.
-class Show:
-    def __init__(self, key, description, bg_image_url, image_url, title,
+class Show(_Base):
+    def __init__(self, agent, key, description, bg_image_url, image_url, title,
                  details, season_lineups, stats_metas):
+        super().__init__(agent)
         self._key = key
         self._description = description
         self._bg_image_url = bg_image_url
@@ -480,8 +498,9 @@ class Show:
 
 
 # A season lineup.
-class SeasonLineup:
-    def __init__(self, name, title, url, is_free, items):
+class SeasonLineup(_Base):
+    def __init__(self, agent, name, title, url, is_free, items):
+        super().__init__(agent)
         self._name = name
         self._title = title
         self._url = url
@@ -510,9 +529,11 @@ class SeasonLineup:
 
 
 # An episode lineup item.
-class EpisodeLineupItem:
-    def __init__(self, template, is_active, url, is_free, key, is_geolocalized,
-                 image_url, title, is_drm, description, share_url, details):
+class EpisodeLineupItem(_Base):
+    def __init__(self, agent, template, is_active, url, is_free, key,
+                 is_geolocalized, image_url, title, is_drm, description,
+                 share_url, details):
+        super().__init__(agent)
         self._template = template
         self._is_active = is_active
         self._url = url

@@ -23,21 +23,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from toutv3 import agent
+import logging
+
+
+_logger = logging.getLogger(__name__)
+
+
 class Client:
-    def __init__(self, user, password):
+    def __init__(self, user, password, no_cache=False):
         self._user = user
         self._password = password
+        self._agent = agent.Agent(user, password, no_cache)
 
     @property
     def user_infos(self):
-        return self._user_infos
+        return self._agent.get_user_infos()
 
     @property
     def shows(self):
-        # request, cache, stuff
-        return self._shows
+        pass
 
     @property
     def sections(self):
-        # request, cache, stuff
-        return self._sections
+        pass
+
+    def release_cache(self):
+        self._agent.release_cache()

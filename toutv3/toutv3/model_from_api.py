@@ -27,190 +27,187 @@ from toutv3 import model
 import datetime as DT
 
 
-def create_bookmark(api_obj):
-    dt = DT.datetime.strptime(api_obj['Timestamp'][:-4], '%Y%m%d%H%M%S')
-    obj = model.Bookmark(key=key, creation_date=dt)
+class Factory:
+    def __init__(self, agent):
+        self._agent = agent
 
-    return obj
+    def create_bookmark(self, key, api_obj):
+        dt = DT.datetime.strptime(api_obj['Timestamp'][:-4], '%Y%m%d%H%M%S')
+        obj = model.Bookmark(self._agent, key=key, creation_date=dt)
 
+        return obj
 
-def create_user_infos(rc_api_obj, api_obj):
-    bookmarks = []
+    def create_user_infos(self, rc_api_obj, toutv_api_obj):
+        bookmarks = []
 
-    if 'ProfileItems' in toutv_api_obj:
-        for key, api_profile_item in toutv_api_obj['ProfileItems'].items():
-            if api_profile_item['IsBookmarked']:
-                bookmark = create_bookmark(key, api_profile_item)
-                bookmarks.append(bookmark)
+        if 'ProfileItems' in toutv_api_obj:
+            for key, api_profile_item in toutv_api_obj['ProfileItems'].items():
+                if api_profile_item['IsBookmarked']:
+                    bookmark = self.create_bookmark(key, api_profile_item)
+                    bookmarks.append(bookmark)
 
-    stats_metas = toutv_api_obj['StatsMetas']
-    cls = model.UserInfos
-    obj = cls(ban_level=rc_api_obj['ban_level'], name=rc_api_obj['name'],
-              email=rc_api_obj['email'], is_hd=toutv_api_obj['IsHD'],
-              bookmarks=bookmarks, stats_metas=stats_metas,
-              rc_telco=stats_metas['rc.telco'],
-              rc_features=stats_metas['rc.forfait'],
-              is_premium=toutv_api_obj['IsPremium'],
-              show_ads=toutv_api_obj['ShowAds'])
+        stats_metas = toutv_api_obj['StatsMetas']
+        cls = model.UserInfos
+        obj = cls(self._agent, ban_level=rc_api_obj['ban_level'],
+                  name=rc_api_obj['name'], email=rc_api_obj['email'],
+                  is_hd=toutv_api_obj['IsHD'],
+                  bookmarks=bookmarks, stats_metas=stats_metas,
+                  rc_telco=stats_metas['rc.telco'],
+                  rc_features=stats_metas['rc.forfait'],
+                  is_premium=toutv_api_obj['IsPremium'],
+                  show_ads=toutv_api_obj['ShowAds'])
 
-    return obj
+        return obj
 
+    def create_section_summary(self, api_obj):
+        return model.SectionSummary(self._agent, section_id=api_obj['Name'],
+                                    title=api_obj['Title'])
 
-def create_section_summary(api_obj):
-    cls = model.SectionSummary
-    obj = cls(section_id=api_obj['Name'], title=api_obj['Title'])
+    def create_search_show_summary(self, api_obj):
+        cls = model.SearchShowSummary
+        obj = cls(self._agent, is_free=api_obj['IsFree'],
+                  image_url=api_obj['ImageUrl'],
+                  searchable_text=api_obj['SearchableText'],
+                  key=model.Key(api_obj['Key']), url=api_obj['Url'],
+                  is_media=api_obj['IsMedia'],
+                  is_geolocalized=api_obj['IsGeolocalized'],
+                  title=api_obj['DisplayText'])
 
-    return obj
+        return obj
 
+    def create_show_lineup_item(self, api_obj):
+        api_key = api_obj['Key']
+        key = api_key
 
-def create_search_show_summary(api_obj):
-    cls = model.SearchShowSummary
-    obj = cls(is_free=api_obj['IsFree'], image_url=api_obj['ImageUrl'],
-              searchable_text=api_obj['SearchableText'],
-              key=model.Key(api_obj['Key']), url=api_obj['Url'],
-              is_media=api_obj['IsMedia'],
-              is_geolocalized=api_obj['IsGeolocalized'],
-              title=api_obj['DisplayText'])
+        if api_key is None:
+            key = api_obj['BookmarkKey']
 
-    return obj
+        cls = model.ShowLineupItem
+        obj = cls(self._agent, key=model.Key(key),
+                  description=api_obj['Description'],
+                  image_url=api_obj['ImageUrl'], is_active=api_obj['IsActive'],
+                  is_drm=api_obj['IsDrm'], is_free=api_obj['IsFree'],
+                  is_geolocalized=api_obj['IsGeolocalized'],
+                  length_text=api_obj['Length'],
+                  share_url=api_obj['Share']['Url'],
+                  template=api_obj['Template'], title=api_obj['Title'],
+                  url=api_obj['Url'])
 
+        return obj
 
-def create_show_lineup_item(api_obj):
-    api_key = api_obj['Key']
-    key = api_key
+    def create_subsection_lineup(self, api_obj):
+        api_lineup_items = api_obj['LineupItems']
+        items = []
 
-    if api_key is None:
-        key = api_obj['BookmarkKey']
+        if type(api_lineup_items) is list:
+            for api_lineup_item in api_lineup_items:
+                items.append(self.create_show_lineup_item(api_lineup_item))
 
-    cls = model.ShowLineupItem
-    obj = cls(key=model.Key(key), description=api_obj['Description'],
-              image_url=api_obj['ImageUrl'], is_active=api_obj['IsActive'],
-              is_drm=api_obj['IsDrm'], is_free=api_obj['IsFree'],
-              is_geolocalized=api_obj['IsGeolocalized'],
-              length_text=api_obj['Length'], share_url=api_obj['Share']['Url'],
-              template=api_obj['Template'], title=api_obj['Title'],
-              url=api_obj['Url'])
+        cls = model.SubsectionLineup
+        obj = cls(self._agent, name=api_obj['Name'], title=api_obj['Title'],
+                  is_free=api_obj['IsFree'], items=items)
 
-    return obj
+        return obj
 
+    def create_section(self, api_obj):
+        api_lineups = api_obj['Lineups']
+        subsection_lineups = []
 
-def create_subsection_lineup(api_obj):
-    api_lineup_items = api_obj['LineupItems']
-    items = []
+        if type(api_lineups) is list:
+            for api_lineup in api_lineups:
+                subsection_lineups.append(self.create_subsection_lineup(api_lineup))
 
-    if type(api_lineup_items) is list:
-        for api_lineup_item in api_lineup_items:
-            items.append(create_show_lineup_item(api_lineup_item))
+        cls = model.Section
+        obj = cls(self._agent, name=api_obj['Name'], title=api_obj['Title'],
+                  subsection_lineups=subsection_lineups,
+                  stats_metas=api_obj['StatsMetas'])
 
-    cls = model.SubsectionLineup
-    obj = cls(name=api_obj['Name'], title=api_obj['Title'],
-              is_free=api_obj['IsFree'], items=items)
+        return obj
 
-    return obj
+    def create_network(self, api_obj):
+        return model.Network(self._agent, name=api_obj['Name'],
+                             image_url=api_obj['ImageUrl'], url=api_obj['Url'],
+                             title=api_obj['Title'])
 
+    def create_credits(self, api_obj):
+        return model.Credits(self._agent, role=api_obj['Key'],
+                             names=api_obj['Value'])
 
-def create_section(api_obj):
-    api_lineups = api_obj['Lineups']
-    subsection_lineups = []
+    def create_details(self, api_obj):
+        credits = []
+        networks = []
+        length = None
+        api_persons = api_obj['Persons']
+        api_networks = api_obj['Networks']
+        api_length = api_obj['Length']
 
-    if type(api_lineups) is list:
-        for api_lineup in api_lineups:
-            subsection_lineups.append(create_subsection_lineup(api_lineup))
+        if type(api_persons) is list:
+            for api_person in api_persons:
+                credits.append(self.create_credits(api_person))
 
-    cls = model.Section
-    obj = cls(name=api_obj['Name'], title=api_obj['Title'],
-              subsection_lineups=subsection_lineups,
-              stats_metas=api_obj['StatsMetas'])
+        if type(api_networks) is list:
+            for api_network in api_networks:
+                networks.append(self.create_network(api_network))
 
-    return obj
+        if type(api_length) is int:
+            length = DT.timedelta(seconds=api_length)
 
+        cls = model.Details
+        obj = cls(self._agent, rating=api_obj['Rating'],
+                  air_date_text=api_obj['AirDate'],
+                  original_title=api_obj['OriginalTitle'], credits=credits,
+                  copyright=api_obj['Copyright'], country=api_obj['Country'],
+                  description=api_obj['Description'],
+                  production_year=api_obj['ProductionYear'],
+                  length_text=api_obj['LengthText'], length=length,
+                  details_type=api_obj['Type'], image_url=api_obj['ImageUrl'],
+                  networks=networks)
 
-def create_network(api_obj):
-    return model.Network(name=api_obj['Name'], image_url=api_obj['ImageUrl'],
-                         url=api_obj['Url'], title=api_obj['Title'])
+        return obj
 
+    def create_show(self, api_obj):
+        api_season_lineups = api_obj['SeasonLineups']
+        season_lineups = []
 
-def create_credits(api_obj):
-    return model.Credits(role=api_obj['Key'], names=api_obj['Value'])
+        if type(api_season_lineups) is list:
+            for api_season_lineup in api_season_lineups:
+                season_lineups.append(self.create_season_lineup(api_season_lineup))
 
+        details = self.create_details(api_obj['Details2'])
+        cls = model.Show
+        obj = cls(self._agent, key=model.Key(api_obj['Key']),
+                  description=api_obj['Description'],
+                  bg_image_url=api_obj['BackgroundImageUrl'],
+                  image_url=api_obj['ImageUrl'], title=api_obj['Title'],
+                  details=details, season_lineups=season_lineups,
+                  stats_metas=api_obj['StatsMetas'])
 
-def create_details(api_obj):
-    credits = []
-    networks = []
-    length = None
-    api_persons = api_obj['Persons']
-    api_networks = api_obj['Networks']
-    api_length = api_obj['Length']
+        return obj
 
-    if type(api_persons) is list:
-        for api_person in api_persons:
-            credits.append(create_credits(api_person))
+    def create_season_lineup(self, api_obj):
+        api_lineup_items = api_obj['LineupItems']
+        items = []
 
-    if type(api_networks) is list:
-        for api_network in api_networks:
-            networks.append(create_network(api_network))
+        if type(api_lineup_items) is list:
+            for api_lineup_item in api_lineup_items:
+                items.append(self.create_episode_lineup_item(api_lineup_item))
 
-    if type(api_length) is int:
-        length = DT.timedelta(seconds=api_length)
+        cls = model.SeasonLineup
+        obj = cls(self._agent, name=api_obj['Name'], title=api_obj['Title'],
+                  url=api_obj['Url'], is_free=api_obj['IsFree'],
+                  items=items)
 
-    cls = model.Details
-    obj = cls(rating=api_obj['Rating'], air_date_text=api_obj['AirDate'],
-              original_title=api_obj['OriginalTitle'], credits=credits,
-              copyright=api_obj['Copyright'], country=api_obj['Country'],
-              description=api_obj['Description'],
-              production_year=api_obj['ProductionYear'],
-              length_text=api_obj['LengthText'], length=length,
-              details_type=api_obj['Type'], image_url=api_obj['ImageUrl'],
-              networks=networks)
+        return obj
 
-    return obj
+    def create_episode_lineup_item(self, api_obj):
+        details = self.create_details(api_obj['Details'])
+        cls = model.EpisodeLineupItem
+        obj = cls(self._agent, template=api_obj['Template'],
+                  is_active=api_obj['IsActive'], url=api_obj['Url'],
+                  is_free=api_obj['IsFree'], key=model.Key(api_obj['Key']),
+                  is_geolocalized=api_obj['IsGeolocalized'],
+                  image_url=api_obj['ImageUrl'], title=api_obj['Title'],
+                  is_drm=api_obj['IsDrm'], description=api_obj['Description'],
+                  share_url=api_obj['Share']['AbsoluteUrl'], details=details)
 
-
-def create_show(api_obj):
-    api_season_lineups = api_obj['SeasonLineups']
-    season_lineups = []
-
-    if type(api_season_lineups) is list:
-        for api_season_lineup in api_season_lineups:
-            season_lineups.append(create_season_lineup(api_season_lineup))
-
-    details = create_details(api_obj['Details2'])
-    cls = model.Show
-    obj = cls(key=model.Key(api_obj['Key']),
-              description=api_obj['Description'],
-              bg_image_url=api_obj['BackgroundImageUrl'],
-              image_url=api_obj['ImageUrl'], title=api_obj['Title'],
-              details=details, season_lineups=season_lineups,
-              stats_metas=api_obj['StatsMetas'])
-
-    return obj
-
-
-def create_season_lineup(api_obj):
-    api_lineup_items = api_obj['LineupItems']
-    items = []
-
-    if type(api_lineup_items) is list:
-        for api_lineup_item in api_lineup_items:
-            items.append(create_episode_lineup_item(api_lineup_item))
-
-    cls = model.SeasonLineup
-    obj = cls(name=api_obj['Name'], title=api_obj['Title'],
-              url=api_obj['Url'], is_free=api_obj['IsFree'],
-              items=items)
-
-    return obj
-
-
-def create_episode_lineup_item(api_obj):
-    details = create_details(api_obj['Details'])
-    cls = model.EpisodeLineupItem
-    obj = cls(template=api_obj['Template'], is_active=api_obj['IsActive'],
-              url=api_obj['Url'], is_free=api_obj['IsFree'],
-              key=model.Key(api_obj['Key']),
-              is_geolocalized=api_obj['IsGeolocalized'],
-              image_url=api_obj['ImageUrl'], title=api_obj['Title'],
-              is_drm=api_obj['IsDrm'], description=api_obj['Description'],
-              share_url=api_obj['Share']['AbsoluteUrl'], details=details)
-
-    return obj
+        return obj

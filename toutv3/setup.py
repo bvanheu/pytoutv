@@ -42,7 +42,7 @@ import toutv3
 
 setup(name='toutv3',
       version=toutv3.__version__,
-      description='TOU.TV client library',
+      description='TOU.TV client library (for TOU.TV API v2)',
       author='Benjamin Vanheuverzwijn',
       author_email='bvanheu@gmail.com',
       url='https://github.com/bvanheu/pytoutv',
@@ -53,4 +53,6 @@ setup(name='toutv3',
           'pycrypto',
           'requests',
           'beautifulsoup4',
+          'python-slugify',
+          'filelock',
       ])

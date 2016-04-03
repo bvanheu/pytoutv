@@ -23,12 +23,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from toutv3 import model, model_from_api, cache2
 from bs4 import BeautifulSoup
+from functools import partial
+import requests.cookies
 import requests
 import logging
 import urllib
 import json
 import sys
+
+
+_logger = logging.getLogger(__name__)
 
 
 _HTTP_HEADERS = {
@@ -42,25 +48,46 @@ _HTTP_TOUTV_GET_PARAMS = {
     'd': 'phone-ios',
 }
 _PRES_SETTINGS_URL = 'http://ici.tou.tv/presentation/settings'
+_USER_PROFILE_URL = 'http://ici.tou.tv/profiling/userprofile'
 
 
 class Agent:
-    def __init__(self, user, password):
+    def __init__(self, user, password, no_cache=False):
         self._user = user
         self._password = password
-        self._base_headers = {}
-        self._base_headers.update(_HTTP_HEADERS)
-        self._toutv_base_headers = {}
-        self._toutv_base_headers.update(_HTTP_TOUTV_HEADERS)
+        self._no_cache = no_cache
         self._toutv_base_params = {}
         self._toutv_base_params.update(_HTTP_TOUTV_GET_PARAMS)
-        self._pres_settings = None
-        self._logged_in = False
-        self._session = requests.Session()
+        self._req_session = requests.Session()
+        self._model_factory = model_from_api.Factory(self)
+        self._load_cache()
 
-    def _post(url, data, headers=None, params=None, allow_redirects=True):
+    def _load_cache(self):
+        if self._no_cache:
+            # do not even bother loading a real cache
+            _logger.debug("Not loading any cache as per user's request")
+            self._cache = cache2.Cache(self._user)
+            return
+
+        # load the cache
+        self._cache = cache2.load(self._user)
+
+        # update our properties from the cache
+        self._req_session.cookies = self._cache.cookies
+
+        if not self._cache.base_headers:
+            self._cache.base_headers.update(_HTTP_HEADERS)
+
+        if not self._cache._toutv_base_headers:
+            self._cache._toutv_base_headers.update(_HTTP_TOUTV_HEADERS)
+
+    def release_cache(self):
+        self._cache.release()
+
+    def _request(self, method, url, data, headers=None, params=None,
+                 allow_redirects=True):
         actual_headers = {}
-        actual_headers.update(self._base_headers)
+        actual_headers.update(self._cache.base_headers)
 
         if headers is not None:
             actual_headers.update(headers)
@@ -70,29 +97,26 @@ class Agent:
         if params is not None:
             actual_params.update(params)
 
-        return self._session.post(url=url, data=data, headers=actual_headers,
-                                  params=actual_params,
-                                  allow_redirects=allow_redirects)
+        fmt = 'HTTP {} request @ "{}" ({} headers, {} params)'
+        _logger.debug(fmt.format(method, url, len(actual_headers), len(actual_params)))
 
-    def _get(url, headers=None, params=None, allow_redirects=True):
+        return self._req_session.request(method=method, url=url, data=data,
+                                         headers=actual_headers,
+                                         params=actual_params,
+                                         allow_redirects=allow_redirects)
+
+    def _post(self, url, data, headers=None, params=None, allow_redirects=True):
+        return self._request('POST', url, data, headers,
+                             params, allow_redirects)
+
+    def _get(self, url, headers=None, params=None, allow_redirects=True):
+        return self._request('GET', url, None, headers,
+                             params, allow_redirects)
+
+    def _toutv_get(self, url, headers=None, params=None,
+                      allow_redirects=True):
         actual_headers = {}
-        actual_headers.update(self._base_headers)
-
-        if headers is not None:
-            actual_headers.update(headers)
-
-        actual_params = {}
-
-        if params is not None:
-            actual_params.update(params)
-
-        return self._session.get(url=url, headers=actual_headers,
-                                 params=actual_params,
-                                 allow_redirects=allow_redirects)
-
-    def _toutvapp_get(url, headers=None, params=None, allow_redirects=True):
-        actual_headers = {}
-        actual_headers.update(self._toutv_base_headers)
+        actual_headers.update(self._cache.toutv_base_headers)
 
         if headers is not None:
             actual_headers.update(headers)
@@ -103,24 +127,28 @@ class Agent:
         if params is not None:
             actual_params.update(params)
 
-        return self._get(url=url, headers=actual_headers, params=params,
+        return self._get(url=url, headers=actual_headers, params=actual_params,
                          allow_redirects=allow_redirects)
 
     def _register_settings(self):
-        if self._pres_settings is not None:
+        if len(self._cache.pres_settings) > 0:
             return
 
-        r = self._toutvapp_get(_PRES_SETTINGS_URL)
-        self._pres_settings = r.json()
+        _logger.debug('Registering settings')
+        r = self._toutv_get(_PRES_SETTINGS_URL)
+        self._cache.pres_settings = r.json()
 
     def _get_setting(self, name):
+        _logger.debug('Getting setting "{}"'.format(name))
         self._register_settings()
 
-        return self._pres_settings[name]
+        return self._cache.pres_settings[name]
 
     def _login(self):
-        if self._logged_in:
+        if self._cache.is_logged_in:
             return
+
+        _logger.debug('Logging in')
 
         # get a few needed settings
         mobile_scopes = self._get_setting('MobileScopes')
@@ -128,22 +156,19 @@ class Agent:
         endpoint_auth = self._get_setting('EndpointAuthorizationIos')
 
         # get login page
-        params = {
-            'response_type': 'token',
-            'client_id': client_id,
-            'scope': mobile_scopes,
-            'state': 'authCode',
-            'redirect_uri': 'http://ici.tou.tv/profiling/callback',
-        }
-        r = self._get(endpoint_auth, params=params)
+        url = '{}?response_type=token&client_id={}&scope={}&state=authCode&redirect_uri=http://ici.tou.tv/profiling/callback'
+        url = url.format(endpoint_auth, client_id, mobile_scopes)
+        _logger.debug('Getting login page')
+        r = self._get(url)
         login_soup = BeautifulSoup(r.text, 'html.parser')
 
         # fill the form with user creds
-        form_login = login_soup.soup.select('#Form-login')[0]
+        form_login = login_soup.select('#Form-login')[0]
         data = {}
 
-        for hidden_field in form_login.select('input[type="hidden"]'):
-            data[hidden_field['name']] = hidden_field['value']
+        for input_el in form_login.select('input'):
+            if input_el.has_attr('name') and input_el.has_attr('value'):
+                data[input_el['name']] = input_el['value']
 
         data['login-email'] = self._user
         data['login-password'] = self._password
@@ -151,27 +176,45 @@ class Agent:
 
         # submit the form. this returns a response which includes super
         # secret stuff (auth tokens and shit) in its "Location" header.
+        _logger.debug('Submitting login page form')
         r = self._post(action, data, allow_redirects=False)
 
         # extract said super secret stuff from the fragment
         url_components = urllib.parse.urlparse(r.headers['Location'])
+        _logger.debug('Received location: "{}"'.format(r.headers['Location']))
         qs_parts = urllib.parse.parse_qs(url_components.fragment)
         token_type = qs_parts['token_type'][0]
         access_token = qs_parts['access_token'][0]
+        _logger.debug('Token type: "{}"'.format(token_type))
+        _logger.debug('Access token: "{}"'.format(access_token))
 
         # update TOU.TV base headers for future requests
-        self._toutv_base_headers['Authorization'] = '{} {}'.format(token_type, access_token)
-        self._toutv_base_headers['ClientID'] = client_id
-        self._toutv_base_headers['RcId'] = ''
+        self._cache.toutv_base_headers['Authorization'] = '{} {}'.format(token_type, access_token)
+        self._cache.toutv_base_headers['ClientID'] = client_id
+        self._cache.toutv_base_headers['RcId'] = ''
 
         # we're in!
-        self._logged_in = True
+        _logger.debug('Successfully logged in')
+        self._cache.is_logged_in = True
 
-    def _get_user_infos(self):
+    def get_user_infos(self):
+        _logger.debug('Getting user infos')
         self._login()
 
-        # TODO
-        r = _toutvapp_get('http://ici.tou.tv/profiling/userprofile?v=2&d=phone-ios',
-                          headers=le_dict)
-        r = _toutvapp_get('https://services.radio-canada.ca/openid/connect/v1/userinfo',
-                          headers=le_dict)
+        if self._cache.user_infos is None:
+            _logger.debug('Downloading user infos')
+
+            # RC user infos endpoint is a setting
+            rc_user_infos_endpoint = self._get_setting('EndpointUserInfoIos')
+
+            # get user infos
+            rc_user_infos = self._toutv_get(rc_user_infos_endpoint)
+            toutv_user_infos = self._toutv_get(_USER_PROFILE_URL)
+
+            # create user infos object
+            self._cache.user_infos = self._model_factory.create_user_infos(rc_user_infos.json(),
+                                                                           toutv_user_infos.json())
+        else:
+            _logger.debug('User infos found in cache')
+
+        return self._cache.user_infos
