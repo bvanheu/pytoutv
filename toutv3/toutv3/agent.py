@@ -145,7 +145,7 @@ class _Agent:
             elif isinstance(e, requests.ConnectionError):
                 exc_cls = toutv3.ConnectionError
             else:
-                exc_cls = toutv3.Error
+                exc_cls = toutv3.NetworkError
 
             exc = exc_cls(method, url, data, headers, params, allow_redirects)
             raise exc from e

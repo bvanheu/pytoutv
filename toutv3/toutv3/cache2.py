@@ -169,15 +169,14 @@ class _Cache:
         if self._lock is None:
             return
 
-        _logger.debug('Saving cache for user "{}"'.format(self._user))
-
         # update expire date
         self._expire_dt = DT.datetime.now() + DT.timedelta(minutes=30)
 
         # save
-        file_name = get_cache_file_name(self._user)
-
         try:
+            file_name = get_cache_file_name(self._user)
+            _logger.debug('Saving cache file "{}"'.format(file_name))
+
             with open(file_name, 'wb') as f:
                 pickle.dump(self, f)
         except:
