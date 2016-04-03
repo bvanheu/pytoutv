@@ -18,18 +18,23 @@ class NetworkError(Error):
     @property
     def method(self):
         return self._method
+
     @property
     def url(self):
         return self._url
+
     @property
     def data(self):
         return self._data
+
     @property
     def headers(self):
         return self._headers
+
     @property
     def params(self):
         return self._params
+
     @property
     def allow_redirects(self):
         return self._allow_redirects
