@@ -241,8 +241,14 @@ def _get_file_lock(user):
 
 
 def load(user):
-    lock = _get_file_lock(user)
     _logger.debug('Trying to load cache for user "{}"'.format(user))
+
+    try:
+        lock = _get_file_lock(user)
+    except:
+        # no lock, no luck
+        _logger.debug('Cannot get cache file lock object: using empty cache')
+        return _Cache(user)
 
     # acquire cache lock
     try:
@@ -258,7 +264,14 @@ def load(user):
         return _Cache(user)
 
     _logger.debug('Cache lock file "{}" acquired'.format(lock.lock_file))
-    cache_file_name = get_cache_file_name(user)
+
+    try:
+        cache_file_name = get_cache_file_name(user)
+    except:
+        # no lock, no luck
+        _logger.debug('Cannot get cache file name: using empty cache')
+        lock.release(force=True)
+        return _Cache(user)
 
     if not os.path.isfile(cache_file_name):
         # cache does not exist: return empty cache (will be created
