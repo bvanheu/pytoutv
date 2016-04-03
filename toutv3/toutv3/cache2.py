@@ -296,6 +296,7 @@ def load(user):
         cache = _Cache(user, lock)
     else:
         _logger.debug('Loaded cache file "{}":'.format(cache_file_name))
+        _logger.debug('  {} cookies'.format(len(cache.cookies)))
         _logger.debug('  {} base headers'.format(len(cache.base_headers)))
         _logger.debug('  {} TOU.TV base headers'.format(len(cache.toutv_base_headers)))
         _logger.debug('  {} search show summaries'.format(len(cache.search_show_summaries)))
