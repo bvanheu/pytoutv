@@ -44,7 +44,7 @@ class _Cache:
         else:
             lock_info = 'with lock file "{}"'.format(lock.lock_file)
 
-        _logger.debug('Creating cache for user "{}" {}'.format(user, lock_info))
+        _logger.debug('Creating empty cache for user "{}" {}'.format(user, lock_info))
         self._user = user
         self._lock = lock
         self._expire_dt = None
@@ -188,10 +188,11 @@ class _Cache:
         if self._lock is None:
             return
 
-        _logger.debug('Releasing cache lock file "{}"'.format(self._lock.lock_file))
         self.save()
+        lock_file = self._lock.lock_file
         self._lock.release(force=True)
         self._lock = None
+        _logger.debug('Cache lock file "{}" released'.format(lock_file))
 
     def __getstate__(self):
         # let's not save the lock file
