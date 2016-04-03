@@ -37,7 +37,7 @@ import pickle
 _logger = logging.getLogger(__name__)
 
 
-class Cache:
+class _Cache:
     def __init__(self, user, lock=None):
         if lock is None:
             lock_info = 'without lock'
@@ -150,12 +150,12 @@ class Cache:
     def sections(self):
         return self._sections
 
-    def get_show(self, key):
-        if key in self._shows:
-            return self._shows[key]
+    def get_show(self, url_name):
+        if url_name in self._shows:
+            return self._shows[url_name]
 
-    def set_show(self, show):
-        self._shows[show.key.key] = show
+    def set_show(self, url_name, show):
+        self._shows[url_name] = show
 
     def get_section(self, name):
         if name in self._sections:
@@ -250,11 +250,11 @@ def load(user):
     except filelock.Timeout:
         # cache is already locked: return empty cache (will not be saved)
         _logger.warn('Cache is locked by lock file "{}": using empty cache'.format(lock.lock_file))
-        return Cache(user)
+        return _Cache(user)
     except Exception as e:
         # other exception: return empty cache (will not be saved)
         _logger.warn('Cannot acquire lock file "{}": {}'.format(lock.lock_file, e))
-        return Cache(user)
+        return _Cache(user)
 
     _logger.debug('Cache lock file "{}" acquired'.format(lock.lock_file))
     cache_file_name = get_cache_file_name(user)
@@ -263,17 +263,22 @@ def load(user):
         # cache does not exist: return empty cache (will be created
         # once saved)
         _logger.debug('Cache file "{}" does not exist: using empty cache'.format(cache_file_name))
-        return Cache(user, lock)
+        return _Cache(user, lock)
 
     _logger.debug('Loading cache file "{}"'.format(cache_file_name))
-    with open(cache_file_name, 'rb') as f:
-        cache = pickle.load(f)
-        cache.lock = lock
+
+    try:
+        with open(cache_file_name, 'rb') as f:
+            cache = pickle.load(f)
+            cache.lock = lock
+    except:
+        # probably a malformed cache: overwrite with empty cache
+        return _Cache(user, lock)
 
     if cache.is_expired:
         # cache is expired: restart with fresh cache
         _logger.debug('Cache is expired')
-        cache = Cache(user, lock)
+        cache = _Cache(user, lock)
     else:
         _logger.debug('Loaded cache file "{}":'.format(cache_file_name))
         _logger.debug('  {} base headers'.format(len(cache.base_headers)))

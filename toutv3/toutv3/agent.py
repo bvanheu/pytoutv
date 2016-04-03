@@ -38,7 +38,7 @@ import sys
 _logger = logging.getLogger(__name__)
 
 
-_VALID_HTTP_STATUS_CODES = (200, 301, 302)
+_VALID_HTTP_STATUS_CODES = (200, 301, 302, 404)
 _HTTP_HEADERS = {
     'User-Agent': 'TouTvApp/2.3.1 (iPhone4.1; iOS/7.1.2; en-ca)'
 }
@@ -49,12 +49,15 @@ _HTTP_TOUTV_GET_PARAMS = {
     'v': '2',
     'd': 'phone-ios',
 }
-_PRES_SETTINGS_URL = 'http://ici.tou.tv/presentation/settings'
-_USER_PROFILE_URL = 'http://ici.tou.tv/profiling/userprofile'
-_SEARCH_URL = 'http://ici.tou.tv/presentation/search'
+_TOUTV_URL = 'http://ici.tou.tv'
+_PRES_BASE_URL = '{}/presentation'.format(_TOUTV_URL)
+_PRES_SETTINGS_URL = '{}/settings'.format(_PRES_BASE_URL)
+_USER_PROFILE_URL = '{}/profiling/userprofile'.format(_TOUTV_URL)
+_SEARCH_URL = '{}/search'.format(_PRES_BASE_URL)
+_SECTION_URL = '{}/section'.format(_PRES_BASE_URL)
 
 
-class Agent:
+class _Agent:
     def __init__(self, user, password, no_cache=False):
         self._user = user
         self._password = password
@@ -62,7 +65,7 @@ class Agent:
         self._toutv_base_params = {}
         self._toutv_base_params.update(_HTTP_TOUTV_GET_PARAMS)
         self._req_session = requests.Session()
-        self._model_factory = model_from_api.Factory(self)
+        self._model_factory = model_from_api._Factory(self)
         self._logging_in = False
         self._load_cache()
 
@@ -89,7 +92,7 @@ class Agent:
         if self._no_cache:
             # do not even bother loading a real cache
             _logger.debug("Not loading any cache as per user's request")
-            self._cache = cache2.Cache(self._user)
+            self._cache = cache2._Cache(self._user)
             return
 
         # load the cache
@@ -403,3 +406,106 @@ class Agent:
             _logger.debug('Search show summaries found in cache')
 
         return self._cache.search_show_summaries
+
+    def get_section_summaries(self):
+        _logger.debug('Getting section summaries')
+
+        if not self._cache.section_summaries:
+            _logger.debug('Downloading section summaries')
+            self._login()
+
+            # get section summaries
+            r_ss = self._toutv_get(_SECTION_URL)
+
+            # decode section summaries
+            try:
+                ss = r_ss.json()
+            except:
+                _logger.critical('Cannot decode section summaries (JSON)')
+                raise toutv3.ApiChanged()
+
+            if type(ss) is not list:
+                _logger.critical('Cannot decode section summaries: expecting an array')
+                raise toutv3.ApiChanged()
+
+            # create section summaries objects
+            for index, ss_item in enumerate(ss):
+                try:
+                    func = self._model_factory.create_section_summary
+                    section_summary = func(ss_item)
+                except:
+                    _logger.critical('Cannot create section summary object #{}'.format(index))
+                    raise toutv3.ApiChanged()
+
+                self._cache.section_summaries[section_summary.name] = section_summary
+        else:
+            _logger.debug('Section summaries found in cache')
+
+        return self._cache.section_summaries
+
+    def get_section(self, name):
+        _logger.debug('Getting section "{}"'.format(name))
+
+        if not self._cache.get_section(name):
+            _logger.debug('Downloading section "{}"'.format(name))
+            self._login()
+
+            # get section
+            fmt = '{}/{}?smallWidth=220&mediumWidth=600&largeWidth=800&includePartnerTeaser=true'
+            url = fmt.format(_SECTION_URL, name)
+            r_section = self._toutv_get(url)
+
+            # decode section
+            try:
+                section = r_section.json()
+            except:
+                _logger.critical('Cannot decode section (JSON)')
+                raise toutv3.ApiChanged()
+
+            # create section object
+            try:
+                section_obj = self._model_factory.create_section(section)
+            except:
+                _logger.critical('Cannot create section object')
+                raise toutv3.ApiChanged()
+
+            self._cache.set_section(section_obj)
+        else:
+            _logger.debug('Section "{}" found in cache'.format(name))
+
+        return self._cache.get_section(name)
+
+    def get_show(self, url_name):
+        if not url_name.startswith('/'):
+            url_name = '/{}'.format(url_name)
+
+        _logger.debug('Getting show "{}"'.format(url_name))
+
+        if not self._cache.get_show(url_name):
+            _logger.debug('Downloading show "{}"'.format(url_name))
+            self._login()
+
+            # get show
+            fmt = '{}/{}?excludeLineups=False&smallWidth=220&mediumWidth=600&largeWidth=800'
+            url = fmt.format(_PRES_BASE_URL, url_name)
+            r_show = self._toutv_get(url)
+
+            # decode show
+            try:
+                show = r_show.json()
+            except:
+                _logger.critical('Cannot decode show (JSON)')
+                raise toutv3.ApiChanged()
+
+            # create show object
+            try:
+                show_obj = self._model_factory.create_show(show)
+            except:
+                _logger.critical('Cannot create show object')
+                raise toutv3.ApiChanged()
+
+            self._cache.set_show(url_name, show_obj)
+        else:
+            _logger.debug('Show "{}" found in cache'.format(url_name))
+
+        return self._cache.get_show(url_name)

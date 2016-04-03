@@ -34,7 +34,7 @@ class Client:
     def __init__(self, user, password, no_cache=False):
         self._user = user
         self._password = password
-        self._agent = agent.Agent(user, password, no_cache)
+        self._agent = agent._Agent(user, password, no_cache)
 
     @property
     def user_infos(self):
@@ -45,12 +45,14 @@ class Client:
         return self._agent.get_search_show_summaries()
 
     @property
-    def shows(self):
-        pass
+    def section_summaries(self):
+        return self._agent.get_section_summaries()
 
-    @property
-    def sections(self):
-        pass
+    def get_show(self, url_name):
+        return self._agent.get_show(url_name)
+
+    def get_section(self, name):
+        return self._agent.get_section(name)
 
     def release_cache(self):
         self._agent.release_cache()

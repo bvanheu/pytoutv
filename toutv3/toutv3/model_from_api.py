@@ -27,7 +27,7 @@ from toutv3 import model
 import datetime as DT
 
 
-class Factory:
+class _Factory:
     def __init__(self, agent):
         self._agent = agent
 
@@ -43,7 +43,8 @@ class Factory:
         if 'ProfileItems' in toutv_api_obj:
             for key, api_profile_item in toutv_api_obj['ProfileItems'].items():
                 if api_profile_item['IsBookmarked']:
-                    bookmark = self.create_bookmark(key, api_profile_item)
+                    bookmark = self.create_bookmark(model.Key(self._agent, key),
+                                                    api_profile_item)
                     bookmarks.append(bookmark)
 
         stats_metas = toutv_api_obj['StatsMetas']
@@ -60,7 +61,7 @@ class Factory:
         return obj
 
     def create_section_summary(self, api_obj):
-        return model.SectionSummary(self._agent, section_id=api_obj['Name'],
+        return model.SectionSummary(self._agent, name=api_obj['Name'],
                                     title=api_obj['Title'])
 
     def create_search_show_summary(self, api_obj):
@@ -77,6 +78,9 @@ class Factory:
         return obj
 
     def create_show_lineup_item(self, api_obj):
+        if api_obj['Share'] is None or api_obj['Url'] is None:
+            return
+
         api_key = api_obj['Key']
         key = api_key
 
@@ -102,7 +106,10 @@ class Factory:
 
         if type(api_lineup_items) is list:
             for api_lineup_item in api_lineup_items:
-                items.append(self.create_show_lineup_item(api_lineup_item))
+                item = self.create_show_lineup_item(api_lineup_item)
+
+                if item is not None:
+                    items.append(item)
 
         cls = model.SubsectionLineup
         obj = cls(self._agent, name=api_obj['Name'], title=api_obj['Title'],
@@ -174,7 +181,13 @@ class Factory:
             for api_season_lineup in api_season_lineups:
                 season_lineups.append(self.create_season_lineup(api_season_lineup))
 
-        details = self.create_details(api_obj['Details2'])
+        if api_obj['Details2']:
+            details = self.create_details(api_obj['Details2'])
+        elif api_obj['Details']:
+            details = self.create_details(api_obj['Details'])
+        else:
+            details = None
+
         cls = model.Show
         obj = cls(self._agent, key=model.Key(self._agent, api_obj['Key']),
                   description=api_obj['Description'],

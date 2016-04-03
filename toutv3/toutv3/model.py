@@ -47,6 +47,12 @@ class Key(_Base):
         super().__init__(agent)
         self._key = key
 
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return False
+
+        return self.key == other.key
+
     @property
     def key(self):
         return self._key
@@ -73,6 +79,12 @@ class Bookmark(_Base):
     def _set_agent(self, agent):
         super()._set_agent(agent)
         self._key._set_agent(agent)
+
+    @property
+    def show(self):
+        for search_show_summary in self._agent.get_search_show_summaries():
+            if search_show_summary.key == self.key:
+                return search_show_summary.show
 
     @property
     def key(self):
@@ -109,6 +121,12 @@ class UserInfos(_Base):
         self._rc_features = rc_features
         self._is_premium = is_premium
         self._show_ads = show_ads
+
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+
+        for bookmark in self._bookmarks:
+            bookmark._set_agent(agent)
 
     @property
     def ban_level(self):
@@ -153,18 +171,22 @@ class UserInfos(_Base):
 
 # A summary of a section.
 #
-# This is just an association between a section ID and its title.
+# This is just an association between a section name and its title.
 # Sections on TOU.TV are the top containers of shows, like "À la une",
 # "Rattrapage télé", "Extra", "Jeunesse", etc.
 class SectionSummary(_Base):
-    def __init__(self, agent, section_id, title):
+    def __init__(self, agent, name, title):
         super().__init__(agent)
-        self._section_id = section_id
+        self._name = name
         self._title = title
 
     @property
-    def section_id(self):
-        return self._section_id
+    def section(self):
+        return self._agent.get_section(self.name)
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def title(self):
@@ -200,6 +222,10 @@ class SearchShowSummary(_Base):
     def _set_agent(self, agent):
         super()._set_agent(agent)
         self._key._set_agent(agent)
+
+    @property
+    def show(self):
+        return self._agent.get_show(self.url)
 
     @property
     def is_free(self):
@@ -256,6 +282,10 @@ class ShowLineupItem(_Base):
     def _set_agent(self, agent):
         super()._set_agent(agent)
         self._key._set_agent(agent)
+
+    @property
+    def show(self):
+        return self._agent.get_show(self.url)
 
     @property
     def key(self):
