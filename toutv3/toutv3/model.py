@@ -28,6 +28,18 @@ class _Base:
     def __init__(self, agent):
         self._agent = agent
 
+    def _set_agent(self, agent):
+        self._agent = agent
+
+    def __getstate__(self):
+        # we do not want the agent to be serialized because this is
+        # useless: we're going to replace it with the effective agent
+        # once loaded anyway
+        props = self.__dict__.copy()
+        del props['_agent']
+
+        return props
+
 
 # A key, used to uniquely represent a show, an episode, etc.
 class Key(_Base):
@@ -57,6 +69,10 @@ class Bookmark(_Base):
         super().__init__(agent)
         self._key = key
         self._creation_date = creation_date
+
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+        self._key._set_agent(agent)
 
     @property
     def key(self):
@@ -170,7 +186,7 @@ class SectionSummary(_Base):
 # show page.
 class SearchShowSummary(_Base):
     def __init__(self, agent, is_free, image_url, key, searchable_text,
-                 url, is_media, is_geolocatized, title):
+                 url, is_media, is_geolocalized, title):
         super().__init__(agent)
         self._is_free = is_free
         self._image_url = image_url
@@ -178,8 +194,12 @@ class SearchShowSummary(_Base):
         self._searchable_text = searchable_text
         self._url = url
         self._is_media = is_media
-        self._is_geolocatized = is_geolocalized
+        self._is_geolocalized = is_geolocalized
         self._title = title
+
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+        self._key._set_agent(agent)
 
     @property
     def is_free(self):
@@ -232,6 +252,10 @@ class ShowLineupItem(_Base):
         self._template = template
         self._title = title
         self._url = url
+
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+        self._key._set_agent(agent)
 
     @property
     def key(self):
@@ -291,6 +315,12 @@ class SubsectionLineup(_Base):
         self._is_free = is_free
         self._items = items
 
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+
+        for item in self._items:
+            item._set_agent(agent)
+
     @property
     def name(self):
         return self._name
@@ -316,6 +346,12 @@ class Section(_Base):
         self._title = title
         self._subsection_lineups = subsection_lineups
         self._stats_metas = stats_metas
+
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+
+        for subsection_lineup in self._subsection_lineups:
+            subsection_lineup._set_agent(agent)
 
     @property
     def name(self):
@@ -397,6 +433,15 @@ class Details(_Base):
         self._image_url = image_url
         self._networks = networks
 
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+
+        for credit in self._credits:
+            credit._set_agent(agent)
+
+        for network in self._networks:
+            network._set_agent(agent)
+
     @property
     def rating(self):
         return self._rating
@@ -464,6 +509,14 @@ class Show(_Base):
         self._season_lineups = season_lineups
         self._stats_metas = stats_metas
 
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+        self._key._set_agent(agent)
+        self._details._set_agent(agent)
+
+        for season_lineup in self._season_lineups:
+            season_lineup._set_agent(agent)
+
     @property
     def key(self):
         return self._key
@@ -507,6 +560,12 @@ class SeasonLineup(_Base):
         self._is_free = is_free
         self._items = items
 
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+
+        for item in self._items:
+            item._set_agent(agent)
+
     @property
     def name(self):
         return self._name
@@ -546,6 +605,11 @@ class EpisodeLineupItem(_Base):
         self._description = description
         self._share_url = share_url
         self._details = details
+
+    def _set_agent(self, agent):
+        super()._set_agent(agent)
+        self._key._set_agent(agent)
+        self._details._set_agent(agent)
 
     @property
     def template(self):

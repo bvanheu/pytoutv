@@ -232,7 +232,7 @@ def get_cache_file_name(user):
     return os.path.join(get_cache_dir(), file_name)
 
 
-def _get_lock(user):
+def _get_file_lock(user):
     file_name = '{}.lock'.format(slugify(user))
     file_name = os.path.join(get_cache_dir(), file_name)
 
@@ -240,7 +240,7 @@ def _get_lock(user):
 
 
 def load(user):
-    lock = _get_lock(user)
+    lock = _get_file_lock(user)
     _logger.debug('Trying to load cache for user "{}"'.format(user))
 
     # acquire cache lock

@@ -41,6 +41,10 @@ class Client:
         return self._agent.get_user_infos()
 
     @property
+    def search_show_summaries(self):
+        return self._agent.get_search_show_summaries()
+
+    @property
     def shows(self):
         pass
 

@@ -68,7 +68,8 @@ class Factory:
         obj = cls(self._agent, is_free=api_obj['IsFree'],
                   image_url=api_obj['ImageUrl'],
                   searchable_text=api_obj['SearchableText'],
-                  key=model.Key(api_obj['Key']), url=api_obj['Url'],
+                  key=model.Key(self._agent, api_obj['Key']),
+                  url=api_obj['Url'],
                   is_media=api_obj['IsMedia'],
                   is_geolocalized=api_obj['IsGeolocalized'],
                   title=api_obj['DisplayText'])
@@ -83,7 +84,7 @@ class Factory:
             key = api_obj['BookmarkKey']
 
         cls = model.ShowLineupItem
-        obj = cls(self._agent, key=model.Key(key),
+        obj = cls(self._agent, key=model.Key(self._agent, key),
                   description=api_obj['Description'],
                   image_url=api_obj['ImageUrl'], is_active=api_obj['IsActive'],
                   is_drm=api_obj['IsDrm'], is_free=api_obj['IsFree'],
@@ -175,7 +176,7 @@ class Factory:
 
         details = self.create_details(api_obj['Details2'])
         cls = model.Show
-        obj = cls(self._agent, key=model.Key(api_obj['Key']),
+        obj = cls(self._agent, key=model.Key(self._agent, api_obj['Key']),
                   description=api_obj['Description'],
                   bg_image_url=api_obj['BackgroundImageUrl'],
                   image_url=api_obj['ImageUrl'], title=api_obj['Title'],
@@ -204,7 +205,8 @@ class Factory:
         cls = model.EpisodeLineupItem
         obj = cls(self._agent, template=api_obj['Template'],
                   is_active=api_obj['IsActive'], url=api_obj['Url'],
-                  is_free=api_obj['IsFree'], key=model.Key(api_obj['Key']),
+                  is_free=api_obj['IsFree'],
+                  key=model.Key(self._agent, api_obj['Key']),
                   is_geolocalized=api_obj['IsGeolocalized'],
                   image_url=api_obj['ImageUrl'], title=api_obj['Title'],
                   is_drm=api_obj['IsDrm'], description=api_obj['Description'],

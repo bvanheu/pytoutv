@@ -29,6 +29,7 @@ from functools import partial
 import requests.cookies
 import requests
 import logging
+import toutv3
 import urllib
 import json
 import sys
@@ -37,6 +38,7 @@ import sys
 _logger = logging.getLogger(__name__)
 
 
+_VALID_HTTP_STATUS_CODES = (200, 301, 302)
 _HTTP_HEADERS = {
     'User-Agent': 'TouTvApp/2.3.1 (iPhone4.1; iOS/7.1.2; en-ca)'
 }
@@ -49,6 +51,7 @@ _HTTP_TOUTV_GET_PARAMS = {
 }
 _PRES_SETTINGS_URL = 'http://ici.tou.tv/presentation/settings'
 _USER_PROFILE_URL = 'http://ici.tou.tv/profiling/userprofile'
+_SEARCH_URL = 'http://ici.tou.tv/presentation/search'
 
 
 class Agent:
@@ -60,7 +63,27 @@ class Agent:
         self._toutv_base_params.update(_HTTP_TOUTV_GET_PARAMS)
         self._req_session = requests.Session()
         self._model_factory = model_from_api.Factory(self)
+        self._logging_in = False
         self._load_cache()
+
+    def _set_cache_objects_agent(self):
+        # the loaded cache objects have no registered agent (the agent
+        # is not serialized), thus we need to set their agent as the
+        # current agent, otherwise they are not complete.
+        if self._cache.user_infos:
+            self._cache.user_infos._set_agent(self)
+
+        for section_summary in self._cache.section_summaries.values():
+            section_summary._set_agent(self)
+
+        for search_show_summary in self._cache.search_show_summaries:
+            search_show_summary._set_agent(self)
+
+        for section in self._cache.sections.values():
+            section._set_agent(self)
+
+        for show in self._cache.shows.values():
+            show._set_agent(self)
 
     def _load_cache(self):
         if self._no_cache:
@@ -71,6 +94,9 @@ class Agent:
 
         # load the cache
         self._cache = cache2.load(self._user)
+
+        # set the current agent as the cache objects's agent
+        self._set_cache_objects_agent()
 
         # update our properties from the cache
         self._req_session.cookies = self._cache.cookies
@@ -100,10 +126,26 @@ class Agent:
         fmt = 'HTTP {} request @ "{}" ({} headers, {} params)'
         _logger.debug(fmt.format(method, url, len(actual_headers), len(actual_params)))
 
-        return self._req_session.request(method=method, url=url, data=data,
-                                         headers=actual_headers,
-                                         params=actual_params,
-                                         allow_redirects=allow_redirects)
+        try:
+            response = self._req_session.request(method=method, url=url, data=data,
+                                                 headers=actual_headers,
+                                                 params=actual_params,
+                                                 allow_redirects=allow_redirects)
+            fmt = 'HTTP response (status code: {}, content length: {} bytes)'
+            _logger.debug(fmt.format(response.status_code, len(response.content)))
+
+            return response
+        except Exception as e:
+            # wrap requests exception
+            if isinstance(e, requests.Timeout):
+                exc_cls = toutv3.NetworkTimeout
+            elif isinstance(e, requests.ConnectionError):
+                exc_cls = toutv3.ConnectionError
+            else:
+                exc_cls = toutv3.Error
+
+            exc = exc_cls(method, url, data, headers, params, allow_redirects)
+            raise exc from e
 
     def _post(self, url, data, headers=None, params=None, allow_redirects=True):
         return self._request('POST', url, data, headers,
@@ -114,7 +156,7 @@ class Agent:
                              params, allow_redirects)
 
     def _toutv_get(self, url, headers=None, params=None,
-                      allow_redirects=True):
+                   allow_redirects=True):
         actual_headers = {}
         actual_headers.update(self._cache.toutv_base_headers)
 
@@ -127,8 +169,34 @@ class Agent:
         if params is not None:
             actual_params.update(params)
 
-        return self._get(url=url, headers=actual_headers, params=actual_params,
-                         allow_redirects=allow_redirects)
+        r = self._get(url=url, headers=actual_headers, params=actual_params,
+                      allow_redirects=allow_redirects)
+
+        if self._logging_in:
+            # we're in the process of logging in, so do not care about
+            # trying to login again
+            return r
+
+        if r.status_code not in _VALID_HTTP_STATUS_CODES:
+            # bad request/unauthorized: try logging in and retry the
+            # GET request
+            _logger.debug('Trying to login again')
+            self._cache.is_logged_in = False
+            self._login()
+
+            # logged in now: self._login() either succeeds, or raises
+            # an exception
+            r = self._get(url=url, headers=actual_headers,
+                          params=actual_params,
+                          allow_redirects=allow_redirects)
+
+            if r.status_code not in _VALID_HTTP_STATUS_CODES:
+                # still not working: we have a serious problem
+                exc_cls = toutv3.UnexpectedHttpStatusCode
+                raise exc_cls(r.status_code, 'GET', url, None, headers,
+                              params, allow_redirects)
+
+        return r
 
     def _register_settings(self):
         if len(self._cache.pres_settings) > 0:
@@ -136,15 +204,28 @@ class Agent:
 
         _logger.debug('Registering settings')
         r = self._toutv_get(_PRES_SETTINGS_URL)
-        self._cache.pres_settings = r.json()
+
+        if r.status_code != 200:
+            _logger.critical('Cannot register settings')
+            raise toutv3.ApiChanged()
+
+        try:
+            self._cache.pres_settings = r.json()
+        except:
+            _logger.critical('Cannot decode settings')
+            raise toutv3.ApiChanged()
 
     def _get_setting(self, name):
         _logger.debug('Getting setting "{}"'.format(name))
         self._register_settings()
 
-        return self._cache.pres_settings[name]
+        try:
+            return self._cache.pres_settings[name]
+        except:
+            _logger.critical('Cannot find setting "{}"'.format(name))
+            raise toutv3.ApiChanged()
 
-    def _login(self):
+    def _do_login(self):
         if self._cache.is_logged_in:
             return
 
@@ -160,10 +241,24 @@ class Agent:
         url = url.format(endpoint_auth, client_id, mobile_scopes)
         _logger.debug('Getting login page')
         r = self._get(url)
-        login_soup = BeautifulSoup(r.text, 'html.parser')
+
+        if r.status_code != 200:
+            _logger.critical('Cannot download login page')
+            raise toutv3.ApiChanged()
+
+        try:
+            login_soup = BeautifulSoup(r.text, 'html.parser')
+        except:
+            _logger.critical('Cannot parse login page')
+            raise toutv3.ApiChanged()
 
         # fill the form with user creds
-        form_login = login_soup.select('#Form-login')[0]
+        try:
+            form_login = login_soup.select('#Form-login')[0]
+        except:
+            _logger.critical('Login page: cannot select login form')
+            raise toutv3.ApiChanged()
+
         data = {}
 
         for input_el in form_login.select('input'):
@@ -172,19 +267,44 @@ class Agent:
 
         data['login-email'] = self._user
         data['login-password'] = self._password
-        action = form_login['action']
+
+        try:
+            action = form_login['action']
+        except:
+            _logger.critical("Login page: cannot get login form's action")
+            raise toutv3.ApiChanged()
 
         # submit the form. this returns a response which includes super
         # secret stuff (auth tokens and shit) in its "Location" header.
         _logger.debug('Submitting login page form')
         r = self._post(action, data, allow_redirects=False)
 
+        # success?
+        if r.status_code not in (301, 302):
+            raise toutv3.InvalidCredentials(self._user, self._password)
+
         # extract said super secret stuff from the fragment
-        url_components = urllib.parse.urlparse(r.headers['Location'])
+        try:
+            url_components = urllib.parse.urlparse(r.headers['Location'])
+        except:
+            _logger.critical('Cannot parse URL in "Location" header')
+            raise toutv3.ApiChanged()
+
         _logger.debug('Received location: "{}"'.format(r.headers['Location']))
         qs_parts = urllib.parse.parse_qs(url_components.fragment)
-        token_type = qs_parts['token_type'][0]
-        access_token = qs_parts['access_token'][0]
+
+        try:
+            token_type = qs_parts['token_type'][0]
+        except:
+            _logger.critical('Cannot get "token_type" part of query string')
+            raise toutv3.ApiChanged()
+
+        try:
+            access_token = qs_parts['access_token'][0]
+        except:
+            _logger.critical('Cannot get "access_token" part of query string')
+            raise toutv3.ApiChanged()
+
         _logger.debug('Token type: "{}"'.format(token_type))
         _logger.debug('Access token: "{}"'.format(access_token))
 
@@ -197,24 +317,89 @@ class Agent:
         _logger.debug('Successfully logged in')
         self._cache.is_logged_in = True
 
+    def _login(self):
+        self._logging_in = True
+
+        try:
+            self._do_login()
+        finally:
+            self._logging_in = False
+
     def get_user_infos(self):
         _logger.debug('Getting user infos')
-        self._login()
 
-        if self._cache.user_infos is None:
+        if not self._cache.user_infos:
             _logger.debug('Downloading user infos')
+            self._login()
 
             # RC user infos endpoint is a setting
             rc_user_infos_endpoint = self._get_setting('EndpointUserInfoIos')
 
             # get user infos
-            rc_user_infos = self._toutv_get(rc_user_infos_endpoint)
-            toutv_user_infos = self._toutv_get(_USER_PROFILE_URL)
+            r_rc_user_infos = self._toutv_get(rc_user_infos_endpoint)
+            r_toutv_user_infos = self._toutv_get(_USER_PROFILE_URL)
+
+            # decode user infos
+            try:
+                rc_user_infos = r_rc_user_infos.json()
+            except:
+                _logger.critical('Cannot decode RC user infos (JSON)')
+                raise toutv3.ApiChanged()
+
+            try:
+                toutv_user_infos = r_toutv_user_infos.json()
+            except:
+                _logger.critical('Cannot decode TOU.TV user infos (JSON)')
+                raise toutv3.ApiChanged()
 
             # create user infos object
-            self._cache.user_infos = self._model_factory.create_user_infos(rc_user_infos.json(),
-                                                                           toutv_user_infos.json())
+            try:
+                func = self._model_factory.create_user_infos
+                self._cache.user_infos = func(rc_user_infos, toutv_user_infos)
+            except:
+                _logger.critical('Cannot create user infos object')
+                raise toutv3.ApiChanged()
         else:
             _logger.debug('User infos found in cache')
 
         return self._cache.user_infos
+
+    def get_search_show_summaries(self):
+        _logger.debug('Getting search show summaries')
+
+        if not self._cache.search_show_summaries:
+            _logger.debug('Downloading search show summaries')
+            self._login()
+
+            # get search show summaries
+            r_sss = self._toutv_get(_SEARCH_URL)
+
+            # decode search show summaries
+            try:
+                sss = r_sss.json()
+            except:
+                _logger.critical('Cannot decode search show summaries (JSON)')
+                raise toutv3.ApiChanged()
+
+            if type(sss) is not list:
+                _logger.critical('Cannot decode search show summaries: expecting an array')
+                raise toutv3.ApiChanged()
+
+            # create search show summaries objects
+            search_show_summaries = []
+
+            for index, sss_item in enumerate(sss):
+                try:
+                    func = self._model_factory.create_search_show_summary
+                    search_show_summary = func(sss_item)
+                except:
+                    _logger.critical('Cannot create search show summary object #{}'.format(index))
+                    raise toutv3.ApiChanged()
+
+                search_show_summaries.append(search_show_summary)
+
+            self._cache.search_show_summaries = search_show_summaries
+        else:
+            _logger.debug('Search show summaries found in cache')
+
+        return self._cache.search_show_summaries
