@@ -171,10 +171,6 @@ class _Cache:
 
         _logger.debug('Saving cache for user "{}"'.format(self._user))
 
-        # save lock here so we don't serialize it
-        lock = self._lock
-        self._lock = None
-
         # update expire date
         self._expire_dt = DT.datetime.now() + DT.timedelta(minutes=30)
 
@@ -184,11 +180,9 @@ class _Cache:
         try:
             with open(file_name, 'wb') as f:
                 pickle.dump(self, f)
-        except Exception as e:
-            raise e
-        finally:
-            # restore saved lock
-            self._lock = lock
+        except:
+            # ignore this failure: not the end of the world
+            pass
 
     def release(self):
         if self._lock is None:
