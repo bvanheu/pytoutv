@@ -199,6 +199,13 @@ class _Cache:
         self._lock.release(force=True)
         self._lock = None
 
+    def __getstate__(self):
+        # let's not save the lock file
+        props = self.__dict__.copy()
+        props['_lock'] = None
+
+        return props
+
 
 def get_cache_dir():
     cache_subdir = 'toutv3'
