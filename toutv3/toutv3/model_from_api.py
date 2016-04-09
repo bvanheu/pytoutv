@@ -188,12 +188,18 @@ class _Factory:
         else:
             details = None
 
+        id_media = None
+
+        if 'IdMedia' in api_obj and type(api_obj['IdMedia']) is str:
+            id_media = api_obj['IdMedia']
+
         cls = model.Show
         obj = cls(self._agent, key=model.Key(self._agent, api_obj['Key']),
                   description=api_obj['Description'],
                   bg_image_url=api_obj['BackgroundImageUrl'],
                   image_url=api_obj['ImageUrl'], title=api_obj['Title'],
-                  details=details, season_lineups=season_lineups,
+                  id_media=id_media, details=details,
+                  season_lineups=season_lineups,
                   stats_metas=api_obj['StatsMetas'])
 
         return obj

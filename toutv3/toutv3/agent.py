@@ -23,7 +23,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from toutv3 import model, model_from_api, cache2
+from toutv3 import model, model_from_api, cache2, playlist
 from bs4 import BeautifulSoup
 from functools import partial
 import requests.cookies
@@ -38,12 +38,15 @@ import sys
 _logger = logging.getLogger(__name__)
 
 
-_VALID_HTTP_STATUS_CODES = (200, 301, 302, 404)
+_VALID_HTTP_STATUS_CODES = (200, 301, 302)
 _HTTP_HEADERS = {
-    'User-Agent': 'TouTvApp/2.3.1 (iPhone4.1; iOS/7.1.2; en-ca)'
+    'User-Agent': 'TouTvApp/2.3.1 (iPhone4.1; iOS/7.1.2; en-ca)',
 }
 _HTTP_TOUTV_HEADERS = {
     'Accept': 'application/json',
+}
+_HTTP_AKAMAIHD_HEADERS = {
+    'User-Agent': 'AppleCoreMedia/1.0.0.11D257 (iPhone; U; CPU OS 7_1_2 like Mac OS X; en_us)',
 }
 _HTTP_TOUTV_GET_PARAMS = {
     'v': '2',
@@ -181,6 +184,12 @@ class _Agent:
             return r
 
         if r.status_code not in _VALID_HTTP_STATUS_CODES:
+            # no need to login again with 404: the resource is not found
+            if r.status_code == 404:
+                exc_cls = toutv3.UnexpectedHttpStatusCode
+                raise exc_cls(r.status_code, 'GET', url, None, headers,
+                              params, allow_redirects)
+
             # bad request/unauthorized: try logging in and retry the
             # GET request
             _logger.debug('Trying to login again')
@@ -201,38 +210,51 @@ class _Agent:
 
         return r
 
+    def _akamaihd_get(self, url):
+        return self._get(url=url, headers=_HTTP_AKAMAIHD_HEADERS)
+
     def _register_settings(self):
+        _logger.debug('Registering settings')
+
         if len(self._cache.pres_settings) > 0:
+            _logger.debug('Settings found in cache')
             return
 
-        _logger.debug('Registering settings')
+        _logger.debug('Requesting settings')
         r = self._toutv_get(_PRES_SETTINGS_URL)
 
         if r.status_code != 200:
-            _logger.critical('Cannot register settings')
+            _logger.error('Cannot register settings')
             raise toutv3.ApiChanged()
 
         try:
             self._cache.pres_settings = r.json()
         except:
-            _logger.critical('Cannot decode settings')
+            _logger.error('Cannot decode settings')
             raise toutv3.ApiChanged()
+
+        _logger.debug('Registered settings')
 
     def _get_setting(self, name):
         _logger.debug('Getting setting "{}"'.format(name))
         self._register_settings()
 
         try:
-            return self._cache.pres_settings[name]
+            setting = self._cache.pres_settings[name]
         except:
-            _logger.critical('Cannot find setting "{}"'.format(name))
+            _logger.error('Cannot find setting "{}"'.format(name))
             raise toutv3.ApiChanged()
 
-    def _do_login(self):
-        if self._cache.is_logged_in:
-            return
+        _logger.debug('Found "{}" setting value: "{}"'.format(name, setting))
 
-        _logger.debug('Logging in')
+        return setting
+
+    def _do_login(self):
+        _logger.debug('Trying to log in')
+
+        if self._cache.is_logged_in:
+            _logger.debug('Already logged in')
+            return
 
         # get a few needed settings
         mobile_scopes = self._get_setting('MobileScopes')
@@ -242,24 +264,24 @@ class _Agent:
         # get login page
         url = '{}?response_type=token&client_id={}&scope={}&state=authCode&redirect_uri=http://ici.tou.tv/profiling/callback'
         url = url.format(endpoint_auth, client_id, mobile_scopes)
-        _logger.debug('Getting login page')
+        _logger.debug('Requesting login page')
         r = self._get(url)
 
         if r.status_code != 200:
-            _logger.critical('Cannot download login page')
+            _logger.error('Failed to request login page')
             raise toutv3.ApiChanged()
 
         try:
             login_soup = BeautifulSoup(r.text, 'html.parser')
         except:
-            _logger.critical('Cannot parse login page')
+            _logger.error('Cannot parse login page')
             raise toutv3.ApiChanged()
 
         # fill the form with user creds
         try:
             form_login = login_soup.select('#Form-login')[0]
         except:
-            _logger.critical('Login page: cannot select login form')
+            _logger.error('Login page: cannot select login form')
             raise toutv3.ApiChanged()
 
         data = {}
@@ -274,7 +296,7 @@ class _Agent:
         try:
             action = form_login['action']
         except:
-            _logger.critical("Login page: cannot get login form's action")
+            _logger.error("Login page: cannot get login form's action")
             raise toutv3.ApiChanged()
 
         # submit the form. this returns a response which includes super
@@ -284,13 +306,14 @@ class _Agent:
 
         # success?
         if r.status_code not in (301, 302):
+            _logger.error('Got HTTP status {}: invalid credentials'.format(r.status_code))
             raise toutv3.InvalidCredentials(self._user, self._password)
 
         # extract said super secret stuff from the fragment
         try:
             url_components = urllib.parse.urlparse(r.headers['Location'])
         except:
-            _logger.critical('Cannot parse URL in "Location" header')
+            _logger.error('Cannot parse URL in "Location" header')
             raise toutv3.ApiChanged()
 
         _logger.debug('Received location: "{}"'.format(r.headers['Location']))
@@ -299,26 +322,27 @@ class _Agent:
         try:
             token_type = qs_parts['token_type'][0]
         except:
-            _logger.critical('Cannot get "token_type" part of query string')
+            _logger.error('Cannot get "token_type" part of query string')
             raise toutv3.ApiChanged()
 
         try:
-            access_token = qs_parts['access_token'][0]
+            self._cache._access_token = qs_parts['access_token'][0]
         except:
-            _logger.critical('Cannot get "access_token" part of query string')
+            _logger.error('Cannot get "access_token" part of query string')
             raise toutv3.ApiChanged()
 
         _logger.debug('Token type: "{}"'.format(token_type))
-        _logger.debug('Access token: "{}"'.format(access_token))
+        _logger.debug('Access token: "{}"'.format(self._cache._access_token))
 
         # update TOU.TV base headers for future requests
-        self._cache.toutv_base_headers['Authorization'] = '{} {}'.format(token_type, access_token)
+        authorization = '{} {}'.format(token_type, self._cache._access_token)
+        self._cache.toutv_base_headers['Authorization'] = authorization
         self._cache.toutv_base_headers['ClientID'] = client_id
         self._cache.toutv_base_headers['RcId'] = ''
 
         # we're in!
-        _logger.debug('Successfully logged in')
         self._cache.is_logged_in = True
+        _logger.debug('Successfully logged in')
 
     def _login(self):
         self._logging_in = True
@@ -331,147 +355,179 @@ class _Agent:
     def get_user_infos(self):
         _logger.debug('Getting user infos')
 
-        if not self._cache.user_infos:
-            _logger.debug('Downloading user infos')
-            self._login()
-
-            # RC user infos endpoint is a setting
-            rc_user_infos_endpoint = self._get_setting('EndpointUserInfoIos')
-
-            # get user infos
-            r_rc_user_infos = self._toutv_get(rc_user_infos_endpoint)
-            r_toutv_user_infos = self._toutv_get(_USER_PROFILE_URL)
-
-            # decode user infos
-            try:
-                rc_user_infos = r_rc_user_infos.json()
-            except:
-                _logger.critical('Cannot decode RC user infos (JSON)')
-                raise toutv3.ApiChanged()
-
-            try:
-                toutv_user_infos = r_toutv_user_infos.json()
-            except:
-                _logger.critical('Cannot decode TOU.TV user infos (JSON)')
-                raise toutv3.ApiChanged()
-
-            # create user infos object
-            try:
-                func = self._model_factory.create_user_infos
-                self._cache.user_infos = func(rc_user_infos, toutv_user_infos)
-            except:
-                _logger.critical('Cannot create user infos object')
-                raise toutv3.ApiChanged()
-        else:
+        if self._cache.user_infos:
             _logger.debug('User infos found in cache')
+            return self._cache.user_infos
+
+        self._login()
+
+        # RC user infos endpoint is a setting
+        rc_user_infos_endpoint = self._get_setting('EndpointUserInfoIos')
+
+        # get user infos
+        _logger.debug('Requesting RC user infos')
+        r_rc_user_infos = self._toutv_get(rc_user_infos_endpoint)
+
+        if r_rc_user_infos.status_code != 200:
+            _logger.error('Failed to request RC user infos')
+            raise toutv3.ApiChanged()
+
+        _logger.debug('Requesting TOU.TV user profile')
+        r_toutv_user_infos = self._toutv_get(_USER_PROFILE_URL)
+
+        if r_toutv_user_infos.status_code != 200:
+            _logger.error('Failed to request TOU.TV user profile')
+            raise toutv3.ApiChanged()
+
+        # decode user infos
+        try:
+            rc_user_infos = r_rc_user_infos.json()
+        except:
+            _logger.error('Cannot decode RC user infos (JSON)')
+            raise toutv3.ApiChanged()
+
+        try:
+            toutv_user_infos = r_toutv_user_infos.json()
+        except:
+            _logger.error('Cannot decode TOU.TV user profile (JSON)')
+            raise toutv3.ApiChanged()
+
+        # create user infos object
+        try:
+            func = self._model_factory.create_user_infos
+            self._cache.user_infos = func(rc_user_infos, toutv_user_infos)
+        except:
+            _logger.error('Cannot create user infos object')
+            raise toutv3.ApiChanged()
+
+        _logger.debug('Created user infos object')
 
         return self._cache.user_infos
 
     def get_search_show_summaries(self):
         _logger.debug('Getting search show summaries')
 
-        if not self._cache.search_show_summaries:
-            _logger.debug('Downloading search show summaries')
-            self._login()
-
-            # get search show summaries
-            r_sss = self._toutv_get(_SEARCH_URL)
-
-            # decode search show summaries
-            try:
-                sss = r_sss.json()
-            except:
-                _logger.critical('Cannot decode search show summaries (JSON)')
-                raise toutv3.ApiChanged()
-
-            if type(sss) is not list:
-                _logger.critical('Cannot decode search show summaries: expecting an array')
-                raise toutv3.ApiChanged()
-
-            # create search show summaries objects
-            search_show_summaries = []
-
-            for index, sss_item in enumerate(sss):
-                try:
-                    func = self._model_factory.create_search_show_summary
-                    search_show_summary = func(sss_item)
-                except:
-                    _logger.critical('Cannot create search show summary object #{}'.format(index))
-                    raise toutv3.ApiChanged()
-
-                search_show_summaries.append(search_show_summary)
-
-            self._cache.search_show_summaries = search_show_summaries
-        else:
+        if self._cache.search_show_summaries:
             _logger.debug('Search show summaries found in cache')
+            return self._cache.search_show_summaries
+
+        self._login()
+        _logger.debug('Requesting search show summaries')
+
+        # get search show summaries
+        r_sss = self._toutv_get(_SEARCH_URL)
+
+        if r_sss.status_code != 200:
+            _logger.error('Failed to request search show summaries')
+            raise toutv3.ApiChanged()
+
+        # decode search show summaries
+        try:
+            sss = r_sss.json()
+        except:
+            _logger.error('Cannot decode search show summaries (JSON)')
+            raise toutv3.ApiChanged()
+
+        if type(sss) is not list:
+            _logger.error('Cannot decode search show summaries: expecting an array')
+            raise toutv3.ApiChanged()
+
+        # create search show summaries objects
+        search_show_summaries = []
+
+        for index, sss_item in enumerate(sss):
+            try:
+                func = self._model_factory.create_search_show_summary
+                search_show_summary = func(sss_item)
+            except:
+                _logger.error('Cannot create search show summary object #{}'.format(index))
+                raise toutv3.ApiChanged()
+
+            search_show_summaries.append(search_show_summary)
+
+        self._cache.search_show_summaries = search_show_summaries
+        _logger.debug('Created all search show summary objects')
 
         return self._cache.search_show_summaries
 
     def get_section_summaries(self):
         _logger.debug('Getting section summaries')
 
-        if not self._cache.section_summaries:
-            _logger.debug('Downloading section summaries')
-            self._login()
-
-            # get section summaries
-            r_ss = self._toutv_get(_SECTION_URL)
-
-            # decode section summaries
-            try:
-                ss = r_ss.json()
-            except:
-                _logger.critical('Cannot decode section summaries (JSON)')
-                raise toutv3.ApiChanged()
-
-            if type(ss) is not list:
-                _logger.critical('Cannot decode section summaries: expecting an array')
-                raise toutv3.ApiChanged()
-
-            # create section summaries objects
-            for index, ss_item in enumerate(ss):
-                try:
-                    func = self._model_factory.create_section_summary
-                    section_summary = func(ss_item)
-                except:
-                    _logger.critical('Cannot create section summary object #{}'.format(index))
-                    raise toutv3.ApiChanged()
-
-                self._cache.section_summaries[section_summary.name] = section_summary
-        else:
+        if self._cache.section_summaries:
             _logger.debug('Section summaries found in cache')
+            return self._cache.section_summaries
+
+        self._login()
+        _logger.debug('Requesting section summaries')
+
+        # get section summaries
+        r_ss = self._toutv_get(_SECTION_URL)
+
+        if r_ss.status_code != 200:
+            _logger.error('Failed to request section summaries')
+            raise toutv3.ApiChanged()
+
+        # decode section summaries
+        try:
+            ss = r_ss.json()
+        except:
+            _logger.error('Cannot decode section summaries (JSON)')
+            raise toutv3.ApiChanged()
+
+        if type(ss) is not list:
+            _logger.error('Cannot decode section summaries: expecting an array')
+            raise toutv3.ApiChanged()
+
+        # create section summaries objects
+        for index, ss_item in enumerate(ss):
+            try:
+                func = self._model_factory.create_section_summary
+                section_summary = func(ss_item)
+            except:
+                _logger.error('Cannot create section summary object #{}'.format(index))
+                raise toutv3.ApiChanged()
+
+            self._cache.section_summaries[section_summary.name] = section_summary
+
+        _logger.debug('Created all section summary objects')
 
         return self._cache.section_summaries
 
     def get_section(self, name):
         _logger.debug('Getting section "{}"'.format(name))
 
-        if not self._cache.get_section(name):
-            _logger.debug('Downloading section "{}"'.format(name))
-            self._login()
-
-            # get section
-            fmt = '{}/{}?smallWidth=220&mediumWidth=600&largeWidth=800&includePartnerTeaser=true'
-            url = fmt.format(_SECTION_URL, name)
-            r_section = self._toutv_get(url)
-
-            # decode section
-            try:
-                section = r_section.json()
-            except:
-                _logger.critical('Cannot decode section (JSON)')
-                raise toutv3.ApiChanged()
-
-            # create section object
-            try:
-                section_obj = self._model_factory.create_section(section)
-            except:
-                _logger.critical('Cannot create section object')
-                raise toutv3.ApiChanged()
-
-            self._cache.set_section(section_obj)
-        else:
+        if self._cache.get_section(name):
             _logger.debug('Section "{}" found in cache'.format(name))
+            return self._cache.get_section(name)
+
+        self._login()
+        _logger.debug('Requesting section "{}"'.format(name))
+
+        # get section
+        fmt = '{}/{}?smallWidth=220&mediumWidth=600&largeWidth=800&includePartnerTeaser=true'
+        url = fmt.format(_SECTION_URL, name)
+        r_section = self._toutv_get(url)
+
+        if r_section.status_code != 200:
+            _logger.error('Failed to request section')
+            raise toutv3.ApiChanged()
+
+        # decode section
+        try:
+            section = r_section.json()
+        except:
+            _logger.error('Cannot decode section (JSON)')
+            raise toutv3.ApiChanged()
+
+        # create section object
+        try:
+            section_obj = self._model_factory.create_section(section)
+        except:
+            _logger.error('Cannot create section object')
+            raise toutv3.ApiChanged()
+
+        self._cache.set_section(section_obj)
+        _logger.debug('Created section object')
 
         return self._cache.get_section(name)
 
@@ -481,31 +537,147 @@ class _Agent:
 
         _logger.debug('Getting show "{}"'.format(url_name))
 
-        if not self._cache.get_show(url_name):
-            _logger.debug('Downloading show "{}"'.format(url_name))
-            self._login()
-
-            # get show
-            fmt = '{}/{}?excludeLineups=False&smallWidth=220&mediumWidth=600&largeWidth=800'
-            url = fmt.format(_PRES_BASE_URL, url_name)
-            r_show = self._toutv_get(url)
-
-            # decode show
-            try:
-                show = r_show.json()
-            except:
-                _logger.critical('Cannot decode show (JSON)')
-                raise toutv3.ApiChanged()
-
-            # create show object
-            try:
-                show_obj = self._model_factory.create_show(show)
-            except:
-                _logger.critical('Cannot create show object')
-                raise toutv3.ApiChanged()
-
-            self._cache.set_show(url_name, show_obj)
-        else:
+        if self._cache.get_show(url_name):
             _logger.debug('Show "{}" found in cache'.format(url_name))
+            return self._cache.get_show(url_name)
+
+        self._login()
+        _logger.debug('Requesting show "{}"'.format(url_name))
+
+        # get show
+        fmt = '{}/{}?excludeLineups=False&smallWidth=220&mediumWidth=600&largeWidth=800'
+        url = fmt.format(_PRES_BASE_URL, url_name)
+        r_show = self._toutv_get(url)
+
+        if r_show.status_code != 200:
+            _logger.error('Failed to request show')
+            raise toutv3.ApiChanged()
+
+        # decode show
+        try:
+            show = r_show.json()
+        except:
+            _logger.error('Cannot decode show (JSON)')
+            raise toutv3.ApiChanged()
+
+        # create show object
+        try:
+            show_obj = self._model_factory.create_show(show)
+        except:
+            _logger.error('Cannot create show object')
+            raise toutv3.ApiChanged()
+
+        self._cache.set_show(url_name, show_obj)
+        _logger.debug('Created show object')
 
         return self._cache.get_show(url_name)
+
+    def _register_claims(self):
+        _logger.debug('Registering claims')
+
+        if self._cache.claims:
+            _logger.debug('Claims found in cache')
+            return
+
+        self._login()
+        _logger.debug('Requesting claims')
+
+        # validation endpoint is a setting
+        validation_endpoint = self._get_setting('EndpointValidationMediaIos')
+
+        # get claims
+        url = '{}/GetClaims'.format(validation_endpoint)
+        params = {
+            'token': self._cache.access_token,
+        }
+        r_claims = self._toutv_get(url, params=params)
+
+        if r_claims.status_code != 200:
+            _logger.error('Failed to request claims')
+            raise toutv3.ApiChanged()
+
+        # decode claims
+        try:
+            self._cache.claims = r_claims.json()
+        except:
+            _logger.error('Cannot decode claims (JSON)')
+            raise toutv3.ApiChanged()
+
+        _logger.debug('Registered claims')
+
+    def _get_master_playlist(self, id_media):
+        _logger.debug('Getting master playlist for media ID "{}"'.format(id_media))
+
+        if self._cache.get_master_playlist(id_media):
+            _logger.debug('Master playlist for media ID "{}" found in cache'.format(id_media))
+            return self._cache.get_master_playlist(id_media)
+
+        self._login()
+        self._register_claims()
+
+        params = {
+            'appCode': 'toutv',
+            'deviceType': 'ioscenc',
+            'connectionType': 'wifi',
+            'idMedia': id_media,
+            'claims': self._cache.claims['claims'],
+            'output': 'json',
+            'deviceId': str(self._cache.device_id).upper(),
+        }
+
+        # validation endpoint is a setting
+        validation_endpoint = self._get_setting('EndpointValidationMediaIos')
+
+        # get master playlist info
+        _logger.debug('Requesting master playlist info')
+        r_playlist_info = self._toutv_get(validation_endpoint, params=params)
+
+        if r_playlist_info.status_code != 200:
+            _logger.error('Failed to request master playlist info')
+            raise toutv3.ApiChanged()
+
+        # decode playlist info
+        try:
+            playlist_info = r_playlist_info.json()
+        except:
+            _logger.error('Cannot decode master playlist info (JSON)')
+            raise toutv3.ApiChanged()
+
+        playlist_url = playlist_info['url']
+
+        if type(playlist_url) is not str:
+            _logger.error('Invalid master playlist URL: {}'.format(playlist_url))
+            raise toutv3.ApiChanged()
+
+        _logger.debug('Found master playlist URL: "{}"'.format(playlist_url))
+        _logger.debug('Requesting master playlist')
+        r_playlist = self._akamaihd_get(playlist_url)
+
+        if r_playlist.status_code != 200:
+            _logger.error('Failed to request master playlist')
+            raise toutv3.ApiChanged()
+
+        try:
+            master_playlist = playlist.from_m3u8(r_playlist.text)
+        except Exception as e:
+            _logger.error('Failed to parse master playlist M3U8')
+            raise toutv3.ApiChanged() from e
+
+        if type(master_playlist) is not playlist.MasterPlaylist:
+            _logger.error('Expecting a master playlist, got something else')
+            raise toutv3.ApiChanged()
+
+        _logger.debug('Created master playlist for media ID "{}"'.format(id_media))
+        self._cache.set_master_playlist(id_media, master_playlist)
+
+        return master_playlist
+
+    def get_media_versions(self, id_media):
+        _logger.debug('Getting media versions for media ID "{}"'.format(id_media))
+        master_playlist = self._get_master_playlist(id_media)
+        media_versions = []
+
+        for vs in master_playlist.variant_streams:
+            media_versions.append(model.MediaVersion(self, id_media, vs))
+
+        return media_versions

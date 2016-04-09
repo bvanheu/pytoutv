@@ -528,7 +528,7 @@ class Details(_Base):
 # A show.
 class Show(_Base):
     def __init__(self, agent, key, description, bg_image_url, image_url, title,
-                 details, season_lineups, stats_metas):
+                 details, id_media, season_lineups, stats_metas):
         super().__init__(agent)
         self._key = key
         self._description = description
@@ -538,6 +538,7 @@ class Show(_Base):
         self._details = details
         self._season_lineups = season_lineups
         self._stats_metas = stats_metas
+        self._id_media = id_media
 
     def _set_agent(self, agent):
         super()._set_agent(agent)
@@ -578,6 +579,10 @@ class Show(_Base):
     @property
     def stats_metas(self):
         return self._stats_metas
+
+    @property
+    def id_media(self):
+        return self._id_media
 
 
 # A season lineup.
@@ -635,6 +640,7 @@ class EpisodeLineupItem(_Base):
         self._description = description
         self._share_url = share_url
         self._details = details
+        self._id_media = None
 
     def _set_agent(self, agent):
         super()._set_agent(agent)
@@ -688,3 +694,41 @@ class EpisodeLineupItem(_Base):
     @property
     def details(self):
         return self._details
+
+    @property
+    def id_media(self):
+        if not self._id_media:
+            if not self._url:
+                return
+
+            show = self._agent.get_show(self._url)
+            self._id_media = show.id_media
+
+        return self._id_media
+
+    @property
+    def media_versions(self):
+        return self._agent.get_media_versions(self.id_media)
+
+
+# A media version
+class MediaVersion(_Base):
+    def __init__(self, agent, id_media, variant_stream):
+        super().__init__(agent)
+        self._id_media = id_media
+        self._variant_stream = variant_stream
+
+    @property
+    def id_media(self):
+        return self._id_media
+
+    @property
+    def bandwidth(self):
+        return self._variant_stream.bandwidth
+
+    @property
+    def resolution(self):
+        if self._variant_stream.resolution:
+            reso = self._variant_stream.resolution
+
+            return (reso.width, reso.height)

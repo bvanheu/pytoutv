@@ -32,6 +32,7 @@ import filelock
 import logging
 import os.path
 import pickle
+import uuid
 
 
 _logger = logging.getLogger(__name__)
@@ -52,12 +53,16 @@ class _Cache:
         self._toutv_base_headers = {}
         self._cookies = requests.cookies.RequestsCookieJar()
         self._pres_settings = {}
+        self._access_token = None
+        self._claims = None
         self._is_logged_in = False
         self._shows = {}
         self._sections = {}
+        self._master_playlists = {}
         self._search_show_summaries = []
         self._section_summaries = OrderedDict()
         self._user_infos = None
+        self._device_id = uuid.uuid4()
 
     @property
     def is_expired(self):
@@ -77,6 +82,10 @@ class _Cache:
     @lock.setter
     def lock(self, lock):
         self._lock = lock
+
+    @property
+    def device_id(self):
+        return self._device_id
 
     @property
     def pres_settings(self):
@@ -127,6 +136,22 @@ class _Cache:
         self._cookies = cookies
 
     @property
+    def claims(self):
+        return self._claims
+
+    @claims.setter
+    def claims(self, claims):
+        self._claims = claims
+
+    @property
+    def access_token(self):
+        return self._access_token
+
+    @access_token.setter
+    def access_token(self, access_token):
+        self._access_token = access_token
+
+    @property
     def section_summaries(self):
         return self._section_summaries
 
@@ -146,10 +171,6 @@ class _Cache:
     def shows(self):
         return self._shows
 
-    @property
-    def sections(self):
-        return self._sections
-
     def get_show(self, url_name):
         if url_name in self._shows:
             return self._shows[url_name]
@@ -157,12 +178,27 @@ class _Cache:
     def set_show(self, url_name, show):
         self._shows[url_name] = show
 
+    @property
+    def sections(self):
+        return self._sections
+
     def get_section(self, name):
         if name in self._sections:
             return self._sections[name]
 
     def set_section(self, section):
         self._sections[section.name] = section
+
+    @property
+    def master_playlists(self):
+        return self._master_playlists
+
+    def get_master_playlist(self, id_media):
+        if id_media in self._master_playlists:
+            return self._master_playlists[id_media]
+
+    def set_master_playlist(self, id_media, master_playlist):
+        self._master_playlists[id_media] = master_playlist
 
     def save(self):
         # only save if we have a lock
