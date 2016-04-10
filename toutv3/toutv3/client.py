@@ -31,28 +31,73 @@ _logger = logging.getLogger(__name__)
 
 
 class Client:
+    """
+    TOU.TV client.
+
+    This is the main entry point of the :ref:`API <API>`.
+    """
+
     def __init__(self, user, password, no_cache=False):
+        """
+        Creates a TOU.TV client, logging in with user name *user*
+        and password *password*.
+
+        If *no_cache* is ``True``, then no :ref:`cache <cache>`
+        is created/loaded.
+        """
+
         self._user = user
         self._password = password
         self._agent = agent._Agent(user, password, no_cache)
 
     @property
     def user_infos(self):
+        """
+        :py:class:`toutv3.model.UserInfos` object containing the
+        informations and profile of the client's user.
+        """
+
         return self._agent.get_user_infos()
 
     @property
     def search_show_summaries(self):
+        """
+        List of :py:class:`toutv3.model.SearchShowSummary` objects.
+        """
+
         return self._agent.get_search_show_summaries()
 
     @property
     def section_summaries(self):
+        """
+        Dictionary mapping section names to
+        :py:class:`toutv3.model.SectionSummary` objects.
+        """
+
         return self._agent.get_section_summaries()
 
     def get_show(self, url_name):
+        """
+        Returns a :py:class`toutv3.model.Show` object correspoding to
+        the URL name *url_name*.
+
+        The URL name of a show can be found in the
+        :py:attr:`toutv3.model.SearchShowSummary.url` or
+        :py:attr:`toutv3.model.ShowLineupItem.url` property.
+        """
         return self._agent.get_show(url_name)
 
     def get_section(self, name):
+        """
+        Returns a :py:class:`toutv3.model.Section` object correspoding to
+        the section name *name*.
+        """
         return self._agent.get_section(name)
 
     def release_cache(self):
+        """
+        Releases the :ref:`cache <cache>` created/loaded by this
+        client, if any.
+        """
+
         self._agent.release_cache()

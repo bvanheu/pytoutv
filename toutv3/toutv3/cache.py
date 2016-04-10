@@ -223,7 +223,7 @@ class _Cache:
 
         # save
         try:
-            file_name = get_cache_file_name(self._user)
+            file_name = _get_cache_file_name(self._user)
             _logger.debug('Saving cache file "{}"'.format(file_name))
 
             with open(file_name, 'wb') as f:
@@ -250,7 +250,7 @@ class _Cache:
         return props
 
 
-def get_cache_dir():
+def _get_cache_dir():
     # lookup order:
     #
     #   1. $TOUTV3_CACHE_DIR
@@ -303,20 +303,20 @@ def _get_cache_base_name(user):
     return '{}-{}'.format(san_user, md5.hexdigest())
 
 
-def get_cache_file_name(user):
+def _get_cache_file_name(user):
     file_name = '{}.cache'.format(_get_cache_base_name(user))
 
-    return os.path.join(get_cache_dir(), file_name)
+    return os.path.join(_get_cache_dir(), file_name)
 
 
 def _get_file_lock(user):
     file_name = '{}.lock'.format(_get_cache_base_name(user))
-    file_name = os.path.join(get_cache_dir(), file_name)
+    file_name = os.path.join(_get_cache_dir(), file_name)
 
     return filelock.FileLock(file_name)
 
 
-def load(user):
+def _load(user):
     _logger.debug('Trying to load cache for user "{}"'.format(user))
 
     try:
@@ -342,7 +342,7 @@ def load(user):
     _logger.debug('Cache lock file "{}" acquired'.format(lock.lock_file))
 
     try:
-        cache_file_name = get_cache_file_name(user)
+        cache_file_name = _get_cache_file_name(user)
     except:
         # no lock, no luck
         _logger.debug('Cannot get cache file name: using empty cache')

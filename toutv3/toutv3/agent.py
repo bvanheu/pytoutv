@@ -99,7 +99,7 @@ class _Agent:
             return
 
         # load the cache
-        self._cache = cache.load(self._user)
+        self._cache = cache._load(self._user)
 
         # set the current agent as the cache objects's agent
         self._set_cache_objects_agent()

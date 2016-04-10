@@ -42,29 +42,122 @@ from collections import namedtuple
 _logger = logging.getLogger(__name__)
 
 
-DownloadProgress = namedtuple('DownloadProgress', ['done_bytes', 'done_segments', 'total_segments', 'done_seconds'])
+class DownloadProgress:
+    """
+    Download progress indication.
+
+    A download progress indication object is created by a
+    :py:class:`Download` object when iterating on chunks using
+    :py:meth:`Download.iter_download`.
+    """
+
+    def __init__(self, dl_bytes, dl_segments, total_segments, dl_seconds):
+        self._dl_bytes = dl_bytes
+        self._dl_segments = dl_segments
+        self._total_segments = total_segments
+        self._dl_seconds = dl_seconds
+
+    @property
+    def dl_bytes(self):
+        """
+        Total downloaded bytes.
+        """
+
+        return self._dl_bytes
+
+    @property
+    def dl_segments(self):
+        """
+        Total downloaded media segments.
+        """
+
+        return self._dl_segments
+
+    @property
+    def total_segments(self):
+        """
+        Total count of media segments.
+        """
+
+        return self._total_segments
+
+    @property
+    def dl_seconds(self):
+        """
+        Total downloaded playback seconds of the media content.
+        """
+
+        return self._dl_seconds
 
 
 _seg_aes_iv = struct.Struct('>IIII')
 
 
 class Download:
+    """
+    Media download.
+
+    A download object is created for a specific media version by
+    :py:meth:`toutv3.model.MediaVersion.create_download`.
+
+    Once created, the target media file can be downloaded iteratively
+    by iterating on :py:meth:`iter_download`.
+    """
+
     def __init__(self, agent, playlist):
         self._agent = agent
         self._playlist = playlist
+        self._download_progress = DownloadProgress()
 
     def _init_download(self):
-        self._done_bytes = 0
-        self._done_segments = 0
-        self._done_seconds = 0
+        self._dl_bytes = 0
+        self._dl_segments = 0
+        self._dl_seconds = 0
 
     @property
-    def done_bytes(self):
-        return self._done_bytes
+    def dl_bytes(self):
+        """
+        Total downloaded bytes.
+        """
+
+        return self._dl_bytes
 
     @property
-    def done_segments(self):
-        return self._done_segments
+    def dl_segments(self):
+        """
+        Total downloaded media segments.
+        """
+
+        return self._dl_segments
+
+    @property
+    def total_segments(self):
+        return len(self._playlist.media_segments)
+
+    @property
+    def dl_seconds(self):
+        """
+        Total downloaded playback seconds of the media content.
+        """
+
+        return self._dl_seconds
+
+    @property
+    def output_path(self):
+        """
+        Output path of this download.
+        """
+
+        return self._output_path
+
+    @property
+    def chunk_size(self):
+        """
+        Size of chunks, in bytes, downloaded when iterating on
+        :py:meth:`iter_download`.
+        """
+
+        return self._chunk_size
 
     def _get_segment_file_path(self, ms):
         dirname = os.path.dirname(self._output_path)
@@ -79,7 +172,7 @@ class Download:
         key = ms.key
 
         if key.method != playlist.KeyMethod.AES_128:
-            raise toutv3.DownloadError('Unsupported key method at segment {}'.format(ms.media_sequence))
+            raise toutv3.DownloadError(self, 'Unsupported key method at segment {}'.format(ms.media_sequence))
 
         bin_key = self._agent.get_media_segment_key(key.uri)
 
@@ -92,17 +185,17 @@ class Download:
         if os.path.isfile(segpath):
             _logger.debug('Segment file "{}" exists: skipping'.format(segpath))
             statinfo = os.stat(segpath)
-            self._done_bytes += statinfo.st_size
+            self._dl_bytes += statinfo.st_size
             return
 
         encrypted_ts_segment = bytearray()
 
         for chunk in self._agent.akamaihd_stream_get(ms.uri, self._chunk_size):
             encrypted_ts_segment += chunk
-            self._done_bytes += len(chunk)
-            yield DownloadProgress(self._done_bytes, self._done_segments,
+            self._dl_bytes += len(chunk)
+            yield DownloadProgress(self._dl_bytes, self._dl_segments,
                                    len(self._playlist.media_segments),
-                                   self._done_seconds)
+                                   self._dl_seconds)
 
         _logger.debug('Decrypting segment {}'.format(ms.media_sequence))
         aes_iv = _seg_aes_iv.pack(0, 0, 0, ms.media_sequence)
@@ -145,7 +238,7 @@ class Download:
 
                 if not os.path.isfile(segpath):
                     _logger.error('Cannot find segment file "{}"'.format(segpath))
-                    raise toutv3.DownloadError('While trying to stitch: Cannot find segment file "{}"'.format(segpath))
+                    raise toutv3.DownloadError(self, 'While trying to stitch: Cannot find segment file "{}"'.format(segpath))
 
                 with open(segpath, 'rb') as segf:
                     _logger.debug('Appending segment file "{}"'.format(segpath))
@@ -171,6 +264,22 @@ class Download:
             self._remove_segment_file(ms)
 
     def iter_download(self, output_path, chunk_size=4096):
+        """
+        Generator of :py:class:`DownloadProgress` objects which indicate
+        the progress of this download.
+
+        The downloaded file is saved to *output_path*.
+
+        A :py:class:`DownloadProgress` object is generated each time
+        *chunk_size* bytes are downloaded.
+
+        The media segments of the complete media file are downloaded
+        one byte one, saved as temporary files in the directory of
+        *output_path*. This allows the download to be resumed if it's
+        not completed. Once all the segment files exist, they are
+        stitched together to form the final media file, and then
+        removed from the file system.
+        """
         self._output_path = output_path
         self._chunk_size = max(4096, chunk_size)
 
@@ -186,15 +295,15 @@ class Download:
             except Exception as e:
                 if type(e) is OSError and e.errno == errno.ENOSPC:
                     _logger.error('No space left on device')
-                    raise toutv3.NoSpaceLeft()
+                    raise toutv3.NoSpaceLeft(self)
 
                 _logger.error('Cannot download segment file: {}'.format(e))
-                raise toutv3.DownloadError('Cannot download segment {}: {}'.format(ms.media_sequence, e)) from e
+                raise toutv3.DownloadError(self, 'Cannot download segment {}: {}'.format(ms.media_sequence, e)) from e
 
-            self._done_segments += 1
+            self._dl_segments += 1
 
             if ms.duration is not None:
-                self._done_seconds += ms.duration
+                self._dl_seconds += ms.duration
 
         # stitch individual segment files as a complete file
         try:
@@ -202,10 +311,10 @@ class Download:
         except Exception as e:
             if type(e) is OSError and e.errno == errno.ENOSPC:
                 _logger.error('No space left on device')
-                raise toutv3.NoSpaceLeft()
+                raise toutv3.NoSpaceLeft(self)
 
             _logger.error('Cannot stitch segment files: {}'.format(e))
-            raise toutv3.DownloadError('Cannot stitch segment files: {}'.format(e))
+            raise toutv3.DownloadError(self, 'Cannot stitch segment files: {}'.format(e))
 
         # remove segment files
         self._remove_segment_files()

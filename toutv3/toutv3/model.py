@@ -46,6 +46,12 @@ class _Base:
 
 # A key, used to uniquely represent a show, an episode, etc.
 class Key(_Base):
+    """
+    Show/episode's unique key.
+
+    Key objects are comparable.
+    """
+
     def __init__(self, agent, key):
         super().__init__(agent)
         self._key = key
@@ -58,14 +64,26 @@ class Key(_Base):
 
     @property
     def key(self):
+        """
+        Key's string.
+        """
+
         return self._key
 
     @property
     def key_type(self):
+        """
+        Key's type (string).
+        """
+
         return self._key.split('-')[0]
 
     @property
     def key_code(self):
+        """
+        Key's code (string).
+        """
+
         return self._key.split('-')[1]
 
     def __str__(self):
@@ -74,6 +92,10 @@ class Key(_Base):
 
 # A user bookmark.
 class Bookmark(_Base):
+    """
+    TOU.TV user bookmark.
+    """
+
     def __init__(self, agent, key, creation_date):
         super().__init__(agent)
         self._key = key
@@ -85,16 +107,29 @@ class Bookmark(_Base):
 
     @property
     def show(self):
+        """
+        :py:class:`Show` object which corresponds to this bookmark,
+        or ``None`` if it cannot be found.
+        """
+
         for search_show_summary in self._agent.get_search_show_summaries():
             if search_show_summary.key == self.key:
                 return search_show_summary.show
 
     @property
     def key(self):
+        """
+        Bookmark's unique key (:py:class:`Key` object).
+        """
+
         return self._key
 
     @property
     def creation_date(self):
+        """
+        Creation date of this bookmark (:py:class:`datetime.datetime`).
+        """
+
         return self._creation_date
 
 
@@ -111,6 +146,10 @@ class Bookmark(_Base):
 #
 # show_ads tells the app whether or not it should display ads.
 class UserInfos(_Base):
+    """
+    TOU.TV user informations and profile.
+    """
+
     def __init__(self, agent, ban_level, name, email, is_hd, bookmarks,
                  stats_metas, rc_telco, rc_features, is_premium, show_ads):
         super().__init__(agent)
@@ -133,42 +172,84 @@ class UserInfos(_Base):
 
     @property
     def ban_level(self):
+        """
+        Ban level of this user or ``None``.
+        """
+
         return self._ban_level
 
     @property
     def name(self):
+        """
+        User's full name.
+        """
+
         return self._name
 
     @property
     def email(self):
+        """
+        User's email address.
+        """
+
         return self._email
 
     @property
     def is_hd(self):
+        """
+        ``True`` if this user can access HD content.
+        """
+
         return self._is_hd
 
     @property
     def bookmarks(self):
+        """
+        List of :py:class:`Bookmark` objects of this user.
+        """
+
         return self._bookmarks
 
     @property
     def stats_metas(self):
+        """
+        Raw stats metas from the TOU.TV API (:py:class:`dict`).
+        """
+
         return self._stats_metas
 
     @property
     def rc_telco(self):
+        """
+        Telephone company of this user, if the user's account is
+        associated with one.
+        """
+
         return self._rc_telco
 
     @property
     def rc_features(self):
+        """
+        Features of this account enabled by the partnership between
+        TOU.TV and the user's telephone company.
+        """
+
         return self._rc_features
 
     @property
     def is_premium(self):
+        """
+        ``True`` if this user is a premium user.
+        """
+
         return self._is_premium
 
     @property
     def show_ads(self):
+        """
+        ``True`` if this user should see ads.
+        """
+
         return self._show_ads
 
 
@@ -178,6 +259,10 @@ class UserInfos(_Base):
 # Sections on TOU.TV are the top containers of shows, like "À la une",
 # "Rattrapage télé", "Extra", "Jeunesse", etc.
 class SectionSummary(_Base):
+    """
+    Summary of a section.
+    """
+
     def __init__(self, agent, name, title):
         super().__init__(agent)
         self._name = name
@@ -185,14 +270,27 @@ class SectionSummary(_Base):
 
     @property
     def section(self):
+        """
+        :py:class:`Section` object which corresponds to this
+        section summary.
+        """
+
         return self._agent.get_section(self.name)
 
     @property
     def name(self):
+        """
+        Section's name.
+        """
+
         return self._name
 
     @property
     def title(self):
+        """
+        Section's title.
+        """
+
         return self._title
 
 
@@ -210,6 +308,12 @@ class SectionSummary(_Base):
 # url is the link, relative to the TOU.TV domain name, to access the
 # show page.
 class SearchShowSummary(_Base):
+    """
+    Search show summary.
+
+    This contains the minimum information about a show to search for
+    it in a list of such summaries.
+    """
     def __init__(self, agent, is_free, image_url, key, searchable_text,
                  url, is_media, is_geolocalized, title):
         super().__init__(agent)
@@ -228,43 +332,86 @@ class SearchShowSummary(_Base):
 
     @property
     def show(self):
+        """
+        :py:class:`Show` object which corresponds to this
+        search show summary.
+        """
+
         return self._agent.get_show(self.url)
 
     @property
     def is_free(self):
+        """
+        ``True`` if this show is available to non-premium users.
+        """
+
         return self._is_free
 
     @property
     def image_url(self):
+        """
+        URL of the static image file of this show.
+        """
+
         return self._image_url
 
     @property
     def key(self):
+        """
+        Show's unique key (:py:class:`Key` object).
+        """
+
         return self._key
 
     @property
     def searchable_text(self):
+        """
+        Text in which a user's search term should be searched instead
+        of using the title.
+        """
+
         return self._searchable_text
 
     @property
     def url(self):
+        """
+        Show's URL name.
+        """
+
         return self._url
 
     @property
     def is_media(self):
+        """
+        ``True`` if this show has no seasons/episodes.
+        """
+
         return self._is_media
 
     @property
     def is_geolocalized(self):
+        """
+        ``True`` if this show is geolocalized.
+        """
+
         return self._is_geolocalized
 
     @property
     def title(self):
+        """
+        Show's title.
+        """
+
         return self._title
 
 
 # A show lineup item.
 class ShowLineupItem(_Base):
+    """
+    Show lineup item: an item in the :py:attr:`SubsectionLineup.items`
+    list.
+    """
+
     def __init__(self, agent, key, description, image_url, is_active, is_drm,
                  is_free, is_geolocalized, length_text, share_url, template,
                  title, url):
@@ -288,42 +435,83 @@ class ShowLineupItem(_Base):
 
     @property
     def show(self):
+        """
+        :py:class:`Show` object which corresponds to this
+        show lineup item.
+        """
+
         return self._agent.get_show(self.url)
 
     @property
     def key(self):
+        """
+        Show's unique key (:py:class:`Key` object).
+        """
+
         return self._key
 
     @property
     def description(self):
+        """
+        Show's textual description.
+        """
+
         return self._description
 
     @property
     def image_url(self):
+        """
+        URL of the static image file of this show.
+        """
+
         return self._image_url
 
     @property
     def is_active(self):
+        """
+        ``True`` if this show is active.
+        """
+
         return self._is_active
 
     @property
     def is_drm(self):
+        """
+        ``True`` if this show is protected by DRM.
+        """
+
         return self._is_drm
 
     @property
     def is_free(self):
+        """
+        ``True`` if this show is available to non-premium users.
+        """
+
         return self._is_free
 
     @property
     def is_geolocalized(self):
+        """
+        ``True`` if this show is geolocalized.
+        """
+
         return self._is_geolocalized
 
     @property
     def length_text(self):
+        """
+        Textual length information of this show.
+        """
+
         return self._length_text
 
     @property
     def share_url(self):
+        """
+        Full sharing URL of this show.
+        """
+
         return self._share_url
 
     @property
@@ -332,15 +520,28 @@ class ShowLineupItem(_Base):
 
     @property
     def title(self):
+        """
+        Show's title.
+        """
+
         return self._title
 
     @property
     def url(self):
+        """
+        Show's URL name.
+        """
+
         return self._url
 
 
 # A subsection lineup.
 class SubsectionLineup(_Base):
+    """
+    Subsection lineup: a lineup in the :py:attr:`Section.subsection_lineups`
+    list.
+    """
+
     def __init__(self, agent, name, title, is_free, items):
         super().__init__(agent)
         self._name = name
@@ -356,23 +557,43 @@ class SubsectionLineup(_Base):
 
     @property
     def name(self):
+        """
+        Subsection's name.
+        """
+
         return self._name
 
     @property
     def title(self):
+        """
+        Subsection's title.
+        """
+
         return self._title
 
     @property
     def is_free(self):
+        """
+        ``True`` if this subsection is available to non-premium users.
+        """
+
         return self._is_free
 
     @property
     def items(self):
+        """
+        A list of :py:class:`ShowLineupItem` objects.
+        """
+
         return self._items
 
 
 # A section.
 class Section(_Base):
+    """
+    TOU.TV section.
+    """
+
     def __init__(self, agent, name, title, subsection_lineups, stats_metas):
         super().__init__(agent)
         self._name = name
@@ -388,23 +609,43 @@ class Section(_Base):
 
     @property
     def name(self):
+        """
+        Section's name.
+        """
+
         return self._name
 
     @property
     def title(self):
+        """
+        Section's title.
+        """
+
         return self._title
 
     @property
     def subsection_lineups(self):
+        """
+        A list of :py:class:`SubsectionLineup` objects.
+        """
+
         return self._subsection_lineups
 
     @property
     def stats_metas(self):
+        """
+        Raw stats metas from the TOU.TV API (:py:class:`dict`).
+        """
+
         return self._stats_metas
 
 
 # A network.
 class Network(_Base):
+    """
+    A broadcast network.
+    """
+
     def __init__(self, agent, name, image_url, url, title):
         super().__init__(agent)
         self._name = name
@@ -414,23 +655,43 @@ class Network(_Base):
 
     @property
     def name(self):
+        """
+        Network's name.
+        """
+
         return self._name
 
     @property
     def image_url(self):
+        """
+        URL of the static image file of this network.
+        """
+
         return self._image_url
 
     @property
     def url(self):
+        """
+        Network's URL.
+        """
+
         return self._url
 
     @property
     def title(self):
+        """
+        Network's title.
+        """
+
         return self._title
 
 
 # Some credits.
 class Credits(_Base):
+    """
+    Credits.
+    """
+
     def __init__(self, agent, role, names):
         super().__init__(agent)
         self._role = role
@@ -438,15 +699,29 @@ class Credits(_Base):
 
     @property
     def role(self):
+        """
+        Role of the persons to which those credits are attributed.
+        """
+
         return self._role
 
     @property
     def names(self):
+        """
+        Names of the persons to which those credits are attributed
+        (string).
+        """
+
         return self._names
 
 
 # The details of an item (show or episode).
 class Details(_Base):
+    """
+    Details about a :py:class:`Show` or an
+    :py:class:`EpisodeLineupItem` object.
+    """
+
     def __init__(self, agent, rating, air_date_text, original_title, credits,
                  copyright, description, country, length_text,
                  length, production_year, details_type,
@@ -477,42 +752,82 @@ class Details(_Base):
 
     @property
     def rating(self):
+        """
+        Program rating (string).
+        """
+
         return self._rating
 
     @property
     def air_date_text(self):
+        """
+        Textual air date.
+        """
+
         return self._air_date_text
 
     @property
     def original_title(self):
+        """
+        Original title.
+        """
+
         return self._original_title
 
     @property
     def credits(self):
+        """
+        A list of :py:class:`Credits` objects.
+        """
+
         return self._credits
 
     @property
     def copyright(self):
+        """
+        Copyright notice.
+        """
+
         return self._copyright
 
     @property
     def description(self):
+        """
+        Description.
+        """
+
         return self._description
 
     @property
     def country(self):
+        """
+        Country of origin.
+        """
+
         return self._country
 
     @property
     def length_text(self):
+        """
+        Textual length information.
+        """
+
         return self._length_text
 
     @property
     def length(self):
+        """
+        Length in seconds (integer).
+        """
+
         return self._length
 
     @property
     def production_year(self):
+        """
+        Production year.
+        """
+
         return self._production_year
 
     @property
@@ -521,15 +836,27 @@ class Details(_Base):
 
     @property
     def image_url(self):
+        """
+        URL of the static image file of this show/episode.
+        """
+
         return self._image_url
 
     @property
     def networks(self):
+        """
+        List of :py:class:`Network` objects.
+        """
+
         return self._networks
 
 
 # A show.
 class Show(_Base):
+    """
+    TOU.TV show.
+    """
+
     def __init__(self, agent, key, description, bg_image_url, image_url, title,
                  details, id_media, season_lineups, stats_metas):
         super().__init__(agent)
@@ -553,34 +880,66 @@ class Show(_Base):
 
     @property
     def key(self):
+        """
+        Show's unique key (:py:class:`Key` object).
+        """
+
         return self._key
 
     @property
     def description(self):
+        """
+        Show's description.
+        """
+
         return self._description
 
     @property
     def bg_image_url(self):
+        """
+        URL of the static background image file of this show.
+        """
+
         return self._bg_image_url
 
     @property
     def image_url(self):
+        """
+        URL of the static image file of this show.
+        """
+
         return self._image_url
 
     @property
     def title(self):
+        """
+        Show's title.
+        """
+
         return self._title
 
     @property
     def details(self):
+        """
+        Show's details (:py:class:`Details` object).
+        """
+
         return self._details
 
     @property
     def season_lineups(self):
+        """
+        List of :py:class:`SeasonLineup` objects.
+        """
+
         return self._season_lineups
 
     @property
     def stats_metas(self):
+        """
+        Raw stats metas from the TOU.TV API (:py:class:`dict`).
+        """
+
         return self._stats_metas
 
     @property
@@ -590,6 +949,11 @@ class Show(_Base):
 
 # A season lineup.
 class SeasonLineup(_Base):
+    """
+    Season lineup: a lineup in the :py:attr:`Show.season_lineups`
+    list.
+    """
+
     def __init__(self, agent, name, title, url, is_free, items):
         super().__init__(agent)
         self._name = name
@@ -606,27 +970,52 @@ class SeasonLineup(_Base):
 
     @property
     def name(self):
+        """
+        Season's name.
+        """
+
         return self._name
 
     @property
     def title(self):
+        """
+        Season's title.
+        """
+
         return self._title
 
     @property
     def url(self):
+        """
+        Season's URL name.
+        """
+
         return self._url
 
     @property
     def is_free(self):
+        """
+        ``True`` if this season is available to non-premium users.
+        """
+
         return self._is_free
 
     @property
     def items(self):
+        """
+        List of :py:class:`EpisodeLineupItem` objects.
+        """
+
         return self._items
 
 
 # An episode lineup item.
 class EpisodeLineupItem(_Base):
+    """
+    Episode lineup item: an item in the :py:attr:`SeasonLineup.items`
+    list.
+    """
+
     def __init__(self, agent, template, is_active, url, is_free, key,
                  is_geolocalized, image_url, title, is_drm, description,
                  share_url, details):
@@ -656,46 +1045,90 @@ class EpisodeLineupItem(_Base):
 
     @property
     def is_active(self):
+        """
+        ``True`` if this episode is active.
+        """
+
         return self._is_active
 
     @property
     def url(self):
+        """
+        Episode's URL name.
+        """
+
         return self._url
 
     @property
     def is_free(self):
+        """
+        ``True`` if this episode is available to non-premium users.
+        """
+
         return self._is_free
 
     @property
     def key(self):
+        """
+        Episode's unique key (:py:class:`Key` object).
+        """
+
         return self._key
 
     @property
     def is_geolocalized(self):
+        """
+        ``True`` if this episode is geolocalized.
+        """
+
         return self._is_geolocalized
 
     @property
     def image_url(self):
+        """
+        URL of the static image file of this episode.
+        """
+
         return self._image_url
 
     @property
     def title(self):
+        """
+        Episode's title.
+        """
+
         return self._title
 
     @property
     def is_drm(self):
+        """
+        ``True`` if this episode is protected by DRM.
+        """
+
         return self._is_drm
 
     @property
     def description(self):
+        """
+        Episode's description.
+        """
+
         return self._description
 
     @property
     def share_url(self):
+        """
+        Full sharing URL of this episode.
+        """
+
         return self._share_url
 
     @property
     def details(self):
+        """
+        Episode's details (:py:class:`Details` object).
+        """
+
         return self._details
 
     @property
@@ -715,12 +1148,20 @@ class EpisodeLineupItem(_Base):
 
     @property
     def media_versions(self):
+        """
+        List of :py:class:`MediaVersion` objects.
+        """
+
         return self._agent.get_media_versions(self.id_media)
 
 
 # A media version. This is what you have to get for creating a
 # download of this specific version.
 class MediaVersion(_Base):
+    """
+    Media version of a show or of an episode.
+    """
+
     def __init__(self, agent, id_media, variant_stream):
         super().__init__(agent)
         self._id_media = id_media
@@ -732,14 +1173,28 @@ class MediaVersion(_Base):
 
     @property
     def bandwidth(self):
+        """
+        Bandwidth, in bps.
+        """
+
         return self._variant_stream.bandwidth
 
     @property
     def resolution(self):
+        """
+        Resolution tuple (width, height), or ``None`` if the resolution
+        is not available.
+        """
+
         if self._variant_stream.resolution:
             reso = self._variant_stream.resolution
 
             return (reso.width, reso.height)
 
     def create_download(self):
+        """
+        Creates a :py:class:`toutv3.download.Download` object ready
+        to download this media version.
+        """
+
         return self._agent.get_download(self._variant_stream)
