@@ -23,6 +23,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import toutv3
+
+
 # Base model object.
 class _Base:
     def __init__(self, agent):
@@ -702,6 +705,10 @@ class EpisodeLineupItem(_Base):
                 return
 
             show = self._agent.get_show(self._url)
+
+            if show.id_media is None:
+                raise toutv3.ApiChanged()
+
             self._id_media = show.id_media
 
         return self._id_media
@@ -711,7 +718,8 @@ class EpisodeLineupItem(_Base):
         return self._agent.get_media_versions(self.id_media)
 
 
-# A media version
+# A media version. This is what you have to get for creating a
+# download of this specific version.
 class MediaVersion(_Base):
     def __init__(self, agent, id_media, variant_stream):
         super().__init__(agent)

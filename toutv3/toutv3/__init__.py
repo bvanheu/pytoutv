@@ -80,6 +80,10 @@ class ApiChanged(Error):
     pass
 
 
+class UnsupportedMedia(Error):
+    pass
+
+
 class DownloadError(Error):
     pass
 

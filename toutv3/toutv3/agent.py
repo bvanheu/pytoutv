@@ -23,7 +23,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from toutv3 import model, model_from_api, cache2, playlist, download
+from toutv3 import model, model_from_api, cache, playlist, download
 from bs4 import BeautifulSoup
 from functools import partial
 import requests.cookies
@@ -95,11 +95,11 @@ class _Agent:
         if self._no_cache:
             # do not even bother loading a real cache
             _logger.debug("Not loading any cache as per user's request")
-            self._cache = cache2._Cache(self._user)
+            self._cache = cache._Cache(self._user)
             return
 
         # load the cache
-        self._cache = cache2.load(self._user)
+        self._cache = cache.load(self._user)
 
         # set the current agent as the cache objects's agent
         self._set_cache_objects_agent()
@@ -627,12 +627,21 @@ class _Agent:
 
     def _get_master_playlist(self, id_media):
         _logger.debug('Getting master playlist for media ID "{}"'.format(id_media))
+        unsupported_msg = 'Downloading DRM-protected content is unsupported (media ID "{}")'.format(id_media)
 
         if self._cache.get_master_playlist(id_media):
             _logger.debug('Master playlist for media ID "{}" found in cache'.format(id_media))
             return self._cache.get_master_playlist(id_media)
 
+        if self._cache.get_master_playlist(id_media) is False:
+            _logger.error(unsupported_msg)
+            raise toutv3.UnsupportedMedia(unsupported_msg)
+
         self._register_claims()
+
+        if 'claims' not in self._cache.claims:
+            _logger.error('Cannot find claims key in claims object')
+            raise touv3.ApiChanged()
 
         params = {
             'appCode': 'toutv',
@@ -655,13 +664,33 @@ class _Agent:
             _logger.error('Failed to request master playlist info')
             raise toutv3.ApiChanged()
 
-        print(r_playlist_info.text)
-
         # decode playlist info
         try:
             playlist_info = r_playlist_info.json()
         except:
             _logger.error('Cannot decode master playlist info (JSON)')
+            raise toutv3.ApiChanged()
+
+        # check for DRM-protected content
+        if 'params' in playlist_info:
+            try:
+                terms = ('drm', 'playready', 'fairplay', 'protection')
+
+                for param in playlist_info['params']:
+                    name = param['name']
+                    value = param['value']
+
+                    for term in terms:
+                        if term in name or term in value:
+                            self._cache.set_master_playlist(id_media, False)
+                            _logger.error(unsupported_msg)
+                            raise toutv3.UnsupportedMedia(unsupported_msg)
+            except:
+                _logger.error('Cannot decode master playlist parameters')
+                raise toutv3.ApiChanged()
+
+        if 'url' not in playlist_info:
+            _logger.error('Cannot find URL in master playlist')
             raise toutv3.ApiChanged()
 
         playlist_url = playlist_info['url']
@@ -677,8 +706,6 @@ class _Agent:
         if r_playlist.status_code != 200:
             _logger.error('Failed to request master playlist')
             raise toutv3.ApiChanged()
-
-        print(r_playlist.text)
 
         try:
             master_playlist = playlist.from_m3u8(r_playlist.text)
