@@ -23,7 +23,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from toutv3 import model, model_from_api, cache2, playlist
+from toutv3 import model, model_from_api, cache2, playlist, download
 from bs4 import BeautifulSoup
 from functools import partial
 import requests.cookies
@@ -117,7 +117,7 @@ class _Agent:
         self._cache.release()
 
     def _request(self, method, url, data, headers=None, params=None,
-                 allow_redirects=True):
+                 allow_redirects=True, stream=False):
         actual_headers = {}
         actual_headers.update(self._cache.base_headers)
 
@@ -136,9 +136,15 @@ class _Agent:
             response = self._req_session.request(method=method, url=url, data=data,
                                                  headers=actual_headers,
                                                  params=actual_params,
-                                                 allow_redirects=allow_redirects)
-            fmt = 'HTTP response (status code: {}, content length: {} bytes)'
-            _logger.debug(fmt.format(response.status_code, len(response.content)))
+                                                 allow_redirects=allow_redirects,
+                                                 stream=stream)
+
+            if stream:
+                fmt = 'HTTP response, streaming mode (status code: {})'
+                _logger.debug(fmt.format(response.status_code))
+            else:
+                fmt = 'HTTP response (status code: {}, content length: {} bytes)'
+                _logger.debug(fmt.format(response.status_code, len(response.content)))
 
             return response
         except Exception as e:
@@ -148,7 +154,7 @@ class _Agent:
             elif isinstance(e, requests.ConnectionError):
                 exc_cls = toutv3.ConnectionError
             else:
-                exc_cls = toutv3.NetworkError
+                exc_cls = toutv3.HttpError
 
             exc = exc_cls(method, url, data, headers, params, allow_redirects)
             raise exc from e
@@ -157,12 +163,13 @@ class _Agent:
         return self._request('POST', url, data, headers,
                              params, allow_redirects)
 
-    def _get(self, url, headers=None, params=None, allow_redirects=True):
+    def _get(self, url, headers=None, params=None, allow_redirects=True,
+             stream=False):
         return self._request('GET', url, None, headers,
-                             params, allow_redirects)
+                             params, allow_redirects, stream)
 
     def _toutv_get(self, url, headers=None, params=None,
-                   allow_redirects=True):
+                   allow_redirects=True, stream=False):
         actual_headers = {}
         actual_headers.update(self._cache.toutv_base_headers)
 
@@ -200,7 +207,7 @@ class _Agent:
             # an exception
             r = self._get(url=url, headers=actual_headers,
                           params=actual_params,
-                          allow_redirects=allow_redirects)
+                          allow_redirects=allow_redirects, stream=stream)
 
             if r.status_code not in _VALID_HTTP_STATUS_CODES:
                 # still not working: we have a serious problem
@@ -210,8 +217,21 @@ class _Agent:
 
         return r
 
-    def _akamaihd_get(self, url):
-        return self._get(url=url, headers=_HTTP_AKAMAIHD_HEADERS)
+    def _akamaihd_get(self, url, stream=False):
+        r = self._get(url=url, headers=_HTTP_AKAMAIHD_HEADERS,
+                      stream=stream)
+
+        if r.status_code != 200:
+            raise UnexpectedHttpStatusCode(r.status_code, 'GET', url,
+                                           None, headers, None, False)
+
+        return r
+
+    def akamaihd_stream_get(self, url, chunk_size):
+        r = self._akamaihd_get(url, True)
+
+        for chunk in r.iter_content(chunk_size):
+            yield chunk
 
     def _register_settings(self):
         _logger.debug('Registering settings')
@@ -612,7 +632,6 @@ class _Agent:
             _logger.debug('Master playlist for media ID "{}" found in cache'.format(id_media))
             return self._cache.get_master_playlist(id_media)
 
-        self._login()
         self._register_claims()
 
         params = {
@@ -636,6 +655,8 @@ class _Agent:
             _logger.error('Failed to request master playlist info')
             raise toutv3.ApiChanged()
 
+        print(r_playlist_info.text)
+
         # decode playlist info
         try:
             playlist_info = r_playlist_info.json()
@@ -656,6 +677,8 @@ class _Agent:
         if r_playlist.status_code != 200:
             _logger.error('Failed to request master playlist')
             raise toutv3.ApiChanged()
+
+        print(r_playlist.text)
 
         try:
             master_playlist = playlist.from_m3u8(r_playlist.text)
@@ -680,4 +703,58 @@ class _Agent:
         for vs in master_playlist.variant_streams:
             media_versions.append(model.MediaVersion(self, id_media, vs))
 
+        _logger.debug('Created media versions for media ID "{}"'.format(id_media))
+
         return media_versions
+
+    def _get_playlist(self, uri):
+        _logger.debug('Requesting playlist "{}"'.format(uri))
+        r_playlist = self._akamaihd_get(uri)
+
+        if r_playlist.status_code != 200:
+            _logger.error('Failed to request playlist')
+            raise toutv3.ApiChanged()
+
+        try:
+            pl = playlist.from_m3u8(r_playlist.text)
+        except Exception as e:
+            _logger.error('Failed to parse playlist M3U8')
+            raise toutv3.ApiChanged() from e
+
+        if type(pl) is not playlist.Playlist:
+            _logger.error('Expecting a playlist, got something else')
+            raise toutv3.ApiChanged()
+
+        _logger.debug('Created playlist from URL "{}"'.format(uri))
+
+        return pl
+
+    def get_media_segment_key(self, uri):
+        _logger.debug('Getting media segment key "{}"'.format(uri))
+
+        if self._cache.get_media_segment_key(uri):
+            _logger.debug('Media segment key "{}" found in cache'.format(uri))
+            return self._cache.get_media_segment_key(uri)
+
+        _logger.debug('Requesting media segment key "{}"'.format(uri))
+        r_key = self._akamaihd_get(uri)
+
+        if r_key.status_code != 200:
+            _logger.error('Failed to request media segment key')
+            raise toutv3.ApiChanged()
+
+        key = r_key.content
+
+        if len(key) != 16:
+            _logger.error('Unexpected media segment key response size: {}'.format(len(key)))
+            raise toutv3.ApiChanged()
+
+        self._cache.set_media_segment_key(uri, key)
+        _logger.debug('Received media segment key from URL "{}"'.format(uri))
+
+        return key
+
+    def get_download(self, variant_stream):
+        _logger.debug('Creating download for variant stream "{}"'.format(variant_stream.uri))
+
+        return download.Download(self, self._get_playlist(variant_stream.uri))

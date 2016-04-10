@@ -53,6 +53,5 @@ setup(name='toutv3',
           'pycrypto',
           'requests',
           'beautifulsoup4',
-          'python-slugify',
           'filelock',
       ])

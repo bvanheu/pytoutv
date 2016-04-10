@@ -732,3 +732,6 @@ class MediaVersion(_Base):
             reso = self._variant_stream.resolution
 
             return (reso.width, reso.height)
+
+    def create_download(self):
+        return self._agent.get_download(self._variant_stream)

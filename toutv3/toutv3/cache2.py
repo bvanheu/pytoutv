@@ -24,7 +24,6 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from collections import OrderedDict
-from slugify import slugify
 import requests.cookies
 import datetime as DT
 import platform
@@ -59,6 +58,7 @@ class _Cache:
         self._shows = {}
         self._sections = {}
         self._master_playlists = {}
+        self._media_segment_keys = {}
         self._search_show_summaries = []
         self._section_summaries = OrderedDict()
         self._user_infos = None
@@ -200,6 +200,17 @@ class _Cache:
     def set_master_playlist(self, id_media, master_playlist):
         self._master_playlists[id_media] = master_playlist
 
+    @property
+    def media_segment_keys(self):
+        return self._media_segment_keys
+
+    def get_media_segment_key(self, uri):
+        if uri in self._media_segment_keys:
+            return self._media_segment_keys[uri]
+
+    def set_media_segment_key(self, uri, media_segment_key):
+        self._media_segment_keys[uri] = media_segment_key
+
     def save(self):
         # only save if we have a lock
         if self._lock is None:
@@ -264,13 +275,13 @@ def get_cache_dir():
 
 
 def get_cache_file_name(user):
-    file_name = '{}.cache'.format(slugify(user))
+    file_name = '{}.cache'.format(user)
 
     return os.path.join(get_cache_dir(), file_name)
 
 
 def _get_file_lock(user):
-    file_name = '{}.lock'.format(slugify(user))
+    file_name = '{}.lock'.format(user)
     file_name = os.path.join(get_cache_dir(), file_name)
 
     return filelock.FileLock(file_name)

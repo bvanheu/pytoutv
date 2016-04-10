@@ -6,6 +6,10 @@ class Error(Exception):
 
 
 class NetworkError(Error):
+    pass
+
+
+class HttpError(NetworkError):
     def __init__(self, method, url, data, headers, params, allow_redirects):
         super().__init__()
         self._method = method
@@ -40,15 +44,15 @@ class NetworkError(Error):
         return self._allow_redirects
 
 
-class NetworkTimeout(NetworkError):
+class NetworkTimeout(HttpError):
     pass
 
 
-class ConnectionError(NetworkError):
+class ConnectionError(HttpError):
     pass
 
 
-class UnexpectedHttpStatusCode(NetworkError):
+class UnexpectedHttpStatusCode(HttpError):
     def __init__(self, status_code, *args):
         super().__init__(*args)
         self._status_code = status_code
@@ -73,4 +77,20 @@ class InvalidCredentials(Error):
 
 
 class ApiChanged(Error):
+    pass
+
+
+class DownloadError(Error):
+    pass
+
+
+class CancelledByUser(DownloadError):
+    pass
+
+
+class FileExists(DownloadError):
+    pass
+
+
+class NoSpaceLeft(DownloadError):
     pass

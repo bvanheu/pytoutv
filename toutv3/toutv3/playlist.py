@@ -292,7 +292,7 @@ def _create_media_segment(line, key, media_sequence, uri):
     m = _re_extinf.match(_extract_tag_payload(line))
 
     if m:
-        duration = int(m.group(1))
+        duration = float(m.group(1))
 
         if m.group(2):
             title = m.group(2)
