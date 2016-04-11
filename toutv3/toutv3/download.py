@@ -107,7 +107,6 @@ class Download:
     def __init__(self, agent, playlist):
         self._agent = agent
         self._playlist = playlist
-        self._download_progress = DownloadProgress()
 
     def _init_download(self):
         self._dl_bytes = 0

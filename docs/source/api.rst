@@ -23,6 +23,11 @@ The pytoutv Python API is pretty straightforward:
    The current API requires a client to be logged in: it does not
    allow anonymous connections to TOU.TV.
 
+.. toctree::
+
+   examples
+   reference
+
 
 .. _cache:
 
@@ -69,14 +74,3 @@ All :py:mod:`toutv3` loggers are children of the ``toutv3`` logger. You
 may also enable the logging statements of the underlying
 `Requests <http://docs.python-requests.org/>`_ package by setting the
 desired level of the ``requests`` logger.
-
-
-API reference
--------------
-
-.. toctree::
-
-   excver
-   client
-   model
-   download

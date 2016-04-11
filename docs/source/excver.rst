@@ -4,6 +4,8 @@ Exceptions and version
 .. currentmodule:: toutv3
 
 
+.. _exceptions:
+
 Exceptions
 ----------
 
