@@ -196,7 +196,7 @@ The URL name of a show can be found in the
    # create a download object
    download = media_version.create_download()
 
-   # download media version to to "/tmp/episode.ts"
+   # download media version to "/tmp/episode.ts"
    last_printed_dl_segments = None
 
    for progress in download.iter_download('/tmp/episode.ts'):

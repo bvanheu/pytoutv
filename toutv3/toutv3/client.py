@@ -78,7 +78,7 @@ class Client:
 
     def get_show(self, url_name):
         """
-        Returns a :py:class`toutv3.model.Show` object correspoding to
+        Returns a :py:class:`toutv3.model.Show` object correspoding to
         the URL name *url_name*.
 
         The URL name of a show can be found in the
