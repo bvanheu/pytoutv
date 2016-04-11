@@ -404,6 +404,10 @@ class SearchShowSummary(_Base):
 
         return self._title
 
+    def __repr__(self):
+        fmt = "SearchShowSummary(title='{s.title}', key='{s.key}', url='{s.url}')"
+        return fmt.format(s=self)
+
 
 # A show lineup item.
 class ShowLineupItem(_Base):
