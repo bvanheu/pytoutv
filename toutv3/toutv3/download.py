@@ -274,7 +274,7 @@ class Download:
         *chunk_size* bytes are downloaded.
 
         The media segments of the complete media file are downloaded
-        one byte one, saved as temporary files in the directory of
+        one by one, saved as temporary files in the directory of
         *output_path*. This allows the download to be resumed if it's
         not completed. Once all the segment files exist, they are
         stitched together to form the final media file, and then
