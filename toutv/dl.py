@@ -307,6 +307,8 @@ class Downloader:
             r = self._do_request(uri)
             self._key = r.content
             self._logger.debug('decryption key: {}'.format(self._key))
+        else:
+            self._logger.debug('no decryption key found')
 
         # download segments
         self._notify_dl_start()
