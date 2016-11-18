@@ -83,6 +83,7 @@ class Downloader:
         self._overwrite = overwrite
         self._proxies = proxies
         self._timeout = timeout
+        self._key = None
 
         self._set_output_path()
 
@@ -214,9 +215,13 @@ class Downloader:
                 self._notify_progress_update()
             chunks_count += 1
 
-        aes_iv = Downloader._seg_aes_iv.pack(0, 0, 0, count)
-        aes = AES.new(self._key, AES.MODE_CBC, aes_iv)
-        ts_segment = aes.decrypt(bytes(encrypted_ts_segment))
+        ts_segment = None
+        if self._key:
+            aes_iv = Downloader._seg_aes_iv.pack(0, 0, 0, count)
+            aes = AES.new(self._key, AES.MODE_CBC, aes_iv)
+            ts_segment = aes.decrypt(bytes(encrypted_ts_segment))
+        else:
+            ts_segment = encrypted_ts_segment
 
         # completely write the part file first (could be interrupted)
         with open(partpath, 'wb') as f:
@@ -297,10 +302,11 @@ class Downloader:
         self._logger.debug('parsed M3U8 file: {} total segments'.format(self._total_segments))
 
         # get decryption key
-        uri = self._segments[0].key.uri
-        r = self._do_request(uri)
-        self._key = r.content
-        self._logger.debug('decryption key: {}'.format(self._key))
+        if self._segments[0].key:
+            uri = self._segments[0].key.uri
+            r = self._do_request(uri)
+            self._key = r.content
+            self._logger.debug('decryption key: {}'.format(self._key))
 
         # download segments
         self._notify_dl_start()
