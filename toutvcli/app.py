@@ -42,6 +42,7 @@ import toutv.cache
 import toutv.config
 from toutvcli import __version__
 from toutvcli.progressbar import ProgressBar
+import traceback
 
 
 class CliError(RuntimeError):
@@ -125,6 +126,10 @@ class App:
         except Exception as e:
             print('Unknown exception: {}: {}'.format(type(e), e),
                   file=sys.stderr)
+
+            if self._verbose:
+                traceback.print_exc()
+
             return 100
 
         return 0
