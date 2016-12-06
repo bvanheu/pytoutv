@@ -242,6 +242,23 @@ class Client:
             emission = self.get_emission_by_name(emid)
             episode = self.get_episode_by_name(emission, ep_name)
         except NoMatchException as e:
-            raise ClientError('Cannot read emission/episode information for URL "{}"'.format(url))
+            # Still, it we have emission and episode IDs, that might be enough (for example, to fetch an episode)
+            print("Warning: could't find episode; will try to use only the emission & episodes IDs instead.")
+            print('  Emission ID: %s' % emission_m)
+            print('  Episode ID: %s' % episode_m)
+            emission = toutv.bos.Emission()
+            emission.Id = emission_m
+            emission.Title = emission.Id
+            episode = toutv.bos.Episode()
+            episode.set_auth(self._auth)
+            episode._emission = emission
+            episode.CategoryId = emission.Id
+            episode.Id = episode_m
+            episode.Title = episode.Id
+
+            regex = r'codepage" content="id(\d+)'
+            episode.PID = Client._find_last(regex, r_em.text)
+            if episode.PID is None:
+                raise ClientError('Cannot find emission PID information for URL "{}"'.format(url_em))
 
         return episode
