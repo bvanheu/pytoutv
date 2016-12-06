@@ -186,7 +186,7 @@ class App:
         pi.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
         pi.add_argument('-u', '--url', action='store_true',
-                        help='Get episode information using a TOU.TV URL')
+                        help='Get episode information using TOU.TV URLs. You need to specify both the emission and episode URLs.')
         pi.set_defaults(func=self._command_info)
         pi.set_defaults(build_client=True)
 
@@ -223,7 +223,7 @@ class App:
                         default=App.QUALITY_AVG, choices=quality_choices,
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
         pf.add_argument('-u', '--url', action='store_true',
-                        help='Fetch an episode using a TOU.TV URL')
+                        help='Fetch an episode using TOU.TV URLs. You need to specify both the emission and episode URLs.')
         pf.set_defaults(func=self._command_fetch)
         pf.set_defaults(build_client=True)
 
@@ -339,7 +339,8 @@ class App:
     def _command_info(self, args):
         if args.url:
             em = args.emission
-            episode = self._toutv_client.get_episode_from_url(em)
+            ep = args.episode
+            episode = self._toutv_client.get_episode_from_url(em, ep)
             self._print_info_episode(episode)
             return
 
@@ -355,7 +356,8 @@ class App:
 
         if args.url:
             em = args.emission
-            episode = self._toutv_client.get_episode_from_url(em)
+            ep = args.episode
+            episode = self._toutv_client.get_episode_from_url(em, ep)
             self._fetch_episode(episode, output_dir=output_dir,
                                 quality=quality, bitrate=bitrate,
                                 overwrite=args.force)
