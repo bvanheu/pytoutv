@@ -60,10 +60,14 @@ class Auth:
 
         payload = {
                 "sessionID": sessionid,
-                "requested-operation": "login",
+                "action": "login",
+                "client_id": toutv.config.TOUTV_AUTH_CLIENT_ID,
+                "redirect_uri" : "http://ici.tou.tv/login/loginCallback",
+                "client-domain": "icitv",
+                "client-platform": "android",
                 "login-email": username,
                 "login-password": password,
-                "action": "Ouvrir une session"
+                "form-submit-btn": "Ouvrir une session"
                 }
 
         headers = {
