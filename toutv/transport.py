@@ -68,17 +68,14 @@ class JsonTransport(Transport):
         self._auth = auth
 
     def _do_query(self, endpoint, params={}):
-        url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
+        if endpoint.startswith("http://") or endpoint.startswith("https://"):
+            url = endpoint
+        else:
+            url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
         timeout = 10
 
         try:
             headers = toutv.config.HEADERS
-
-            # FIXME - is there a way to fetch EXTRA content using
-            #         the JSON API?
-            #token = self._auth.get_token()
-            #params['claims'] = self._auth.get_claims(token)
-            #headers['Authorization'] = "Bearer " + token
 
             r = requests.get(url, params=params, headers=headers,
                              proxies=self._proxies, timeout=timeout)
@@ -90,10 +87,24 @@ class JsonTransport(Transport):
 
         response_obj = r.json()
 
-        return response_obj['d']
+        if endpoint.startswith("http://") or endpoint.startswith("https://"):
+            return response_obj
+        else:
+            return response_obj['d']
 
     def get_emissions(self):
         emissions = {}
+
+        # All emissions, including those only available in Extra
+        # We don't have much information about them, except their id, title, and URL, but that is enough to be able to fetch them at least.
+        url = '{}/presentation/search'.format(toutv.config.TOUTV_BASE_URL)
+        emissions_dto = self._do_query(url, {'v': 2, 'd': 'android'})
+        for emission_dto in emissions_dto:
+            emission = toutv.bos.Emission()
+            emission.Title = emission_dto['DisplayText']
+            emission.Id = emission_dto['Id']
+            emission.Url = emission_dto['Url']
+            emissions[emission.Id] = emission
 
         emissions_dto = self._do_query('GetEmissions')
         for emission_dto in emissions_dto:
@@ -103,17 +114,35 @@ class JsonTransport(Transport):
         return emissions
 
     def get_emission_episodes(self, emission):
-        emid = emission.Id
         episodes = {}
-        params = {
-            'emissionid': str(emid)
-        }
 
-        episodes_dto = self._do_query('GetEpisodesForEmission', params)
+        episodes_dto = self._do_query('GetEpisodesForEmission', {'emissionid': str(emission.Id)})
         for episode_dto in episodes_dto:
             episode = self._mapper.dto_to_bo(episode_dto, bos.Episode)
             episode.set_emission(emission)
             episodes[episode.Id] = episode
+
+        if len(episodes) == 0:
+            # Is probably an Extra; load episodes using /presentation/ URL
+            url = '{}/presentation{}'.format(toutv.config.TOUTV_BASE_URL, emission.Url)
+            emission_dto = self._do_query(url, {'v': 2, 'excludeLineups': False, 'd': 'android'})
+            seasons = emission_dto['SeasonLineups']
+            for season in seasons:
+                episodes_dto = season['LineupItems']
+                for episode_dto in episodes_dto:
+                    episode = toutv.bos.Episode()
+                    episode.Title = episode_dto['Title']
+                    episode.Description = episode_dto['Description']
+                    if 'Description' in episode_dto['Details']:
+                        episode.Description = episode_dto['Details']['Description']
+                    episode.PID = episode_dto['IdMedia']
+                    episode.Id = episode_dto['Key'][6:]
+                    episode.Url = episode_dto['Url']
+                    episode.AirDateLongString = episode_dto['Details']['AirDate']
+                    episode.CategoryId = emission.Id
+                    episode.SeasonAndEpisode = toutv.client.Client._find_last(r'/.*/(.*)$', episode_dto['Url'])
+                    episode.set_emission(emission)
+                    episodes[episode.Id] = episode
 
         return episodes
 

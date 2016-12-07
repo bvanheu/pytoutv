@@ -234,6 +234,8 @@ class Emission(_AbstractEmission, _ThumbnailProvider):
         return self.Country
 
     def get_description(self):
+        if self.Description is None:
+            return None
         return _clean_description(self.Description)
 
     def get_network(self):
@@ -463,7 +465,7 @@ class Episode(_Bo, _ThumbnailProvider):
 
     def get_air_date(self):
         if self.AirDateFormated is None:
-            return None
+            return self.AirDateLongString
 
         dt = datetime.datetime.strptime(self.AirDateFormated, '%Y%m%d')
 

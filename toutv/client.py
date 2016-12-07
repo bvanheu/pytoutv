@@ -132,6 +132,22 @@ class Client:
         search = self._transport.search(query)
         self._set_bo_proxies(search)
 
+        # Add local emissions (to find Extra emissions & episodes)
+        emissions = self.get_emissions()
+        query_upper = query.upper()
+        for emid, emission in emissions.items():
+            if query_upper in emission.get_title().upper():
+                sr = toutv.bos.SearchResultData()
+                sr.Emission = emission
+                search.Results.append(sr)
+
+                # Load this emission' episodes, and add those to the search results too
+                episodes = self._transport.get_emission_episodes(emission)
+                for epid, episode in episodes.items():
+                    sr = toutv.bos.SearchResultData()
+                    sr.Episode = episode
+                    search.Results.append(sr)
+
         return search
 
     def get_emission_by_name(self, emission_name):

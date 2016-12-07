@@ -265,9 +265,11 @@ class App:
 
         return cache_path
 
+    @staticmethod
     def _build_cache():
         return toutv.cache.ShelveCache(App._build_cache_path('.toutv_cache'))
 
+    @staticmethod
     def _build_auth():
         auth = None
 
@@ -471,6 +473,7 @@ class App:
         if emission.get_year() is not None:
             inner = '{}, {}'.format(inner, emission.get_year())
         print('{}  [{}]'.format(emission.get_title(), inner))
+        print('ID: {}'.format(emission.get_id()))
 
         if emission.get_description() is not None:
             print('')
