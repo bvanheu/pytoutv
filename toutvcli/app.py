@@ -466,7 +466,13 @@ class App:
         self._print_list_episodes(emission)
 
     @staticmethod
-    def _print_info_emission(emission):
+    def _print_info_emission(self, emission):
+        if emission.get_description() is None:
+            url = '{}/presentation{}'.format(toutv.config.TOUTV_BASE_URL, emission.Url)
+            emission_dto = self._toutvclient._transport._do_query(url, {'v': 2, 'excludeLineups': True, 'd': 'android'})
+            emission.Description = emission_dto['Details']['Description']
+            emission.Country = emission_dto['Details']['Country']
+
         inner = emission.get_country()
         if inner is None:
             inner = 'Unknown country'
