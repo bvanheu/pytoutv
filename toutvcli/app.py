@@ -31,6 +31,7 @@ import argparse
 import distutils.version
 import locale
 import os
+import re
 import sys
 import time
 import logging
@@ -173,20 +174,22 @@ class App:
                         help='List emissions without episodes')
         pl.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
+        pl.add_argument('-v', '--verbose', action='store_true',
+                        help='Verbose output')
         pl.set_defaults(func=self._command_list)
         pl.set_defaults(build_client=True)
 
         # info command
         pi = sp.add_parser('info',
                            help='Get emission or episode information')
-        pi.add_argument('emission', action='store', type=str,
-                        help='Emission name for which to get information')
+        pi.add_argument('emission', action='store', nargs='?', type=str,
+                        help='Emission name or URL for which to get information')
         pi.add_argument('episode', action='store', nargs='?', type=str,
-                        help='Episode name for which to get information')
+                        help='Episode name or URL for which to get information')
         pi.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
-        pi.add_argument('-u', '--url', action='store_true',
-                        help='Get episode information using TOU.TV URLs. You need to specify both the emission and episode URLs.')
+        pi.add_argument('-v', '--verbose', action='store_true',
+                        help='Verbose output')
         pi.set_defaults(func=self._command_info)
         pi.set_defaults(build_client=True)
 
@@ -206,10 +209,10 @@ class App:
             App.QUALITY_AVG,
             App.QUALITY_MAX
         ]
-        pf.add_argument('emission', action='store', type=str,
-                        help='Emission name to fetch')
+        pf.add_argument('emission', action='store', nargs='?', type=str,
+                        help='Emission name or URL to fetch')
         pf.add_argument('episode', action='store', nargs='?', type=str,
-                        help='Episode name to fetch')
+                        help='Episode name or URL to fetch')
         pf.add_argument('-b', '--bitrate', action='store', type=int,
                         help='Video bitrate (default: use default quality)')
         pf.add_argument('-d', '--directory', action='store',
@@ -222,8 +225,6 @@ class App:
         pf.add_argument('-q', '--quality', action='store',
                         default=App.QUALITY_AVG, choices=quality_choices,
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
-        pf.add_argument('-u', '--url', action='store_true',
-                        help='Fetch an episode using TOU.TV URLs. You need to specify both the emission and episode URLs.')
         pf.set_defaults(func=self._command_fetch)
         pf.set_defaults(build_client=True)
 
@@ -295,6 +296,54 @@ class App:
 
         return toutv.client.Client(cache=cache, auth=auth)
 
+    def _get_emission_episode_from_args(self, args):
+        # Checks if the parameters are URLs, and if so, check if they are emission or episode URLs
+
+        emission_name = None
+        emission_url = None
+        episode_name = None
+        episode_url = None
+
+        if hasattr(args, 'episode') and args.episode:
+            # Two args
+            if args.episode.startswith('http'):
+                episode_url = args.episode
+            else:
+                episode_name = args.episode
+            if args.emission.startswith('http'):
+                emission_url = args.emission
+            else:
+                emission_name = args.emission
+        else:
+            # One arg
+            if args.emission.startswith('http'):
+                # Emission or episode URL?
+                regex = r'(https?://[^/]+)/([^/]+)/?([^/]*)/?'
+                results = re.findall(regex, args.emission)
+                if not results:
+                    raise CliError('"{}" is not a valid tou.tv URL. Expected format: https://ici.tou.tv/emission_name/[optional_episode_name]'.format(args.emission))
+                if results[0][2] == '':
+                    emission_url = args.emission
+                else:
+                    episode_url = args.emission
+            else:
+                emission_name = args.emission
+
+        episode = None
+        emission = None
+        if episode_url:
+            episode = self._toutv_client.get_episode_from_url(episode_url, emission_url)
+        elif emission_url:
+            emission = self._toutv_client.get_emission_from_url(emission_url)
+        elif emission_name:
+            emission = self._toutv_client.get_emission_by_name(emission_name)
+        elif episode_name:
+            episode = self._toutv_client.get_episode_by_name(episode_name, emission_name)
+        else:
+            raise CliError("Couldn't understand emission/episode parameters.")
+
+        return emission, episode
+
     def _command_clean(self, args):
         # make sure we have to clean a directory
         if not os.path.isdir(args.directory):
@@ -333,48 +382,32 @@ class App:
             print('Unable to login "{}"'.format(e))
 
     def _command_list(self, args):
-        if args.emission:
-            self._print_list_episodes_name(args.emission)
+        emission, episode = self._get_emission_episode_from_args(args)
+        if emission:
+            self._print_list_episodes(emission)
         else:
             self._print_list_emissions(args.all)
 
     def _command_info(self, args):
-        if args.url:
-            em = args.emission
-            ep = args.episode
-            episode = self._toutv_client.get_episode_from_url(em, ep)
+        emission, episode = self._get_emission_episode_from_args(args)
+        if episode:
             self._print_info_episode(episode)
-            return
-
-        if args.episode:
-            self._print_info_episode_name(args.emission, args.episode)
         else:
-            self._print_info_emission_name(args.emission)
+            self._print_info_emission(emission)
 
     def _command_fetch(self, args):
         output_dir = args.directory
         bitrate = args.bitrate
         quality = args.quality
+        overwrite = args.force
 
-        if args.url:
-            em = args.emission
-            ep = args.episode
-            episode = self._toutv_client.get_episode_from_url(em, ep)
-            self._fetch_episode(episode, output_dir=output_dir,
-                                quality=quality, bitrate=bitrate,
-                                overwrite=args.force)
-            return
+        emission, episode = self._get_emission_episode_from_args(args)
 
-        if args.emission is not None and args.episode is None:
-            self._fetch_emission_episodes_name(args.emission,
-                                               output_dir=args.directory,
-                                               quality=args.quality,
-                                               bitrate=args.bitrate,
-                                               overwrite=args.force)
-        elif args.emission is not None and args.episode is not None:
-            self._fetch_episode_name(args.emission, args.episode,
-                                     output_dir=output_dir, quality=quality,
-                                     bitrate=bitrate, overwrite=args.force)
+        if episode:
+            self._fetch_episode(episode, output_dir=output_dir, quality=quality, bitrate=bitrate, overwrite=overwrite)
+        else:
+            self._fetch_emission_episodes(emission, output_dir=output_dir, quality=quality, bitrate=bitrate,
+                                          overwrite=overwrite)
 
     def _command_search(self, args):
         self._print_search_results(args.query)
@@ -461,15 +494,10 @@ class App:
             title = episode.get_title()
             print('  * {} - {} - {}'.format(episode.Id, sae, title))
 
-    def _print_list_episodes_name(self, emission_name):
-        emission = self._toutv_client.get_emission_by_name(emission_name)
-        self._print_list_episodes(emission)
-
-    @staticmethod
     def _print_info_emission(self, emission):
         if emission.get_description() is None:
             url = '{}/presentation{}'.format(toutv.config.TOUTV_BASE_URL, emission.Url)
-            emission_dto = self._toutvclient._transport._do_query(url, {'v': 2, 'excludeLineups': True, 'd': 'android'})
+            emission_dto = self._toutv_client._transport._do_query(url, {'v': 2, 'excludeLineups': True, 'd': 'android'})
             emission.Description = emission_dto['Details']['Description']
             emission.Country = emission_dto['Details']['Country']
 
@@ -618,13 +646,6 @@ class App:
         # Finished
         self._dl = None
 
-    def _fetch_episode_name(self, emission_name, episode_name, output_dir,
-                            quality, bitrate, overwrite):
-        emission = self._toutv_client.get_emission_by_name(emission_name)
-        episode = self._toutv_client.get_episode_by_name(emission, episode_name)
-        self._fetch_episode(episode, output_dir=output_dir, quality=quality,
-                            bitrate=bitrate, overwrite=overwrite)
-
     def _fetch_emission_episodes(self, emission, output_dir, bitrate, quality,
                                  overwrite):
         episodes = self._toutv_client.get_emission_episodes(emission)
@@ -664,12 +685,6 @@ class App:
             except Exception as e:
                 tmpl = 'Error: cannot fetch "{}": {}'
                 print(tmpl.format(title, e), file=sys.stderr)
-
-    def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
-                                      quality, overwrite):
-        emission = self._toutv_client.get_emission_by_name(emission_name)
-        self._fetch_emission_episodes(emission, output_dir, bitrate, quality,
-                                      overwrite)
 
     @staticmethod
     def _sort_episodes(episodes):

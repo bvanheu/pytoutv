@@ -218,53 +218,59 @@ class Client:
 
         return results[-1]
 
-    def get_episode_from_url(self, url_em, url_ep):
-        # Try sending the request
+    def get_emission_from_url(self, url):
         timeout = 10
 
         try:
-            r_em = requests.get(url_em, proxies=self._proxies, timeout=timeout)
-            if r_em.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url_em,
-                                                                     r_em.status_code)
+            r = requests.get(url, proxies=self._proxies, timeout=timeout)
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url, r.status_code)
         except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeoutError(url_em, timeout)
-
-        try:
-            r_ep = requests.get(url_ep, proxies=self._proxies, timeout=timeout)
-            if r_ep.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url_ep,
-                                                                     r_ep.status_code)
-        except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeoutError(url_ep, timeout)
+            raise toutv.exceptions.RequestTimeoutError(url, timeout)
 
         # Extract emission ID
         regex = r'program-(\d+)'
-        emission_m = Client._find_last(regex, r_em.text)
+        emission_m = Client._find_last(regex, r.text)
         if emission_m is None:
-            raise ClientError('Cannot read emission information for URL "{}"'.format(url_em))
-
-        # Extract episode ID
-        regex = r'media-(\d+)'
-        episode_m = Client._find_last(regex, r_ep.text)
-        if episode_m is None:
-            raise ClientError('Cannot read episode information for URL "{}"'.format(url_ep))
-
-        # Find emission and episode
-        emid = emission_m
-        ep_name = episode_m
+            raise ClientError('Cannot read emission information for URL "{}"'.format(url))
 
         try:
-            emission = self.get_emission_by_name(emid)
-            episode = self.get_episode_by_name(emission, ep_name)
+            emission = self.get_emission_by_name(emission_m)
         except NoMatchException as e:
             # Still, it we have emission and episode IDs, that might be enough (for example, to fetch an episode)
-            print("Warning: could't find episode; will try to use only the emission & episodes IDs instead.")
-            print('  Emission ID: %s' % emission_m)
-            print('  Episode ID: %s' % episode_m)
             emission = toutv.bos.Emission()
             emission.Id = emission_m
             emission.Title = emission.Id
+
+        return emission
+
+    def get_episode_from_url(self, episode_url, emission_url = None):
+        timeout = 10
+
+        try:
+            r = requests.get(episode_url, proxies=self._proxies, timeout=timeout)
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(episode_url, r.status_code)
+        except requests.exceptions.Timeout:
+            raise toutv.exceptions.RequestTimeoutError(episode_url, timeout)
+
+        # Extract episode ID
+        regex = r'media-(\d+)'
+        episode_m = Client._find_last(regex, r.text)
+        if episode_m is None:
+            raise ClientError('Cannot read episode information for URL "{}"'.format(episode_url))
+
+        # Get emission
+        if emission_url is None:
+            regex = r'(https?://[^/]+/[^/]+)/([^/]*)/?'
+            results = re.findall(regex, episode_url)
+            emission_url = results[0][0]
+        emission = self.get_emission_from_url(emission_url)
+
+        try:
+            episode = self.get_episode_by_name(emission, episode_m)
+        except NoMatchException as e:
+            # Still, it we have emission and episode IDs, that might be enough (for example, to fetch an episode)
             episode = toutv.bos.Episode()
             episode.set_auth(self._auth)
             episode._emission = emission
@@ -273,8 +279,8 @@ class Client:
             episode.Title = episode.Id
 
             regex = r'codepage" content="id(\d+)'
-            episode.PID = Client._find_last(regex, r_em.text)
+            episode.PID = Client._find_last(regex, r.text)
             if episode.PID is None:
-                raise ClientError('Cannot find emission PID information for URL "{}"'.format(url_em))
+                raise ClientError('Cannot find emission PID information for URL "{}"'.format(episode_url))
 
         return episode
