@@ -199,14 +199,19 @@ Exemples
 
 Voici quelques exemples d'utilisation de l'interface en ligne de commande.
 
-### Se connecter à la section extra de Tou.tv
+### Se connecter à la section extra de tou.tv
+
+Ceci est requis pour pouvoir télécharger la version 720p des vidéos, et pour télécharger les émissions qui sont exclusives aux membres de la section Extra. Pour les autres cas, le login est optionnel.
 
     $ toutv login <USERNAME>
     Password: <PASSWORD>
     Login successful
     Token: c3458d85-6094-4030-9454-114380b2dec0
 
+
 ### Liste de toutes les émissions
+
+Note: toutes les émissions, incluant celles qui sont exclusives aux membres de la section Extra.
 
     $ toutv list
     2416249839: 2030, Le Big Bang démographique
@@ -220,7 +225,7 @@ Voici quelques exemples d'utilisation de l'interface en ligne de commande.
     ...
 
 
-### Liste des épisodes d'une émission donnée
+### Liste des épisodes d'une émission
 
     $ toutv list 'physique ou chimie'
     Physique ou chimie:
@@ -256,9 +261,9 @@ Voici quelques exemples d'utilisation de l'interface en ligne de commande.
       * Tags: jeunesse, rogers
 
 
-### Informations d'un épisode en utilisant son URL TOU.TV
+### Informations d'un épisode
 
-    $ toutv info -u http://ici.tou.tv/serie-noire/S01E08
+    $ toutv info 'Série noire' S01E08
     Série noire
     Épisode 8  [S01E08]
 
@@ -298,6 +303,17 @@ Voici quelques exemples d'utilisation de l'interface en ligne de commande.
     En.audition.avec.Simon.S03E47...    24.9 MiB   23/23 [####################] 100%
     En.audition.avec.Simon.S01E17...     9.9 MiB    9/27 [#######-------------]  33%
     ...
+
+
+### Spécifier une émission ou un épisode avec un URL
+
+Vous pouvez utiliser un URL tou.tv au lieu d'un nom pour une émission ou un épisode, pour les commandes `fetch`, `info`, et `list`.
+
+    $ toutv fetch http://ici.tou.tv/le-show-cache-2
+    $ toutv fetch http://ici.tou.tv/le-show-cache-2/S2014E02
+    $ toutv info http://ici.tou.tv/le-show-cache-2
+    $ toutv info http://ici.tou.tv/le-show-cache-2/S2014E02
+    $ toutv list http://ici.tou.tv/le-show-cache-2
 
 
 ### Recherche d'émissions et d'épisodes
@@ -424,3 +440,4 @@ Nous tenons à remercier spécialement :
   * [Simon Marchi](https://github.com/simark)
   * [Simon Carpentier](https://github.com/scarpentier)
   * [Philippe Proulx](https://github.com/eepp)
+  * [Guillaume Boudreau](https://github.com/gboudreau)

@@ -204,14 +204,19 @@ Examples
 
 Here are a few CLI usage examples.
 
-### Login to the extra section of Tou.tv
+### Login to the extra section of tou.tv
+
+This is required to be able to download 720p files, and to fetch any episode only available to Extra members, but otherwise optional.
 
      $ toutv login <USERNAME>
      Password: <PASSWORD>
      Login successful
      Token: c3458d85-6094-4030-9454-114380b2dec0
 
+
 ### Listing all emissions
+
+Note: this will list all emissions, including those only available to Extra members.
 
     $ toutv list
     2416249839: 2030, Le Big Bang démographique
@@ -243,7 +248,7 @@ Here are a few CLI usage examples.
       ...
 
 
-### Getting informations about an emission
+### Getting information about an emission
 
     $ toutv info 'physique ou chimie'
     Physique ou chimie  [Unknown country]
@@ -261,9 +266,9 @@ Here are a few CLI usage examples.
       * Tags: jeunesse, rogers
 
 
-### Getting information about an episode using its URL
+### Getting information about an episode
 
-    $ toutv info -u http://ici.tou.tv/serie-noire/S01E08
+    $ toutv info 'Série noire' S01E08
     Série noire
     Épisode 8  [S01E08]
 
@@ -282,6 +287,7 @@ Here are a few CLI usage examples.
         * 561 kbps
         * 925 kbps
         * 1324 kbps
+
 
 ### Fetching an episode
 
@@ -302,6 +308,17 @@ Here are a few CLI usage examples.
     En.audition.avec.Simon.S03E47...    24.9 MiB   23/23 [####################] 100%
     En.audition.avec.Simon.S01E17...     9.9 MiB    9/27 [#######-------------]  33%
     ...
+
+
+### Using URL instead of emission or episode name
+
+You can use tou.tv URLs instead of emission or episode names, for the `fetch`, `info`, and `list` commands.
+
+    $ toutv fetch http://ici.tou.tv/le-show-cache-2
+    $ toutv fetch http://ici.tou.tv/le-show-cache-2/S2014E02
+    $ toutv info http://ici.tou.tv/le-show-cache-2
+    $ toutv info http://ici.tou.tv/le-show-cache-2/S2014E02
+    $ toutv list http://ici.tou.tv/le-show-cache-2
 
 
 ### Searching for episodes and emissions
@@ -422,3 +439,4 @@ Special thanks to:
   * [Simon Marchi](https://github.com/simark)
   * [Simon Carpentier](https://github.com/scarpentier)
   * [Philippe Proulx](https://github.com/eepp)
+  * [Guillaume Boudreau](https://github.com/gboudreau)
