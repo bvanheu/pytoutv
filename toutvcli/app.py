@@ -234,7 +234,7 @@ class App:
     def _build_cache():
         cache_name = '.toutv_cache'
         cache_path = cache_name
-        if platform.system() == 'Linux' or platform.system() == 'Darwin':
+        if platform.system() in ['Linux', 'Darwin']:
             try:
                 cache_dir = os.environ['XDG_CACHE_DIR']
                 xdg_cache_path = os.path.join(cache_dir, 'toutv')
