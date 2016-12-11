@@ -660,7 +660,7 @@ class App:
         return sorted(episodes.values(), key=episode_sort_func)
 
 
-def _register_sigint(app):
+def _register_sigint():
     if platform.system() == 'Linux':
         def handler(signal, frame):
             print('Cancelled by user', file=sys.stderr)
@@ -672,6 +672,6 @@ def _register_sigint(app):
 
 def run():
     app = App(sys.argv[1:])
-    _register_sigint(app)
+    _register_sigint()
 
     return app.run()
