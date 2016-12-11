@@ -60,6 +60,7 @@ class App:
         self._dl = None
         self._stop = False
         self._logger = logging.getLogger(__name__)
+        self._toutv_client = None
 
     def run(self):
         locale.setlocale(locale.LC_ALL, '')
@@ -86,7 +87,7 @@ class App:
             logging.basicConfig(level=logging.DEBUG)
 
         if args.build_client:
-            self._toutvclient = self._build_toutv_client(no_cache)
+            self._toutv_client = self._build_toutv_client(no_cache)
 
         try:
             args.func(args)
@@ -289,7 +290,7 @@ class App:
     def _command_info(self, args):
         if args.url:
             em = args.emission
-            episode = self._toutvclient.get_episode_from_url(em)
+            episode = self._toutv_client.get_episode_from_url(em)
             self._print_info_episode(episode)
             return
 
@@ -305,7 +306,7 @@ class App:
 
         if args.url:
             em = args.emission
-            episode = self._toutvclient.get_episode_from_url(em)
+            episode = self._toutv_client.get_episode_from_url(em)
             self._fetch_episode(episode, output_dir=output_dir,
                                 quality=quality, bitrate=bitrate,
                                 overwrite=args.force)
@@ -326,7 +327,7 @@ class App:
         self._print_search_results(args.query)
 
     def _print_search_results(self, query):
-        searchresult = self._toutvclient.search(query)
+        searchresult = self._toutv_client.search(query)
 
         modified_query = searchresult.get_modified_query()
         print('Effective query: {}\n'.format(modified_query))
@@ -379,9 +380,9 @@ class App:
 
     def _print_list_emissions(self, all=False):
         if all:
-            emissions = self._toutvclient.get_emissions()
+            emissions = self._toutv_client.get_emissions()
         else:
-            repertoire = self._toutvclient.get_page_repertoire()
+            repertoire = self._toutv_client.get_page_repertoire()
             emissions = repertoire.get_emissions()
 
         emissions_keys = list(emissions.keys())
@@ -395,7 +396,7 @@ class App:
             print('{} - {}'.format(ekey, title))
 
     def _print_list_episodes(self, emission):
-        episodes = self._toutvclient.get_emission_episodes(emission)
+        episodes = self._toutv_client.get_emission_episodes(emission)
 
         print('{}:\n'.format(emission.get_title()))
         if len(episodes) == 0:
@@ -409,7 +410,7 @@ class App:
 
     def _print_list_episodes_name(self, emission_name):
         try:
-            emission = self._toutvclient.get_emission_by_name(emission_name)
+            emission = self._toutv_client.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
@@ -451,7 +452,7 @@ class App:
 
     def _print_info_emission_name(self, emission_name):
         try:
-            emission = self._toutvclient.get_emission_by_name(emission_name)
+            emission = self._toutv_client.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
@@ -493,14 +494,14 @@ class App:
 
     def _print_info_episode_name(self, emission_name, episode_name):
         try:
-            emission = self._toutvclient.get_emission_by_name(emission_name)
+            emission = self._toutv_client.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
 
         try:
             epname = episode_name
-            episode = self._toutvclient.get_episode_by_name(emission, epname)
+            episode = self._toutv_client.get_episode_by_name(emission, epname)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
@@ -579,14 +580,14 @@ class App:
     def _fetch_episode_name(self, emission_name, episode_name, output_dir,
                             quality, bitrate, overwrite):
         try:
-            emission = self._toutvclient.get_emission_by_name(emission_name)
+            emission = self._toutv_client.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
 
         try:
             epname = episode_name
-            episode = self._toutvclient.get_episode_by_name(emission, epname)
+            episode = self._toutv_client.get_episode_by_name(emission, epname)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
@@ -596,7 +597,7 @@ class App:
 
     def _fetch_emission_episodes(self, emission, output_dir, bitrate, quality,
                                  overwrite):
-        episodes = self._toutvclient.get_emission_episodes(emission)
+        episodes = self._toutv_client.get_emission_episodes(emission)
 
         if not episodes:
             title = emission.get_title()
@@ -637,7 +638,7 @@ class App:
     def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
                                       quality, overwrite):
         try:
-            emission = self._toutvclient.get_emission_by_name(emission_name)
+            emission = self._toutv_client.get_emission_by_name(emission_name)
         except toutv.client.NoMatchException as e:
             self._handle_no_match_exception(e)
             return
