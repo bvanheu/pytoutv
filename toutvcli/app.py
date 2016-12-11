@@ -61,6 +61,7 @@ class App:
         self._stop = False
         self._logger = logging.getLogger(__name__)
         self._toutv_client = None
+        self._verbose = False
 
     def run(self):
         locale.setlocale(locale.LC_ALL, '')
