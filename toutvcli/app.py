@@ -134,7 +134,8 @@ class App:
 
         return 0
 
-    def _handle_no_match_exception(self, e):
+    @staticmethod
+    def _handle_no_match_exception(e):
         print('Cannot find "{}"'.format(e.query))
         if not e.candidates:
             return
@@ -252,7 +253,8 @@ class App:
 
         return cache
 
-    def _build_toutv_client(self, no_cache):
+    @staticmethod
+    def _build_toutv_client(no_cache):
         if no_cache:
             cache = toutv.cache.EmptyCache()
         else:
@@ -419,7 +421,8 @@ class App:
 
         self._print_list_episodes(emission)
 
-    def _print_info_emission(self, emission):
+    @staticmethod
+    def _print_info_emission(emission):
         inner = emission.get_country()
         if inner is None:
             inner = 'Unknown country'
@@ -461,7 +464,8 @@ class App:
 
         self._print_info_emission(emission)
 
-    def _print_info_episode(self, episode):
+    @staticmethod
+    def _print_info_episode(episode):
         emission = episode.get_emission()
         qualities = episode.get_available_qualities()
 
