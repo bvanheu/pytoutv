@@ -40,6 +40,7 @@ import toutv.dl
 import toutv.client
 import toutv.cache
 import toutv.config
+import toutv.exceptions
 from toutvcli import __version__
 from toutvcli.progressbar import ProgressBar
 import traceback
