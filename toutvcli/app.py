@@ -71,13 +71,10 @@ class App:
         #   * 1: client error
         #   * 2: download error (cancelled, file exists, no space left, etc.)
         #   * 3: network error (timeout, bad HTTP request, etc.)
-        #   * 10: bad argument
         #   * 100: unknown error
-        if not self._args:
-            self._argparser.print_help()
-            return 10
 
         args = self._argparser.parse_args(self._args)
+
         self._verbose = args.verbose
 
         if 'no_cache' not in args:
@@ -148,6 +145,7 @@ class App:
     def _build_argparser(self):
         p = argparse.ArgumentParser(description='TOU.TV command line client')
         sp = p.add_subparsers(dest='command', help='Commands help')
+        sp.required = True
 
         # version
         p.add_argument('-n', '--no-cache', action='store_true',
