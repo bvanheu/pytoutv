@@ -314,7 +314,7 @@ class App:
                 emission_url = args.emission
             else:
                 emission_name = args.emission
-        else:
+        elif hasattr(args, 'emission') and args.emission:
             # One arg
             if args.emission.startswith('http'):
                 # Emission or episode URL?
@@ -328,6 +328,8 @@ class App:
                     episode_url = args.emission
             else:
                 emission_name = args.emission
+        else:
+            return None, None
 
         episode = None
         emission = None
