@@ -118,6 +118,10 @@ class App:
             return 3
         except toutv.exceptions.UnexpectedHttpStatusCodeError as e:
             tmpl = 'Bad HTTP status code ({}) for "{}"'
+            if e.status_code == 401 and os.path.exists(App._build_cache_path(toutv.config.TOUTV_AUTH_TOKEN_PATH)):
+                print("Invalid auth token; will be deleted. You will need to run 'toutv login [email_address]' to resolve this issue.", file=sys.stderr)
+                App._delete_auth()
+                return run()
             print(tmpl.format(e.status_code, e.url), file=sys.stderr)
             return 3
         except toutv.exceptions.NetworkError as e:
@@ -285,7 +289,14 @@ class App:
         return auth
 
     @staticmethod
-    def _build_toutv_client(no_cache):
+    def _delete_auth():
+        token_file = App._build_cache_path(toutv.config.TOUTV_AUTH_TOKEN_PATH)
+        os.remove(token_file)
+
+    @staticmethod
+    def _build_toutv_client(self, no_cache):
+        auth = App._build_auth()
+
         if no_cache:
             cache = toutv.cache.EmptyCache()
         else:
