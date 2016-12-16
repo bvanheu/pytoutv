@@ -244,7 +244,7 @@ class Client:
 
         return emission
 
-    def get_episode_from_url(self, episode_url, emission_url = None):
+    def get_episode_from_url(self, episode_url, emission=None, emission_url=None):
         timeout = 10
 
         try:
@@ -260,12 +260,13 @@ class Client:
         if episode_m is None:
             raise ClientError('Cannot read episode information for URL "{}"'.format(episode_url))
 
-        # Get emission
-        if emission_url is None:
-            regex = r'(https?://[^/]+/[^/]+)/([^/]*)/?'
-            results = re.findall(regex, episode_url)
-            emission_url = results[0][0]
-        emission = self.get_emission_from_url(emission_url)
+        if emission is None:
+            # Get emission
+            if emission_url is None:
+                regex = r'(https?://[^/]+/[^/]+)/([^/]*)/?'
+                results = re.findall(regex, episode_url)
+                emission_url = results[0][0]
+            emission = self.get_emission_from_url(emission_url)
 
         try:
             episode = self.get_episode_by_name(emission, episode_m)

@@ -333,17 +333,21 @@ class App:
         else:
             return None, None
 
-        episode = None
         emission = None
-        if episode_url:
-            episode = self._toutv_client.get_episode_from_url(episode_url, emission_url)
-        elif episode_name:
-            episode = self._toutv_client.get_episode_by_name(episode_name, emission_name)
-        elif emission_url:
+        if emission_url:
             emission = self._toutv_client.get_emission_from_url(emission_url)
         elif emission_name:
             emission = self._toutv_client.get_emission_by_name(emission_name)
-        else:
+
+        episode = None
+        if episode_url:
+            episode = self._toutv_client.get_episode_from_url(episode_url, emission, emission_url)
+        elif episode_name:
+            if emission is None:
+                raise CliError("Couldn't understand emission parameter.")
+            episode = self._toutv_client.get_episode_by_name(emission, episode_name)
+
+        if emission is None and episode is None:
             raise CliError("Couldn't understand emission/episode parameters.")
 
         return emission, episode
