@@ -373,9 +373,10 @@ class App:
                 os.remove(f)
             except Exception as e:
                 # not the end of the world
-                self._logger.warn('could not remove file "{}": {}'.format(f, e))
+                self._logger.warning('could not remove file "{}": {}'.format(f, e))
 
-    def _command_login(self, args):
+    @staticmethod
+    def _command_login(args):
         auth = toutv.auth.Auth()
 
         password = args.password
@@ -477,8 +478,8 @@ class App:
 
             print('\n')
 
-    def _print_list_emissions(self, all=False):
-        if all:
+    def _print_list_emissions(self, _all=False):
+        if _all:
             emissions = self._toutv_client.get_emissions()
         else:
             repertoire = self._toutv_client.get_page_repertoire()
