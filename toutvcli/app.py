@@ -225,6 +225,8 @@ class App:
         pf.add_argument('-q', '--quality', action='store',
                         default=App.QUALITY_AVG, choices=quality_choices,
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
+        pf.add_argument('-v', '--verbose', action='store_true',
+                        help='Verbose output')
         pf.set_defaults(func=self._command_fetch)
         pf.set_defaults(build_client=True)
 
