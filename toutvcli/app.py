@@ -178,8 +178,6 @@ class App:
                         help='List emissions without episodes')
         pl.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
-        pl.add_argument('-v', '--verbose', action='store_true',
-                        help='Verbose output')
         pl.set_defaults(func=self._command_list)
         pl.set_defaults(build_client=True)
 
@@ -192,8 +190,6 @@ class App:
                         help='Episode name or URL for which to get information')
         pi.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
-        pi.add_argument('-v', '--verbose', action='store_true',
-                        help='Verbose output')
         pi.set_defaults(func=self._command_info)
         pi.set_defaults(build_client=True)
 
@@ -229,8 +225,6 @@ class App:
         pf.add_argument('-q', '--quality', action='store',
                         default=App.QUALITY_AVG, choices=quality_choices,
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
-        pf.add_argument('-v', '--verbose', action='store_true',
-                        help='Verbose output')
         pf.set_defaults(func=self._command_fetch)
         pf.set_defaults(build_client=True)
 
