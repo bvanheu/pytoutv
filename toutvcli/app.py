@@ -335,12 +335,12 @@ class App:
         emission = None
         if episode_url:
             episode = self._toutv_client.get_episode_from_url(episode_url, emission_url)
+        elif episode_name:
+            episode = self._toutv_client.get_episode_by_name(episode_name, emission_name)
         elif emission_url:
             emission = self._toutv_client.get_emission_from_url(emission_url)
         elif emission_name:
             emission = self._toutv_client.get_emission_by_name(emission_name)
-        elif episode_name:
-            episode = self._toutv_client.get_episode_by_name(episode_name, emission_name)
         else:
             raise CliError("Couldn't understand emission/episode parameters.")
 
