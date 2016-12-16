@@ -294,7 +294,7 @@ class App:
         os.remove(token_file)
 
     @staticmethod
-    def _build_toutv_client(self, no_cache):
+    def _build_toutv_client(no_cache):
         auth = App._build_auth()
 
         if no_cache:
