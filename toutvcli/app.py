@@ -123,6 +123,9 @@ class App:
         except CliError as e:
             print('Command line error: {}'.format(e), file=sys.stderr)
             return 1
+        except toutv.client.NoMatchException as e:
+            self._handle_no_match_exception(e)
+            return 1
         except Exception as e:
             print('Unknown exception: {}: {}'.format(type(e), e),
                   file=sys.stderr)
@@ -413,12 +416,7 @@ class App:
             print('  * {} - {} - {}'.format(episode.Id, sae, title))
 
     def _print_list_episodes_name(self, emission_name):
-        try:
-            emission = self._toutv_client.get_emission_by_name(emission_name)
-        except toutv.client.NoMatchException as e:
-            self._handle_no_match_exception(e)
-            return
-
+        emission = self._toutv_client.get_emission_by_name(emission_name)
         self._print_list_episodes(emission)
 
     @staticmethod
@@ -456,12 +454,7 @@ class App:
                 print(line)
 
     def _print_info_emission_name(self, emission_name):
-        try:
-            emission = self._toutv_client.get_emission_by_name(emission_name)
-        except toutv.client.NoMatchException as e:
-            self._handle_no_match_exception(e)
-            return
-
+        emission = self._toutv_client.get_emission_by_name(emission_name)
         self._print_info_emission(emission)
 
     @staticmethod
@@ -499,19 +492,8 @@ class App:
             print(line)
 
     def _print_info_episode_name(self, emission_name, episode_name):
-        try:
-            emission = self._toutv_client.get_emission_by_name(emission_name)
-        except toutv.client.NoMatchException as e:
-            self._handle_no_match_exception(e)
-            return
-
-        try:
-            epname = episode_name
-            episode = self._toutv_client.get_episode_by_name(emission, epname)
-        except toutv.client.NoMatchException as e:
-            self._handle_no_match_exception(e)
-            return
-
+        emission = self._toutv_client.get_emission_by_name(emission_name)
+        episode = self._toutv_client.get_episode_by_name(emission, episode_name)
         self._print_info_episode(episode)
 
     @staticmethod
@@ -585,19 +567,8 @@ class App:
 
     def _fetch_episode_name(self, emission_name, episode_name, output_dir,
                             quality, bitrate, overwrite):
-        try:
-            emission = self._toutv_client.get_emission_by_name(emission_name)
-        except toutv.client.NoMatchException as e:
-            self._handle_no_match_exception(e)
-            return
-
-        try:
-            epname = episode_name
-            episode = self._toutv_client.get_episode_by_name(emission, epname)
-        except toutv.client.NoMatchException as e:
-            self._handle_no_match_exception(e)
-            return
-
+        emission = self._toutv_client.get_emission_by_name(emission_name)
+        episode = self._toutv_client.get_episode_by_name(emission, episode_name)
         self._fetch_episode(episode, output_dir=output_dir, quality=quality,
                             bitrate=bitrate, overwrite=overwrite)
 
@@ -643,12 +614,7 @@ class App:
 
     def _fetch_emission_episodes_name(self, emission_name, output_dir, bitrate,
                                       quality, overwrite):
-        try:
-            emission = self._toutv_client.get_emission_by_name(emission_name)
-        except toutv.client.NoMatchException as e:
-            self._handle_no_match_exception(e)
-            return
-
+        emission = self._toutv_client.get_emission_by_name(emission_name)
         self._fetch_emission_episodes(emission, output_dir, bitrate, quality,
                                       overwrite)
 
