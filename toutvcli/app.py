@@ -47,6 +47,7 @@ import toutv.exceptions
 from toutvcli import __version__
 from toutvcli.progressbar import ProgressBar
 import traceback
+from urllib.parse import urlparse
 
 
 class CliError(RuntimeError):
@@ -57,6 +58,9 @@ class App:
     QUALITY_MIN = 'MIN'
     QUALITY_AVG = 'AVERAGE'
     QUALITY_MAX = 'MAX'
+
+    FETCH_INFO_FIRST_ARG = 'show-or-url'
+    FETCH_INFO_SECOND_ARG = 'episode'
 
     def __init__(self, args):
         self._argparser = self._build_argparser()
@@ -170,24 +174,46 @@ class App:
                        version='%(prog)s v{}'.format(__version__))
 
         # list command
+        usage = ('\n\n'
+                 '    1. toutv list [options]\n'
+                 '    2. toutv list [options] <show>\n')
+
+        desc = '''
+List shows (1) or episodes of a show (2).  In form 2, the show can be specified
+using its name, url or id (as found with the form 1 of this command).
+'''
         pl = sp.add_parser('list',
-                           help='List emissions or episodes of an emission')
-        pl.add_argument('emission', action='store', nargs='?', type=str,
-                        help='List all episodes of an emission')
+                           help='List shows or episodes of a show',
+                           usage=usage, description=desc)
+        pl.add_argument('show', action='store', nargs='?', type=str,
+                        help='Name or url of a show')
         pl.add_argument('-a', '--all', action='store_true',
-                        help='List emissions without episodes')
+                        help='List shows without episodes')
         pl.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
         pl.set_defaults(func=self._command_list)
         pl.set_defaults(build_client=True)
 
         # info command
+        usage = ('\n\n'
+                 '    1. toutv info [options] <show-url>\n'
+                 '    2. toutv info [options] <episode-url>\n'
+                 '    3. toutv info [options] <show>\n'
+                 '    4. toutv info [options] <show> <episode>\n')
+
+        desc = '''
+Print some information about a show (1 and 3) or an episode (2 and 4). In forms
+3 and 4, shows can be referred to using the name or the id as found with the
+list command. Episodes can be specified using their name, number or id.
+'''
+
         pi = sp.add_parser('info',
-                           help='Get emission or episode information')
-        pi.add_argument('emission', action='store', nargs='?', type=str,
-                        help='Emission name or URL for which to get information')
-        pi.add_argument('episode', action='store', nargs='?', type=str,
-                        help='Episode name or URL for which to get information')
+                           help='Get information about a show or an episode',
+                           usage=usage, description=desc)
+        pi.add_argument(App.FETCH_INFO_FIRST_ARG, action='store', type=str,
+                        help='Show or URL, depending on the form used.')
+        pi.add_argument(App.FETCH_INFO_SECOND_ARG, action='store', nargs='?', type=str,
+                        help='Episode, if necessary.')
         pi.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
         pi.set_defaults(func=self._command_info)
@@ -195,24 +221,37 @@ class App:
 
         # search command
         ps = sp.add_parser('search',
-                           help='Search TOU.TV emissions or episodes')
+                           help='Search TOU.TV shows or episodes')
         ps.add_argument('query', action='store', type=str,
                         help='Search query')
         ps.set_defaults(func=self._command_search)
         ps.set_defaults(build_client=True)
 
         # fetch command
+        usage = ('\n\n'
+                 '    1. toutv fetch [options] <episode-url>\n'
+                 '    2. toutv fetch [options] <show-url>\n'
+                 '    3. toutv fetch [options] <show> <episode>\n'
+                 '    4. toutv fetch [options] <show>\n')
+
+        desc = '''
+Fetch an episode (1 and 3) or all episodes of a show (2 and 4). In forms 3 and
+4, shows can be referred to using the name or the id as found with the list
+command. The episode can be specified using its name, number or id.
+'''
+
         pf = sp.add_parser('fetch',
-                           help='Fetch one or all episodes of an emission')
+                           help='Fetch one or all episodes of a show',
+                           usage=usage, description=desc)
         quality_choices = [
             App.QUALITY_MIN,
             App.QUALITY_AVG,
             App.QUALITY_MAX
         ]
-        pf.add_argument('emission', action='store', nargs='?', type=str,
-                        help='Emission name or URL to fetch')
-        pf.add_argument('episode', action='store', nargs='?', type=str,
-                        help='Episode name or URL to fetch')
+        pf.add_argument(App.FETCH_INFO_FIRST_ARG, action='store', type=str,
+                        help='Show or URL, depending on the form used.')
+        pf.add_argument(App.FETCH_INFO_SECOND_ARG, action='store', type=str, nargs='?',
+                        help='Episode, if necessary.')
         pf.add_argument('-b', '--bitrate', action='store', type=int,
                         help='Video bitrate (default: use default quality)')
         pf.add_argument('-d', '--directory', action='store',
@@ -303,59 +342,70 @@ class App:
 
         return toutv.client.Client(cache=cache, auth=auth)
 
-    def _get_emission_episode_from_args(self, args):
-        # Checks if the parameters are URLs, and if so, check if they are emission or episode URLs
+    def _parse_show_episode_from_args(self, first, second):
+        # Parse the arguments used to specify a show or an episode. If first is
+        # an URL, we extract the show name and episode number (if applicable)
+        # from it.  If not, we consider that first and second are keywords
+        # (name, number or id) describing respectively the show and the
+        # episode, so they are returned as-is.  No validation (e.g. check if
+        # the show/episode exists) is done on the keywords.
+        #
+        # Here are examples of allowed forms to refer to an episode:
+        #
+        #   - "http://ici.tou.tv/district-31/S01E56", None
+        #   - "District 31", "S01E56"
+        #   - "District 31", "Épisode 56"
+        #   - "district-31" "S01E56"
+        #   - "2424967431" "2425170307"
+        #
+        #   or to a show:
+        #   - "http://ici.tou.tv/district-31", None
+        #   - "district-31", None
 
-        emission_name = None
-        emission_url = None
-        episode_name = None
-        episode_url = None
+        # Try to parse the first argument as an URL, this will tell us if we use the URL form or the keyword form.
+        url = urlparse(first)
 
-        if hasattr(args, 'episode') and args.episode:
-            # Two args
-            if args.episode.startswith('http'):
-                episode_url = args.episode
-            else:
-                episode_name = args.episode
-            if args.emission.startswith('http'):
-                emission_url = args.emission
-            else:
-                emission_name = args.emission
-        elif hasattr(args, 'emission') and args.emission:
-            # One arg
-            if args.emission.startswith('http'):
-                # Emission or episode URL?
-                regex = r'(https?://[^/]+)/([^/]+)/?([^/]*)/?'
-                results = re.findall(regex, args.emission)
-                if not results:
-                    raise CliError('"{}" is not a valid tou.tv URL. Expected format: https://ici.tou.tv/emission_name/[optional_episode_name]'.format(args.emission))
-                if results[0][2] == '':
-                    emission_url = args.emission
-                else:
-                    episode_url = args.emission
-            else:
-                emission_name = args.emission
+        if url.scheme in ('http', 'https'):
+            # It's an URL, so check that there is no extra argument.
+            if second is not None:
+                raise CliError('A single argument must be passed when using the URL form.')
+
+            # Validate that the URL is using the right domain.
+            if url.netloc != 'ici.tou.tv':
+                raise CliError('URL from unrecognized domain {}'.format(url.netloc))
+
+            # Cleanup and split the path part (e.g. path='/district-31/S01E56')
+            elements = url.path.strip('/').split('/')
+
+            # Validate the number of path elements.
+            if len(elements) not in [1, 2] or len(elements[0]) == 0:
+                raise CliError('Couldn\'t recognize URL {}'.format(first))
+
+            show_spec = elements[0]
+            episode_spec = elements[1] if len(elements) == 2 else None
         else:
-            return None, None
+            show_spec = first
+            episode_spec = second
 
-        emission = None
-        if emission_url:
-            emission = self._toutv_client.get_emission_from_url(emission_url)
-        elif emission_name:
-            emission = self._toutv_client.get_emission_by_name(emission_name)
+        if self._verbose:
+            tpl = '_parse_show_episode_from_args returns: emission {} and episode {}'
+            print(tpl.format(show_spec, episode_spec))
 
-        episode = None
-        if episode_url:
-            episode = self._toutv_client.get_episode_from_url(episode_url, emission, emission_url)
-        elif episode_name:
-            if emission is None:
-                raise CliError("Couldn't understand emission parameter.")
-            episode = self._toutv_client.get_episode_by_name(emission, episode_name)
+        return show_spec, episode_spec
 
-        if emission is None and episode is None:
-            raise CliError("Couldn't understand emission/episode parameters.")
+    def _get_show_episode_from_args(self, first, second):
+        # Get the show and episode objects referred to by first and second.
+        # See doc of _parse_show_episode_from_args for the acceptable values.
+        show_spec, episode_spec = self._parse_show_episode_from_args(first, second)
 
-        return emission, episode
+        show = self._toutv_client.get_emission_by_name(show_spec)
+
+        if episode_spec:
+            episode = self._toutv_client.get_episode_by_name(show, episode_spec)
+        else:
+            episode = None
+
+        return show, episode
 
     def _command_clean(self, args):
         # make sure we have to clean a directory
@@ -396,18 +446,28 @@ class App:
             print('Unable to login "{}"'.format(e))
 
     def _command_list(self, args):
-        emission, episode = self._get_emission_episode_from_args(args)
-        if emission:
-            self._print_list_episodes(emission)
+        if args.show:
+            # List episodes of a show.
+            show, episode = self._get_show_episode_from_args(args.show, None)
+
+            if episode:
+                raise CliError("Episode URL given to the list command.")
+
+            self._print_list_episodes(show)
         else:
+            # List shows.
             self._print_list_emissions(args.all)
 
     def _command_info(self, args):
-        emission, episode = self._get_emission_episode_from_args(args)
+        first = getattr(args, App.FETCH_INFO_FIRST_ARG)
+        second = getattr(args, App.FETCH_INFO_SECOND_ARG)
+
+        show, episode = self._get_show_episode_from_args(first, second)
+
         if episode:
             self._print_info_episode(episode)
         else:
-            self._print_info_emission(emission)
+            self._print_info_emission(show)
 
     def _command_fetch(self, args):
         output_dir = args.directory
@@ -415,12 +475,15 @@ class App:
         quality = args.quality
         overwrite = args.force
 
-        emission, episode = self._get_emission_episode_from_args(args)
+        first = getattr(args, App.FETCH_INFO_FIRST_ARG)
+        second = getattr(args, App.FETCH_INFO_SECOND_ARG)
+
+        show, episode = self._get_show_episode_from_args(first, second)
 
         if episode:
             self._fetch_episode(episode, output_dir=output_dir, quality=quality, bitrate=bitrate, overwrite=overwrite)
         else:
-            self._fetch_emission_episodes(emission, output_dir=output_dir, quality=quality, bitrate=bitrate,
+            self._fetch_emission_episodes(show, output_dir=output_dir, quality=quality, bitrate=bitrate,
                                           overwrite=overwrite)
 
     def _command_search(self, args):
