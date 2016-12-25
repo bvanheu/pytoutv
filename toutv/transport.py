@@ -133,33 +133,32 @@ class JsonTransport(Transport):
 
         episodes = {}
 
-        episodes_dto = self._do_query('GetEpisodesForEmission', {'emissionid': str(emission.Id)})
-        for episode_dto in episodes_dto:
-            episode = self._mapper.dto_to_bo(episode_dto, bos.Episode)
-            episode.set_emission(emission)
-            episodes[episode.Id] = episode
+        url = '{}/presentation/{}'.format(toutv.config.TOUTV_BASE_URL, emission.Url)
+        emission_dto = self._do_query(url, {'v': 2, 'excludeLineups': False, 'd': 'android'})
+        seasons = emission_dto['SeasonLineups']
+        for season in seasons:
+            episodes_dto = season['LineupItems']
+            for episode_dto in episodes_dto:
+                episode = toutv.bos.Episode()
+                episode.Title = episode_dto['Title']
+                episode.Description = episode_dto['Description']
+                if 'Description' in episode_dto['Details']:
+                    episode.Description = episode_dto['Details']['Description']
+                episode.PID = episode_dto['IdMedia']
+                episode.Id = episode_dto['Key'][6:]
+                episode.Url = episode_dto['Url']
+                episode.AirDateLongString = episode_dto['Details']['AirDate']
+                episode.CategoryId = emission.Id
+                episode.SeasonAndEpisode = toutv.client.Client._find_last(r'/.*/(.*)$', episode_dto['Url'])
+                episode.set_emission(emission)
+                episodes[episode.Id] = episode
 
         if len(episodes) == 0:
-            # Is probably an Extra; load episodes using /presentation/ URL
-            url = '{}/presentation{}'.format(toutv.config.TOUTV_BASE_URL, emission.Url)
-            emission_dto = self._do_query(url, {'v': 2, 'excludeLineups': False, 'd': 'android'})
-            seasons = emission_dto['SeasonLineups']
-            for season in seasons:
-                episodes_dto = season['LineupItems']
-                for episode_dto in episodes_dto:
-                    episode = toutv.bos.Episode()
-                    episode.Title = episode_dto['Title']
-                    episode.Description = episode_dto['Description']
-                    if 'Description' in episode_dto['Details']:
-                        episode.Description = episode_dto['Details']['Description']
-                    episode.PID = episode_dto['IdMedia']
-                    episode.Id = episode_dto['Key'][6:]
-                    episode.Url = episode_dto['Url']
-                    episode.AirDateLongString = episode_dto['Details']['AirDate']
-                    episode.CategoryId = emission.Id
-                    episode.SeasonAndEpisode = toutv.client.Client._find_last(r'/.*/(.*)$', episode_dto['Url'])
-                    episode.set_emission(emission)
-                    episodes[episode.Id] = episode
+            episodes_dto = self._do_query('GetEpisodesForEmission', {'emissionid': str(emission.Id)})
+            for episode_dto in episodes_dto:
+                episode = self._mapper.dto_to_bo(episode_dto, bos.Episode)
+                episode.set_emission(emission)
+                episodes[episode.Id] = episode
 
         return episodes
 
