@@ -96,11 +96,14 @@ class Client:
 
         return emissions
 
-    def get_emission_episodes(self, emission):
-        episodes = self._cache.get_emission_episodes(emission)
+    def get_emission_episodes(self, emission, short_version=False):
+        episodes = None
+        if short_version:
+            episodes = self._cache.get_emission_episodes(emission)
         if episodes is None:
-            episodes = self._transport.get_emission_episodes(emission)
-            self._cache.set_emission_episodes(emission, episodes)
+            episodes = self._transport.get_emission_episodes(emission, short_version)
+            if short_version:
+                self._cache.set_emission_episodes(emission, episodes)
 
         self._set_bos_proxies(episodes.values())
         self._set_bos_auth(episodes.values())
@@ -142,7 +145,7 @@ class Client:
                 search.Results.append(sr)
 
                 # Load this emission' episodes, and add those to the search results too
-                episodes = self._transport.get_emission_episodes(emission)
+                episodes = self._transport.get_emission_episodes(emission, True)
                 for epid, episode in episodes.items():
                     sr = toutv.bos.SearchResultData()
                     sr.Episode = episode
@@ -178,8 +181,8 @@ class Client:
             if emission_name_upper in exact_matches:
                 return emission
 
-    def get_episode_by_name(self, emission, episode_name):
-        episodes = self.get_emission_episodes(emission)
+    def get_episode_by_name(self, emission, episode_name, short_version=False):
+        episodes = self.get_emission_episodes(emission, short_version)
         episode_name_upper = episode_name.upper()
         candidates = []
 

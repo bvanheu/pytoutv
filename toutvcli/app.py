@@ -559,7 +559,7 @@ command. The episode can be specified using its name, number or id.
             print('{} - {}'.format(ekey, title))
 
     def _print_list_episodes(self, emission):
-        episodes = self._toutv_client.get_emission_episodes(emission)
+        episodes = self._toutv_client.get_emission_episodes(emission, True)
 
         print('{}:\n'.format(emission.get_title()))
         if len(episodes) == 0:
@@ -725,7 +725,7 @@ command. The episode can be specified using its name, number or id.
 
     def _fetch_emission_episodes(self, emission, output_dir, bitrate, quality,
                                  overwrite):
-        episodes = self._toutv_client.get_emission_episodes(emission)
+        episodes = self._toutv_client.get_emission_episodes(emission, True)
 
         if not episodes:
             title = emission.get_title()
@@ -738,6 +738,8 @@ command. The episode can be specified using its name, number or id.
             if self._stop:
                 raise toutv.dl.CancelledByUserError()
             try:
+                if episode.PID is None:
+                    episode = self._toutv_client.get_episode_by_name(emission, str(episode.Id))
                 self._fetch_episode(episode, output_dir, bitrate, quality,
                                     overwrite)
                 sys.stdout.write('\n')
