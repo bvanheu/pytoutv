@@ -98,17 +98,30 @@ class JsonTransport(Transport):
         # All emissions, including those only available in Extra
         # We don't have much information about them, except their id, title, and URL, but that is enough to be able to fetch them at least.
         url = '{}/presentation/search'.format(toutv.config.TOUTV_BASE_URL)
-        emissions_dto = self._do_query(url, {'v': 2, 'd': 'android'})
-        for emission_dto in emissions_dto:
-            emission = toutv.bos.Emission()
-            emission.Title = emission_dto['DisplayText']
-            emission.Id = emission_dto['Id']
-            emission.Url = emission_dto['Url']
-            emissions[emission.Id] = emission
+        results_dto = self._do_query(url, {'v': 2, 'd': 'android'})
+        for a_dto in results_dto:
+            if a_dto['Key'].startswith("program-"):
+                emission = toutv.bos.Emission()
+                emission.Title = a_dto['DisplayText']
+                emission.Id = a_dto['Id']
+                emission.Url = a_dto['Url']
+                emissions[emission.Id] = emission
+            else:
+                episode = toutv.bos.Episode()
+                episode.Title = a_dto['DisplayText'].replace("%s - " % emission.Title, "")
+                episode.Id = a_dto['Id']
+                episode.Url = a_dto['Url']
+                url_parts = episode.Url.split('/')
+                episode.SeasonAndEpisode = url_parts[len(url_parts)-1].upper()
+                episode.set_emission(emission)
+                emission.add_episode(episode)
 
         emissions_dto = self._do_query('GetEmissions')
         for emission_dto in emissions_dto:
             emission = self._mapper.dto_to_bo(emission_dto, bos.Emission)
+            if emission.Id in emissions:
+                for epid, episode in emissions[emission.Id].get_episodes().items():
+                    emission.add_episode(episode)
             emissions[emission.Id] = emission
 
         return emissions

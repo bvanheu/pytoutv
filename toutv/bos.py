@@ -223,6 +223,13 @@ class Emission(_AbstractEmission, _ThumbnailProvider):
         self.TitleIndex = None
         self.Url = None
         self.Year = None
+        self._episodes = {}
+
+    def add_episode(self, episode):
+        self._episodes[episode.Id] = episode
+
+    def get_episodes(self):
+        return self._episodes
 
     def get_title(self):
         return self.Title
@@ -439,7 +446,7 @@ class Episode(_Bo, _ThumbnailProvider):
         if self.Url is None:
             return None
 
-        return '{}/{}'.format(toutv.config.TOUTV_BASE_URL, self.Url)
+        return '{}/{}'.format(toutv.config.TOUTV_BASE_URL, self.Url).replace('tou.tv//', 'tou.tv/')
 
     def get_season_number(self):
         return self.SeasonNumber
@@ -451,6 +458,8 @@ class Episode(_Bo, _ThumbnailProvider):
         return self.SeasonAndEpisode
 
     def get_description(self):
+        if self.Description is None:
+            return None
         return _clean_description(self.Description)
 
     def get_emission_id(self):

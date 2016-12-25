@@ -41,6 +41,9 @@ class JsonMapper(Mapper):
         bo_vars = vars(bo)
 
         for key in bo_vars.keys():
+            if key.startswith("_"):
+                continue
+
             value = dto[key]
 
             if isinstance(value, dict):
