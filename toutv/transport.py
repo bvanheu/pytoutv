@@ -34,9 +34,6 @@ import toutv.bos as bos
 
 class Transport:
 
-    def set_proxies(self, proxies):
-        raise NotImplementedError()
-
     def get_emissions(self):
         raise NotImplementedError()
 
