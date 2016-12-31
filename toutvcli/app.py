@@ -99,9 +99,9 @@ class App:
         except toutv.dl.CancelledByUserError:
             print('Download cancelled by user', file=sys.stderr)
             return 2
-        except toutv.dl.FileExistsError:
-            msg = 'Destination file exists (use -f to force)'
-            print(msg, file=sys.stderr)
+        except toutv.dl.FileExistsError as e:
+            tmpl = 'Destination file {} exists (use -f to overwrite).'
+            print(tmpl.format(e.path), file=sys.stderr)
             return 2
         except toutv.dl.NoSpaceLeftError:
             print('No space left on device while downloading', file=sys.stderr)
@@ -600,9 +600,9 @@ class App:
             except toutv.exceptions.NetworkError as e:
                 tmpl = 'Error: cannot fetch "{}": {}'
                 print(tmpl.format(title, e), file=sys.stderr)
-            except toutv.dl.FileExistsError:
-                tmpl = 'Error: cannot fetch "{}": destination file exists'
-                print(tmpl.format(title), file=sys.stderr)
+            except toutv.dl.FileExistsError as e:
+                tmpl = 'Error: cannot fetch "{}": destination file {} already exists'
+                print(tmpl.format(title, e.path), file=sys.stderr)
             except toutv.dl.CancelledByUserError as e:
                 raise e
             except toutv.dl.DownloadError as e:

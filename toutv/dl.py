@@ -56,8 +56,13 @@ class CancelledByUserError(DownloadError):
 
 class FileExistsError(DownloadError):
 
-    def __init__(self):
-        super().__init__('File exists')
+    def __init__(self, path):
+        super().__init__('File {} exists'.format(path))
+        self._path = path
+
+    @property
+    def path(self):
+        return self._path
 
 
 class NoSpaceLeftError(DownloadError):
@@ -140,7 +145,7 @@ class Downloader:
     def _init_download(self):
         # prevent overwriting
         if not self._overwrite and os.path.exists(self._output_path):
-            raise FileExistsError()
+            raise FileExistsError(self._output_path)
 
         pl, cookies = self._episode.get_playlist_cookies()
         self._playlist = pl
