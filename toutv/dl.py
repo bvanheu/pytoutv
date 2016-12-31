@@ -71,89 +71,59 @@ class NoSpaceLeftError(DownloadError):
         super().__init__('No space left on device')
 
 
-class Downloader:
-    _seg_aes_iv = struct.Struct('>IIII')
+class SegmentHandler:
 
-    def __init__(self, episode, bitrate, output_dir=os.getcwd(),
-                 filename=None, on_progress_update=None,
-                 on_dl_start=None, overwrite=False, proxies=None,
-                 timeout=15):
-        self._logger = logging.getLogger(__name__)
+    def initialize(self):
+        """Called once before the Downloader tries to download any segment."""
+        raise NotImplementedError()
+
+    def has_segment(self, segindex):
+        """Return whether the segment handler already has segment with index segindex.
+
+        If the handler returns False, the Downloader will skip downloading
+        this segment and call the segment_size method to determine the size
+        of this segment.
+        """
+        raise NotImplementedError()
+
+    def segment_size(self, segindex):
+        """Return the size of segment with index segindex.
+
+        This is called by the Downloader when the handler has indicated it
+        already has a particular segment.
+        """
+        raise NotImplementedError()
+
+    def on_segment(self, segindex, segment):
+        """Called once for each downloaded segment.
+
+        This method is not called for segments for which the has_segment
+        returned True.
+        """
+        raise NotImplementedError()
+
+    def finalize(self, num_segments):
+        """Called once all the segments have been successfully downloaded."""
+        raise NotImplementedError()
+
+
+class FilesystemSegmentHandler(SegmentHandler):
+    """SegmentHandler implementation which saves the episode on the filesystem."""
+
+    def __init__(self,
+                 episode,
+                 bitrate,
+                 output_dir,
+                 overwrite=False):
         self._episode = episode
         self._bitrate = bitrate
         self._output_dir = output_dir
-        self._filename = filename
-        self._on_progress_update = on_progress_update
-        self._on_dl_start = on_dl_start
         self._overwrite = overwrite
-        self._proxies = proxies
-        self._timeout = timeout
-        self._key = None
 
-        self._set_output_path()
-
-    def _do_request(self, url, params=None, stream=False):
-        self._logger.debug('HTTP GET request @ {}'.format(url))
-
-        try:
-            r = requests.get(url, params=params, headers=toutv.config.HEADERS,
-                             proxies=self._proxies, cookies=self._cookies,
-                             timeout=self._timeout, stream=stream)
-
-            if r.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url,
-                                                                     r.status_code)
-        except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeoutError(url, timeout)
-        except requests.exceptions.ConnectionError as e:
-            raise toutv.exceptions.NetworkError() from e
-
-        return r
-
-    def _gen_filename(self):
-        # remove illegal characters from filename
-        emission_title = self._episode.get_emission().Title
-        episode_title = self._episode.Title
-
-        if self._episode.SeasonAndEpisode is not None:
-            sae = self._episode.SeasonAndEpisode
-            episode_title = '{} {}'.format(sae, episode_title)
-
-        br = self._bitrate // 1000
-        episode_title = '{} {}kbps'.format(episode_title, br)
-        filename = '{}.{}.ts'.format(emission_title, episode_title)
-        regex = r'[^ \'a-zA-Z0-9áàâäéèêëíìîïóòôöúùûüÁÀÂÄÉÈÊËÍÌÎÏÓÒÔÖÚÙÛÜçÇ()._-]'
-        filename = re.sub(regex, '', filename)
-        filename = re.sub(r'\s', '.', filename)
-
-        return filename
-
-    def _set_output_path(self):
-        # create output directory if it doesn't exist
-        try:
-            os.makedirs(self._output_dir)
-        except:
-            pass
-
-        # generate a filename if not specified by user
-        if self._filename is None:
-            self._filename = self._gen_filename()
-
-        # set output path
+        self._filename = self._gen_filename()
         self._output_path = os.path.join(self._output_dir, self._filename)
 
-    def _init_download(self):
-        # prevent overwriting
-        if not self._overwrite and os.path.exists(self._output_path):
-            raise FileExistsError(self._output_path)
-
-        pl, cookies = self._episode.get_playlist_cookies()
-        self._playlist = pl
-        self._cookies = cookies
-        self._done_bytes = 0
-        self._done_segments = 0
-        self._done_segments_bytes = 0
-        self._do_cancel = False
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     @property
     def filename(self):
@@ -167,13 +137,179 @@ class Downloader:
     def output_dir(self):
         return self._output_dir
 
+    def _gen_filename(self):
+        emission_title = self._episode.get_emission().Title
+        episode_title = self._episode.Title
+
+        if self._episode.SeasonAndEpisode is not None:
+            sae = self._episode.SeasonAndEpisode
+            episode_title = '{} {}'.format(sae, episode_title)
+
+        br = self._bitrate // 1000
+        episode_title = '{} {}kbps'.format(episode_title, br)
+        filename = '{}.{}.ts'.format(emission_title, episode_title)
+
+        # remove illegal characters from filename
+        regex = r'[^ \'a-zA-Z0-9áàâäéèêëíìîïóòôöúùûüÁÀÂÄÉÈÊËÍÌÎÏÓÒÔÖÚÙÛÜçÇ()._-]'
+        filename = re.sub(regex, '', filename)
+        filename = re.sub(r'\s', '.', filename)
+
+        return filename
+
+    def _get_segment_file_path(self, segindex):
+        fmt = '.toutv-{}-{}-{}-{}.ts'
+        segname = fmt.format(self._episode.get_emission().get_id(),
+                             self._episode.get_id(),
+                             self._bitrate,
+                             segindex)
+
+        return os.path.join(self._output_dir, segname)
+
+    def _stitch_segment_files(self, num_segments):
+        self._logger.debug('stitching {} segment files'.format(num_segments))
+        part_output_path = self._output_path + '.part'
+
+        with open(part_output_path, 'wb') as of:
+            for segindex in range(num_segments):
+                segpath = self._get_segment_file_path(segindex)
+
+                if not os.path.isfile(segpath):
+                    raise DownloadError('Cannot find segment file "{}"'.format(segpath))
+
+                with open(segpath, 'rb') as segf:
+                    self._logger.debug('concatenating segment file "{}"'.format(segpath))
+                    of.write(segf.read())
+
+        os.rename(part_output_path, self._output_path)
+
+    def _remove_segment_file(self, segindex):
+        segpath = self._get_segment_file_path(segindex)
+        self._logger.debug('removing segment file "{}"'.format(segpath))
+
+        try:
+            os.remove(segpath)
+        except:
+            # not the end of the world...
+            self._logger.warn('cannot remove segment file "{}"'.format(segpath))
+
+    def _remove_segment_files(self, num_segments):
+        self._logger.debug('removing {} segment files'.format(num_segments))
+
+        for segindex in range(num_segments):
+            self._remove_segment_file(segindex)
+
+    def initialize(self):
+        self._logger.debug('output path: {}'.format(self._output_path))
+        self._logger.debug('overwrite: {}'.format(self._overwrite))
+
+        # Ensure the output directory exists.
+        os.makedirs(self._output_dir, exist_ok=True)
+
+        # prevent overwriting
+        if not self._overwrite and os.path.exists(self._output_path):
+            raise FileExistsError(self._output_path)
+
+    def has_segment(self, segindex):
+        segpath = self._get_segment_file_path(segindex)
+
+        self._logger.debug('segment file path: "{}"'.format(segpath))
+
+        return os.path.isfile(segpath)
+
+    def segment_size(self, segindex):
+        segpath = self._get_segment_file_path(segindex)
+        statinfo = os.stat(segpath)
+        return statinfo.st_size
+
+    def on_segment(self, segindex, segment):
+        segpath = self._get_segment_file_path(segindex)
+        partpath = segpath + '.part'
+
+        try:
+            # completely write the part file first (could be interrupted)
+            with open(partpath, 'wb') as f:
+                self._logger.debug('writing partial segment file "{}"'.format(partpath))
+                f.write(segment)
+
+            # rename part file to segment file (should be atomic)
+            os.rename(partpath, segpath)
+        except OSError as e:
+            if e.errno == errno.ENOSPC:
+                raise NoSpaceLeftError()
+            else:
+                raise
+
+    def finalize(self, num_segments):
+        try:
+            # stitch individual segment files as a complete file
+            self._stitch_segment_files(num_segments)
+
+            # remove segment files
+            self._remove_segment_files(num_segments)
+        except OSError as e:
+            if e.errno == errno.ENOSPC:
+                raise NoSpaceLeftError()
+            else:
+                raise
+
+
+class Downloader:
+
+    _seg_aes_iv = struct.Struct('>IIII')
+
+    def __init__(self,
+                 episode,
+                 bitrate,
+                 seg_handler,
+                 on_progress_update=None,
+                 on_dl_start=None,
+                 proxies=None,
+                 timeout=15):
+        self._logger = logging.getLogger(__name__)
+        self._episode = episode
+        self._seg_handler = seg_handler
+        self._bitrate = bitrate
+
+        self._on_progress_update = on_progress_update
+        self._on_dl_start = on_dl_start
+        self._proxies = proxies
+        self._timeout = timeout
+        self._key = None
+
+    def _do_request(self, url, params=None, stream=False):
+        self._logger.debug('HTTP GET request @ {}'.format(url))
+
+        try:
+            r = requests.get(url, params=params, headers=toutv.config.HEADERS,
+                             proxies=self._proxies, cookies=self._cookies,
+                             timeout=self._timeout, stream=stream)
+
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url,
+                                                                     r.status_code)
+        except requests.exceptions.Timeout:
+            raise toutv.exceptions.RequestTimeoutError(url, self._timeout)
+        except requests.exceptions.ConnectionError as e:
+            raise toutv.exceptions.NetworkError() from e
+
+        return r
+
+    def _init_download(self):
+        pl, cookies = self._episode.get_playlist_cookies()
+        self._playlist = pl
+        self._cookies = cookies
+        self._done_bytes = 0
+        self._done_segments = 0
+        self._done_segments_bytes = 0
+        self._do_cancel = False
+
     def cancel(self):
         self._logger.info('cancelling download')
         self._do_cancel = True
 
     def _notify_dl_start(self):
         if self._on_dl_start:
-            self._on_dl_start(self._filename, self._total_segments)
+            self._on_dl_start(self._total_segments)
 
     def _notify_progress_update(self):
         if self._on_progress_update:
@@ -181,26 +317,12 @@ class Downloader:
                                      self._done_bytes,
                                      self._done_segments_bytes)
 
-    def _get_segment_file_path(self, segindex):
-        fmt = '.toutv-{}-{}-{}-{}.ts'
-        segname = fmt.format(self._episode.get_emission().get_id(),
-                             self._episode.get_id(), self._bitrate, segindex)
-
-        return os.path.join(self._output_dir, segname)
-
     def _download_segment(self, segindex):
         self._logger.debug('downloading segment {}'.format(segindex))
 
-        # segment already downloaded? skip
-        segpath = self._get_segment_file_path(segindex)
-        partpath = segpath + '.part'
-        self._logger.debug('partial segment file path: "{}"'.format(partpath))
-        self._logger.debug('segment file path: "{}"'.format(segpath))
-
-        if os.path.isfile(segpath):
-            self._logger.debug('segment file exists; skipping')
-            statinfo = os.stat(segpath)
-            self._done_bytes += statinfo.st_size
+        if self._seg_handler.has_segment(segindex):
+            self._logger.debug('segment handler already has segment; skipping')
+            self._done_bytes += self._seg_handler.segment_size(segindex)
             return
 
         segment = self._segments[segindex]
@@ -228,18 +350,13 @@ class Downloader:
         else:
             ts_segment = encrypted_ts_segment
 
-        # completely write the part file first (could be interrupted)
-        with open(partpath, 'wb') as f:
-            self._logger.debug('writing partial segment file "{}"'.format(partpath))
-            f.write(ts_segment)
-
-        # rename part file to segment file (should be atomic)
-        os.rename(partpath, segpath)
+        self._seg_handler.on_segment(segindex, ts_segment)
 
     def _download_segment_with_retry(self, segindex, num_tries=3):
         for i in range(num_tries):
             try:
-                return self._download_segment(segindex)
+                self._download_segment(segindex)
+                return
             except toutv.exceptions.NetworkError:
                 # If it was our last retry, give up and propagate the exception.
                 if i + 1 == num_tries:
@@ -252,46 +369,13 @@ class Downloader:
 
         raise DownloadError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
 
-    def _stitch_segment_files(self):
-        self._logger.debug('stitching {} segment files'.format(len(self._segments)))
-        part_output_path = self._output_path + '.part'
-
-        with open(part_output_path, 'wb') as of:
-            for segindex in range(len(self._segments)):
-                segpath = self._get_segment_file_path(segindex)
-
-                if not os.path.isfile(segpath):
-                    raise DownloadError('Cannot find segment file "{}"'.format(segpath))
-
-                with open(segpath, 'rb') as segf:
-                    self._logger.debug('concatenating segment file "{}"'.format(segpath))
-                    of.write(segf.read())
-
-        os.rename(part_output_path, self._output_path)
-
-    def _remove_segment_file(self, segindex):
-        segpath = self._get_segment_file_path(segindex)
-        self._logger.debug('removing segment file "{}"'.format(segpath))
-
-        try:
-            os.remove(segpath)
-        except:
-            # not the end of the world...
-            self._logger.warn('cannot remove segment file "{}"'.format(segpath))
-
-    def _remove_segment_files(self):
-        self._logger.debug('removing {} segment files'.format(len(self._segments)))
-
-        for segindex in range(len(self._segments)):
-            self._remove_segment_file(segindex)
-
     def download(self):
         self._logger.debug('starting download')
         self._logger.debug('episode: {}'.format(self._episode))
         self._logger.debug('bitrate: {}'.format(self._bitrate))
-        self._logger.debug('output path: {}'.format(self._output_path))
-        self._logger.debug('overwrite: {}'.format(self._overwrite))
         self._logger.debug('timeout: {}'.format(self._timeout))
+
+        self._seg_handler.initialize()
         self._init_download()
 
         # select appropriate stream for required bitrate
@@ -323,23 +407,14 @@ class Downloader:
             try:
                 self._download_segment_with_retry(segindex)
             except Exception as e:
-                if type(e) is OSError and e.errno == errno.ENOSPC:
-                    raise NoSpaceLeftError()
-
                 raise DownloadError('Cannot download segment {}: {}'.format(segindex + 1, e))
 
             self._done_segments += 1
             self._done_segments_bytes = self._done_bytes
             self._notify_progress_update()
 
-        # stitch individual segment files as a complete file
         try:
-            self._stitch_segment_files()
+            self._seg_handler.finalize(len(self._segments))
         except Exception as e:
-            if type(e) is OSError and e.errno == errno.ENOSPC:
-                raise NoSpaceLeftError()
+            raise DownloadError('Error finalizing download.') from e
 
-            raise DownloadError('Cannot stitch segment files: {}'.format(e))
-
-        # remove segment files
-        self._remove_segment_files()

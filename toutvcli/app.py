@@ -115,6 +115,10 @@ class App:
             return 2
         except toutv.dl.DownloadError as e:
             print('Download error: {}'.format(e), file=sys.stderr)
+
+            if self._verbose:
+                traceback.print_exc()
+
             return 2
         except toutv.exceptions.RequestTimeoutError as e:
             tmpl = 'Timeout error ({} s for "{}")'
@@ -682,10 +686,9 @@ command. The episode can be specified using its name, number or id.
         sys.stdout.write('\r{}'.format(bar))
         sys.stdout.flush()
 
-    def _on_dl_start(self, filename, total_segments):
-        self._cur_filename = filename
+    def _on_dl_start(self, total_segments):
         self._cur_segments_count = total_segments
-        self._cur_pb = ProgressBar(filename, total_segments)
+        self._cur_pb = ProgressBar(self._seg_handler.filename, total_segments)
         self._last_pb_time = time.time()
         self._print_cur_pb(0, 0, True)
 
@@ -709,13 +712,17 @@ command. The episode can be specified using its name, number or id.
             elif quality == App.QUALITY_AVG:
                 bitrate = App._get_average_bitrate(qualities)
 
+        # Create segment handler
+        self._seg_handler = toutv.dl.FilesystemSegmentHandler(
+            episode=episode, bitrate=bitrate, output_dir=output_dir,
+            overwrite=overwrite)
+
         # Create downloader
-        opu = self._on_dl_progress_update
-        self._dl = toutv.dl.Downloader(episode, bitrate=bitrate,
-                                       output_dir=output_dir,
-                                       on_dl_start=self._on_dl_start,
-                                       on_progress_update=opu,
-                                       overwrite=overwrite)
+        self._dl = toutv.dl.Downloader(episode=episode,
+                                       bitrate=bitrate,
+                                       seg_handler=self._seg_handler,
+                                       on_progress_update=self._on_dl_progress_update,
+                                       on_dl_start=self._on_dl_start)
 
         # Start download
         self._dl.download()
