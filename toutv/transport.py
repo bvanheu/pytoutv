@@ -61,13 +61,7 @@ class JsonTransport(Transport):
     def set_auth(self, auth):
         self._auth = auth
 
-    def _do_query(self, endpoint, params={}):
-        if endpoint.startswith("http://") or endpoint.startswith("https://"):
-            url = endpoint
-        else:
-            url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
-        timeout = 10
-
+    def _do_query_url(self, url, params={}, timeout=20):
         try:
             headers = toutv.config.HEADERS
 
@@ -76,15 +70,19 @@ class JsonTransport(Transport):
             if r.status_code != 200:
                 code = r.status_code
                 raise toutv.exceptions.UnexpectedHttpStatusCodeError(url, code)
+
+            return r
         except requests.exceptions.Timeout:
             raise toutv.exceptions.RequestTimeoutError(url, timeout)
 
-        response_obj = r.json()
+    def _do_query_json_url(self, url, params={}):
+        r = self._do_query_url(url, params)
+        return r.json()
 
-        if endpoint.startswith("http://") or endpoint.startswith("https://"):
-            return response_obj
-        else:
-            return response_obj['d']
+    def _do_query_json_endpoint(self, endpoint, params={}):
+        url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
+        json = self._do_query_json_url(url, params)
+        return json['d']
 
     def get_emissions(self):
         emissions = {}
@@ -92,7 +90,8 @@ class JsonTransport(Transport):
         # All emissions, including those only available in Extra
         # We don't have much information about them, except their id, title, and URL, but that is enough to be able to fetch them at least.
         url = '{}/presentation/search'.format(toutv.config.TOUTV_BASE_URL)
-        results_dto = self._do_query(url, {'v': 2, 'd': 'android'})
+        params = {'v': 2, 'd': 'android'}
+        results_dto = self._do_query_json_url(url, params)
         for a_dto in results_dto:
             if a_dto['Key'].startswith("program-"):
                 emission = toutv.bos.Emission()
@@ -110,7 +109,7 @@ class JsonTransport(Transport):
                 episode.set_emission(emission)
                 emission.add_episode(episode)
 
-        emissions_dto = self._do_query('GetEmissions')
+        emissions_dto = self._do_query_json_endpoint('GetEmissions')
         for emission_dto in emissions_dto:
             emission = self._mapper.dto_to_bo(emission_dto, bos.Emission)
             if emission.Id in emissions:
@@ -128,7 +127,8 @@ class JsonTransport(Transport):
         episodes = {}
 
         url = '{}/presentation/{}'.format(toutv.config.TOUTV_BASE_URL, emission.Url)
-        emission_dto = self._do_query(url, {'v': 2, 'excludeLineups': False, 'd': 'android'})
+        params = {'v': 2, 'excludeLineups': False, 'd': 'android'}
+        emission_dto = self._do_query_json_url(url, params)
         seasons = emission_dto['SeasonLineups']
         for season in seasons:
             episodes_dto = season['LineupItems']
@@ -148,7 +148,8 @@ class JsonTransport(Transport):
                 episodes[episode.Id] = episode
 
         if len(episodes) == 0:
-            episodes_dto = self._do_query('GetEpisodesForEmission', {'emissionid': str(emission.Id)})
+            params = {'emissionid': str(emission.Id)}
+            episodes_dto = self._do_query_json_endpoint('GetEpisodesForEmission', params)
             for episode_dto in episodes_dto:
                 episode = self._mapper.dto_to_bo(episode_dto, bos.Episode)
                 episode.set_emission(emission)
@@ -157,7 +158,7 @@ class JsonTransport(Transport):
         return episodes
 
     def get_page_repertoire(self):
-        repertoire_dto = self._do_query('GetPageRepertoire')
+        repertoire_dto = self._do_query_json_endpoint('GetPageRepertoire')
 
         repertoire = bos.Repertoire()
 
@@ -185,11 +186,9 @@ class JsonTransport(Transport):
     def search(self, query):
         searchresults = None
         searchresultdatas = []
-        params = {
-            'query': query
-        }
+        params = {'query': query}
 
-        searchresults_dto = self._do_query('SearchTerms', params)
+        searchresults_dto = self._do_query_json_endpoint('SearchTerms', params)
 
         searchresults = self._mapper.dto_to_bo(searchresults_dto,
                                                bos.SearchResults)
