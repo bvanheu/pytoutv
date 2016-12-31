@@ -61,6 +61,14 @@ install_requires = [
     'setuptools>=3.0'
 ]
 
+setup_requires = [
+    'pytest-runner',
+]
+
+tests_require=[
+    'pytest',
+]
+
 setup(name='pytoutv',
       version=toutv.__version__,
       description='TOU.TV client library and user interfaces',
@@ -72,8 +80,7 @@ setup(name='pytoutv',
       packages=packages,
       package_data=package_data,
       install_requires=install_requires,
+      setup_requires=setup_requires,
+      tests_require=tests_require,
       entry_points=entry_points,
-      # This allows to use "./setup.py test", although using
-      # "./setup nosetests" provides more features.
-      test_suite = 'nose.collector',
 )
