@@ -34,23 +34,20 @@ import toutv.bos as bos
 
 class Transport:
 
-    def __init__(self):
-        pass
-
     def set_proxies(self, proxies):
-        pass
+        raise NotImplementedError()
 
     def get_emissions(self):
-        pass
+        raise NotImplementedError()
 
     def get_emission_episodes(self, emission_id):
-        pass
+        raise NotImplementedError()
 
     def get_page_repertoire(self):
-        pass
+        raise NotImplementedError()
 
     def search_terms(self, query):
-        pass
+        raise NotImplementedError()
 
 
 class JsonTransport(Transport):
