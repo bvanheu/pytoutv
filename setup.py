@@ -30,10 +30,10 @@ from setuptools import setup
 import toutv
 
 
-# Make sure we run Python 3.2+ here
+# Make sure we run Python 3.3+ here
 v = sys.version_info
-if v.major < 3 or v.minor < 2:
-    sys.stderr.write('Sorry, pytoutv needs Python 3.2+\n')
+if v.major < 3 or v.minor < 3:
+    sys.stderr.write('Sorry, pytoutv needs Python 3.3+\n')
     sys.exit(1)
 
 entry_points = {
