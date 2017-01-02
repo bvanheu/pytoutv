@@ -1,5 +1,5 @@
 import unittest
-from toutv import bos, dl
+from toutv import dl
 
 
 class DummySegmentProvider(dl.SegmentProvider):
