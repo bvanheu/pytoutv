@@ -692,12 +692,14 @@ command. The episode can be specified using its name, number or id.
         self._last_pb_time = time.time()
         self._print_cur_pb(0, 0, True)
 
-    def _on_dl_progress_update(self, done_segments, done_bytes,
-                               done_segments_bytes):
+    def _on_dl_progress_update(self, num_completed_segments,
+                               num_bytes_completed_segments,
+                               num_bytes_partial_segment):
         if self._stop:
             return
 
-        self._print_cur_pb(done_segments, done_bytes, False)
+        total_bytes = num_bytes_completed_segments + num_bytes_partial_segment
+        self._print_cur_pb(num_completed_segments, total_bytes, False)
 
     def _fetch_episode(self, episode, output_dir, bitrate, quality, overwrite):
         # Get available bitrates for episode
@@ -717,12 +719,15 @@ command. The episode can be specified using its name, number or id.
             episode=episode, bitrate=bitrate, output_dir=output_dir,
             overwrite=overwrite)
 
+        seg_provider = toutv.dl.ToutvApiSegmentProvider(
+            episode=episode, bitrate=bitrate)
+
         # Create downloader
-        self._dl = toutv.dl.Downloader(episode=episode,
-                                       bitrate=bitrate,
-                                       seg_handler=self._seg_handler,
-                                       on_progress_update=self._on_dl_progress_update,
-                                       on_dl_start=self._on_dl_start)
+        self._dl = toutv.dl.Downloader(
+            seg_provider=seg_provider,
+            seg_handler=self._seg_handler,
+            on_progress_update=self._on_dl_progress_update,
+            on_dl_start=self._on_dl_start)
 
         # Start download
         self._dl.download()

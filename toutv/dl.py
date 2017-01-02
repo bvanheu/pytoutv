@@ -33,6 +33,7 @@ import errno
 import struct
 import logging
 import requests
+import functools
 from Crypto.Cipher import AES
 import toutv.config
 import toutv.exceptions
@@ -199,6 +200,8 @@ class FilesystemSegmentHandler(SegmentHandler):
             self._remove_segment_file(segindex)
 
     def initialize(self):
+        self._logger.debug('episode: {}'.format(self._episode))
+        self._logger.debug('bitrate: {}'.format(self._bitrate))
         self._logger.debug('output path: {}'.format(self._output_path))
         self._logger.debug('overwrite: {}'.format(self._overwrite))
 
@@ -253,28 +256,43 @@ class FilesystemSegmentHandler(SegmentHandler):
                 raise
 
 
-class Downloader:
+class SegmentProvider:
+
+    def __init__(self):
+        self.cancel = False
+
+    def initialize(self):
+        raise NotImplementedError()
+
+    def num_segments(self):
+        raise NotImplementedError()
+
+    def download_segment(self, segindex, progress):
+        raise NotImplementedError()
+
+    def finalize(self):
+        raise NotImplementedError()
+
+
+class ToutvApiSegmentProvider(SegmentProvider):
+    """Segment provider that fetches segments using the Tou.tv API"""
 
     _seg_aes_iv = struct.Struct('>IIII')
 
-    def __init__(self,
-                 episode,
-                 bitrate,
-                 seg_handler,
-                 on_progress_update=None,
-                 on_dl_start=None,
-                 proxies=None,
-                 timeout=15):
-        self._logger = logging.getLogger(__name__)
-        self._episode = episode
-        self._seg_handler = seg_handler
-        self._bitrate = bitrate
+    def __init__(self, episode, bitrate, proxies=None, timeout=15):
+        super().__init__()
 
-        self._on_progress_update = on_progress_update
-        self._on_dl_start = on_dl_start
+        self._episode = episode
+        self._bitrate = bitrate
         self._proxies = proxies
         self._timeout = timeout
+
+        self._cookies = None
+        self._video_playlist = None
+        self._segments = None
         self._key = None
+
+        self._logger = logging.getLogger(self.__class__.__name__)
 
     def _do_request(self, url, params=None, stream=False):
         self._logger.debug('HTTP GET request @ {}'.format(url))
@@ -294,127 +312,178 @@ class Downloader:
 
         return r
 
-    def _init_download(self):
-        pl, cookies = self._episode.get_playlist_cookies()
-        self._playlist = pl
-        self._cookies = cookies
-        self._done_bytes = 0
-        self._done_segments = 0
-        self._done_segments_bytes = 0
-        self._do_cancel = False
+    @staticmethod
+    def _get_video_stream(playlist, bitrate):
+        for stream in playlist.streams:
+            if stream.bandwidth == bitrate:
+                return stream
 
-    def cancel(self):
-        self._logger.info('cancelling download')
-        self._do_cancel = True
+        raise DownloadError('Cannot find stream for bitrate {} bps'.format(bitrate))
 
-    def _notify_dl_start(self):
-        if self._on_dl_start:
-            self._on_dl_start(self._total_segments)
-
-    def _notify_progress_update(self):
-        if self._on_progress_update:
-            self._on_progress_update(self._done_segments,
-                                     self._done_bytes,
-                                     self._done_segments_bytes)
-
-    def _download_segment(self, segindex):
+    def _download_segment(self, segindex, progress):
         self._logger.debug('downloading segment {}'.format(segindex))
 
-        if self._seg_handler.has_segment(segindex):
-            self._logger.debug('segment handler already has segment; skipping')
-            self._done_bytes += self._seg_handler.segment_size(segindex)
-            return
-
-        segment = self._segments[segindex]
-        count = segindex + 1
-        r = self._do_request(segment.uri, stream=True)
         encrypted_ts_segment = bytearray()
         chunks_count = 0
+        num_bytes = 0
 
-        for chunk in r.iter_content(8192):
-            if self._do_cancel:
+        # Obtain the URI to download this segment.
+        segment = self._segments[segindex]
+        request = self._do_request(segment.uri, stream=True)
+
+        # Fetch by chunks of 8 kiB
+        for chunk in request.iter_content(8192):
+            if self.cancel:
                 raise CancelledByUserError()
 
             encrypted_ts_segment += chunk
-            self._done_bytes += len(chunk)
+            num_bytes += len(chunk)
 
+            # Every 32 chunks (256 kiB), we notify of our progress.
             if chunks_count % 32 == 0:
-                self._notify_progress_update()
+                progress(num_bytes)
+
             chunks_count += 1
 
-        ts_segment = None
+        # We have the whole segment, decrypt it if needed.
         if self._key:
-            aes_iv = Downloader._seg_aes_iv.pack(0, 0, 0, count)
+            aes_iv = self._seg_aes_iv.pack(0, 0, 0, segindex + 1)
             aes = AES.new(self._key, AES.MODE_CBC, aes_iv)
             ts_segment = aes.decrypt(bytes(encrypted_ts_segment))
         else:
-            ts_segment = encrypted_ts_segment
+            ts_segment = bytes(encrypted_ts_segment)
 
-        self._seg_handler.on_segment(segindex, ts_segment)
+        return ts_segment
 
-    def _download_segment_with_retry(self, segindex, num_tries=3):
+    def _download_segment_with_retry(self, segindex, progress, num_tries=3):
         for i in range(num_tries):
             try:
-                self._download_segment(segindex)
-                return
+                return self._download_segment(segindex, progress)
             except toutv.exceptions.NetworkError:
                 # If it was our last retry, give up and propagate the exception.
                 if i + 1 == num_tries:
                     raise
 
-    def _get_video_stream(self):
-        for stream in self._playlist.streams:
-            if stream.bandwidth == self._bitrate:
-                return stream
-
-        raise DownloadError('Cannot find stream for bitrate {} bps'.format(self._bitrate))
-
-    def download(self):
-        self._logger.debug('starting download')
+    def initialize(self):
         self._logger.debug('episode: {}'.format(self._episode))
         self._logger.debug('bitrate: {}'.format(self._bitrate))
         self._logger.debug('timeout: {}'.format(self._timeout))
 
-        self._seg_handler.initialize()
-        self._init_download()
+        playlist, cookies = self._episode.get_playlist_cookies()
+        self._cookies = cookies
 
         # select appropriate stream for required bitrate
-        stream = self._get_video_stream()
+        stream = self._get_video_stream(playlist, self._bitrate)
 
         # get video playlist
-        r = self._do_request(stream.uri)
-        m3u8_file = r.text
+        m3u8_file = self._do_request(stream.uri).text
         self._video_playlist = toutv.m3u8.parse(m3u8_file,
                                                 os.path.dirname(stream.uri))
         self._segments = self._video_playlist.segments
-        self._total_segments = len(self._segments)
-        self._logger.debug('parsed M3U8 file: {} total segments'.format(self._total_segments))
+        self._logger.debug('parsed M3U8 file: {} total segments'.format(self.num_segments()))
 
         # get decryption key
         if self._segments[0].key:
             uri = self._segments[0].key.uri
-            r = self._do_request(uri)
-            self._key = r.content
+            self._key = self._do_request(uri).content
             self._logger.debug('decryption key: {}'.format(self._key))
         else:
             self._logger.debug('no decryption key found')
 
-        # download segments
-        self._notify_dl_start()
-        self._notify_progress_update()
+    def num_segments(self):
+        return len(self._segments)
 
-        for segindex in range(len(self._segments)):
-            try:
-                self._download_segment_with_retry(segindex)
-            except Exception as e:
-                raise DownloadError('Cannot download segment {}: {}'.format(segindex + 1, e))
+    def download_segment(self, segindex, progress):
+        return self._download_segment_with_retry(segindex, progress)
 
-            self._done_segments += 1
-            self._done_segments_bytes = self._done_bytes
-            self._notify_progress_update()
+    def finalize(self):
+        pass
+
+
+class Downloader:
+
+    def __init__(self,
+                 seg_provider,
+                 seg_handler,
+                 on_progress_update=None,
+                 on_dl_start=None):
+        self._seg_provider = seg_provider
+        self._seg_handler = seg_handler
+
+        self._on_progress_update = on_progress_update
+        self._on_dl_start = on_dl_start
+
+        self._do_cancel = False
+        self._logger = logging.getLogger(self.__class__.__name__)
+
+    def cancel(self):
+        self._logger.info('cancelling download')
+        self._seg_provider.cancel = True
+        self._do_cancel = True
+
+    def _notify_dl_start(self, num_segments):
+        if self._on_dl_start:
+            self._on_dl_start(num_segments)
+
+    def _notify_progress_update(self, num_completed_segments, num_bytes,
+                                num_bytes_partial_segment):
+        if self._on_progress_update:
+            self._on_progress_update(num_completed_segments, num_bytes,
+                                     num_bytes_partial_segment)
+
+    def download(self):
+        self._logger.debug('starting download')
+
+        self._seg_provider.initialize()
+        self._seg_handler.initialize()
+
+        # Get the number of segments.
+        num_segments = self._seg_provider.num_segments()
+
+        # Notify of the download start.
+        self._notify_dl_start(num_segments)
+
+        # Do an initial progress update before we begin.
+        self._notify_progress_update(0, 0, 0)
+
+        # Number of bytes in the completely downloaded segments.
+        done_segment_bytes = 0
 
         try:
-            self._seg_handler.finalize(len(self._segments))
-        except Exception as e:
-            raise DownloadError('Error finalizing download.') from e
+            for segindex in range(num_segments):
 
+                if self._do_cancel:
+                    raise CancelledByUserError()
+
+                if self._seg_handler.has_segment(segindex):
+                    self._logger.debug('segment handler already has segment; skipping')
+                    done_segment_bytes += self._seg_handler.segment_size(segindex)
+                    continue
+
+                # Function called by the segment provider to notify of progress
+                # during the fetching of a segment.
+                progress = functools.partial(self._notify_progress_update,
+                                             segindex, done_segment_bytes)
+
+                # Get the segment.
+                segment = self._seg_provider.download_segment(segindex, progress)
+
+                # Update running sum of bytes.
+                done_segment_bytes += len(segment)
+
+                # Notify of progress.
+                self._notify_progress_update(segindex + 1, done_segment_bytes, 0)
+
+                # Do something with the segment.
+                self._seg_handler.on_segment(segindex, segment)
+
+            # All the segments were fetched.
+            self._seg_provider.finalize()
+            self._seg_handler.finalize(num_segments)
+        except DownloadError as e:
+            # If the exception is already a DownloadError, just propagate it...
+            raise e
+        except Exception as e:
+            # ... otherwise, throw a DownloadError from the original exception.
+            tmpl = 'Download error: {}'
+            raise DownloadError(tmpl.format(e)) from e
