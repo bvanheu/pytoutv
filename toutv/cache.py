@@ -103,7 +103,7 @@ class ShelveCache(Cache):
 
     def _del(self, key):
         if key in self.shelve:
-            del shelve[key]
+            del self.shelve[key]
 
     def get_emissions(self):
         return self._get('emissions')
