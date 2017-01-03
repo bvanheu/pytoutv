@@ -330,8 +330,7 @@ command. The episode can be specified using its name, number or id.
         token_file = App._build_cache_path(toutv.config.TOUTV_AUTH_TOKEN_PATH)
         os.remove(token_file)
 
-    @staticmethod
-    def _build_toutv_client(no_cache):
+    def _build_toutv_client(self, no_cache):
         auth = App._build_auth()
 
         if no_cache:
@@ -342,6 +341,10 @@ command. The episode can be specified using its name, number or id.
             except:
                 print('Warning: not using cache (multiple instances of toutv?)',
                       file=sys.stderr)
+
+                if self._verbose:
+                    traceback.print_exc()
+
                 cache = toutv.cache.EmptyCache()
 
         return toutv.client.Client(cache=cache, auth=auth)
