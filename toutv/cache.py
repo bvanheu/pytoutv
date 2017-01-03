@@ -25,6 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import logging
 import shelve
 from datetime import datetime
 from datetime import timedelta
@@ -71,9 +72,20 @@ class EmptyCache(Cache):
 
 class ShelveCache(Cache):
 
+    _cache_version = 1
+
     def __init__(self, shelve_filename):
+        self._logger = logging.getLogger(self.__class__.__name__)
+
         try:
+            self._logger.debug('Trying to open shelve at {}'.format(shelve_filename))
             self.shelve = shelve.open(shelve_filename)
+
+            if ('cache_version' not in self.shelve or
+                self.shelve['cache_version'] != self._cache_version):
+                self._logger.debug('Incompatible cache version, invalidating.')
+                self.invalidate()
+
         except Exception as e:
             self.shelve = None
             raise e
@@ -139,3 +151,5 @@ class ShelveCache(Cache):
         self._del('emissions')
         self._del('emission_episodes')
         self._del('page_repertoire')
+        self.shelve['cache_version'] = self._cache_version
+        self.shelve.sync()
