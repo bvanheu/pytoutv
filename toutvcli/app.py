@@ -199,8 +199,6 @@ using its name, url or id (as found with the form 1 of this command).
                            usage=usage, description=desc)
         pl.add_argument('show', action='store', nargs='?', type=str,
                         help='Name or url of a show')
-        pl.add_argument('-a', '--all', action='store_true',
-                        help='List shows without episodes')
         pl.add_argument('-n', '--no-cache', action='store_true',
                         help=argparse.SUPPRESS)
         pl.set_defaults(func=self._command_list)
@@ -473,7 +471,7 @@ command. The episode can be specified using its name, number or id.
             self._print_list_episodes(show)
         else:
             # List shows.
-            self._print_list_emissions(args.all)
+            self._print_list_emissions()
 
     def _command_info(self, args):
         first = getattr(args, App.FETCH_INFO_FIRST_ARG)
@@ -558,22 +556,15 @@ command. The episode can be specified using its name, number or id.
 
             print('\n')
 
-    def _print_list_emissions(self, _all=False):
-        if _all:
-            emissions = self._toutv_client.get_emissions()
-        else:
-            repertoire = self._toutv_client.get_page_repertoire()
-            emissions = repertoire.get_emissions()
+    def _print_list_emissions(self):
+        shows = self._toutv_client.get_emissions()
 
-        emissions_keys = list(emissions.keys())
+        def title_sort_func(show):
+            return locale.strxfrm(show.get_title())
 
-        def title_sort_func(ekey):
-            return locale.strxfrm(emissions[ekey].get_title())
-
-        emissions_keys.sort(key=title_sort_func)
-        for ekey in emissions_keys:
-            title = emissions[ekey].get_title()
-            print('{} - {}'.format(ekey, title))
+        for show in sorted(shows, key=title_sort_func):
+            title = show.get_title()
+            print('{} - {}'.format(show.get_id(), title))
 
     def _print_list_episodes(self, emission):
         episodes = self._toutv_client.get_emission_episodes(emission, True)

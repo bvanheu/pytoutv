@@ -91,8 +91,8 @@ class Client:
             emissions = self._transport.get_emissions()
             self._cache.set_emissions(emissions)
 
-        self._set_bos_proxies(emissions.values())
-        self._set_bos_auth(emissions.values())
+        self._set_bos_proxies(emissions)
+        self._set_bos_auth(emissions)
 
         return emissions
 
@@ -110,27 +110,6 @@ class Client:
 
         return episodes
 
-    def get_page_repertoire(self):
-        # Get repertoire emissions
-        page_repertoire = self._cache.get_page_repertoire()
-        if page_repertoire is None:
-            page_repertoire = self._transport.get_page_repertoire()
-            self._cache.set_page_repertoire(page_repertoire)
-        rep_em = page_repertoire.get_emissions()
-
-        # Get all emissions (contain more infos) to match them
-        all_em = self.get_emissions()
-
-        # Get more infos for repertoire emissions
-        emissions = {k: all_em[k] for k in all_em if k in rep_em}
-        page_repertoire.set_emissions(emissions)
-
-        # Set proxies
-        self._set_bos_proxies(emissions.values())
-        self._set_bos_auth(emissions.values())
-
-        return page_repertoire
-
     def search(self, query):
         search = self._transport.search(query)
         self._set_bo_proxies(search)
@@ -138,7 +117,7 @@ class Client:
         # Add local emissions (to find Extra emissions & episodes)
         emissions = self.get_emissions()
         query_upper = query.upper()
-        for emid, emission in emissions.items():
+        for emission in emissions:
             if query_upper in emission.get_title().upper():
                 sr = toutv.bos.SearchResultData()
                 sr.Emission = emission
@@ -159,8 +138,8 @@ class Client:
         candidates = []
 
         # Fill candidates
-        for emid, emission in emissions.items():
-            candidates.append(str(emid))
+        for emission in emissions:
+            candidates.append(str(emission.get_id()))
             candidates.append(emission.get_title().upper())
 
         # Get close matches
@@ -176,8 +155,8 @@ class Client:
             raise NoMatchException(emission_name, close_matches)
 
         # Exact match
-        for emid, emission in emissions.items():
-            exact_matches = [str(emid), emission.get_title().upper()]
+        for emission in emissions:
+            exact_matches = [emission.get_id(), emission.get_title().upper()]
             if emission_name_upper in exact_matches:
                 return emission
 
