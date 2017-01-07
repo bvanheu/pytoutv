@@ -70,6 +70,7 @@ class App:
         self._logger = logging.getLogger(__name__)
         self._toutv_client = None
         self._verbose = False
+        self._quiet = False
 
     def run(self):
         locale.setlocale(locale.LC_ALL, '')
@@ -86,6 +87,13 @@ class App:
         args = self._argparser.parse_args(self._args)
 
         self._verbose = args.verbose
+
+        if 'quiet' in args:
+            if args.quiet:
+                self._quiet = True
+            elif not sys.__stdin__.isatty():
+                print("Non-interactive shell; enabling --quiet")
+                self._quiet = True
 
         if 'no_cache' not in args:
             args.no_cache = False
@@ -268,6 +276,8 @@ command. The episode can be specified using its name, number or id.
         pf.add_argument('-q', '--quality', action='store',
                         default=App.QUALITY_AVG, choices=quality_choices,
                         help='Video quality (default: {})'.format(App.QUALITY_AVG))
+        pf.add_argument('-Q', '--quiet', action='store_true',
+                        help='Don\'t show progress while downloading')
         pf.set_defaults(func=self._command_fetch)
         pf.set_defaults(build_client=True)
 
@@ -693,12 +703,17 @@ command. The episode can be specified using its name, number or id.
         self._cur_segments_count = total_segments
         self._cur_pb = ProgressBar(self._seg_handler.filename, total_segments)
         self._last_pb_time = time.time()
-        self._print_cur_pb(0, 0, True)
+        if self._quiet:
+            print("Downloading {} ... ".format(self._seg_handler.filename), end="", flush=True)
+        else:
+            self._print_cur_pb(0, 0, True)
 
     def _on_dl_progress_update(self, num_completed_segments,
                                num_bytes_completed_segments,
                                num_bytes_partial_segment):
         if self._stop:
+            return
+        if self._quiet:
             return
 
         total_bytes = num_bytes_completed_segments + num_bytes_partial_segment
@@ -737,6 +752,8 @@ command. The episode can be specified using its name, number or id.
 
         # Finished
         self._dl = None
+        if self._quiet:
+            print("Done.")
 
     def _fetch_emission_episodes(self, emission, output_dir, bitrate, quality,
                                  overwrite):
