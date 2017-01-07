@@ -581,7 +581,7 @@ command. The episode can be specified using its name, number or id.
     def _print_info_emission(self, emission):
         if emission.get_description() is None:
             url = '{}/presentation{}'.format(toutv.config.TOUTV_BASE_URL, emission.Url)
-            emission_dto = self._toutv_client._transport._do_query(url, {'v': 2, 'excludeLineups': True, 'd': 'android'})
+            emission_dto = self._toutv_client._transport._do_query_json_url(url, {'v': 2, 'excludeLineups': True, 'd': 'android'})
             emission.Description = emission_dto['Details']['Description']
             emission.Country = emission_dto['Details']['Country']
 
