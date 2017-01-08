@@ -119,16 +119,20 @@ class Client:
         query_upper = query.upper()
         for emission in emissions:
             if query_upper in emission.get_title().upper():
-                sr = toutv.bos.SearchResultData()
-                sr.Emission = emission
-                search.Results.append(sr)
+                try:
+                    # Load this emission' episodes, and add those to the search results too
+                    episodes = self._transport.get_emission_episodes(emission, True)
 
-                # Load this emission' episodes, and add those to the search results too
-                episodes = self._transport.get_emission_episodes(emission, True)
-                for epid, episode in episodes.items():
                     sr = toutv.bos.SearchResultData()
-                    sr.Episode = episode
+                    sr.Emission = emission
                     search.Results.append(sr)
+
+                    for epid, episode in episodes.items():
+                        sr = toutv.bos.SearchResultData()
+                        sr.Episode = episode
+                        search.Results.append(sr)
+                except Exception as e:
+                    pass
 
         return search
 
