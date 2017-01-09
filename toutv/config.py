@@ -40,7 +40,7 @@ TOUTV_PLAYLIST_PARAMS = {
     'output': 'json'
 }
 TOUTV_JSON_URL_PREFIX = 'https://api.tou.tv/v1/toutvapiservice.svc/json/'
-TOUTV_BASE_URL = 'http://ici.tou.tv'
+TOUTV_BASE_URL = 'https://ici.tou.tv'
 EMISSION_THUMB_URL_TMPL = 'http://images.tou.tv/w_400,c_scale,r_5/v1/emissions/16x9/{}.jpg'
 
 TOUTV_AUTH_CLIENT_ID = "d6f8e3b1-1f48-45d7-9e28-a25c4c514c60"
