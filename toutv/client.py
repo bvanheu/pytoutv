@@ -131,8 +131,12 @@ class Client:
                         sr = toutv.bos.SearchResultData()
                         sr.Episode = episode
                         search.Results.append(sr)
-                except Exception as e:
-                    pass
+                except toutv.exceptions.UnexpectedHttpStatusCodeError as e:
+                    if e.status_code == 404:
+                        # Show returned by search was not found on new API; just skip this result
+                        pass
+                    else:
+                        raise e
 
         return search
 
