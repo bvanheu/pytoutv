@@ -793,7 +793,7 @@ command. The episode can be specified using its name, number or id.
         def episode_sort_func(episode):
             return distutils.version.LooseVersion(episode.get_sae())
 
-        return sorted(episodes.values(), key=episode_sort_func)
+        return sorted(episodes, key=episode_sort_func)
 
 
 def _register_sigint():

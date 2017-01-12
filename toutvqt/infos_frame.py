@@ -261,7 +261,7 @@ class _QEmissionInfosWidget(_QInfosWidget, _QEmissionCommonInfosWidget):
 
     def _on_dl_btn_clicked(self):
         episodes = self._client.get_emission_episodes(self._bo)
-        self.select_download.emit(list(episodes.values()))
+        self.select_download.emit(list(episodes))
 
 
 class _QSeasonInfosWidget(_QInfosWidget, _QEmissionCommonInfosWidget):

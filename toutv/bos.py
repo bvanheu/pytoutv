@@ -229,7 +229,7 @@ class Emission(_AbstractEmission, _ThumbnailProvider):
         self._episodes[episode.Id] = episode
 
     def get_episodes(self):
-        return self._episodes
+        return self._episodes.values()
 
     def get_title(self):
         return self.Title
