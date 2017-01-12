@@ -105,8 +105,8 @@ class Client:
             if short_version:
                 self._cache.set_emission_episodes(emission, episodes)
 
-        self._set_bos_proxies(episodes.values())
-        self._set_bos_auth(episodes.values())
+        self._set_bos_proxies(episodes)
+        self._set_bos_auth(episodes)
 
         return episodes
 
@@ -127,7 +127,7 @@ class Client:
                     sr.Emission = emission
                     search.Results.append(sr)
 
-                    for epid, episode in episodes.items():
+                    for episode in episodes:
                         sr = toutv.bos.SearchResultData()
                         sr.Episode = episode
                         search.Results.append(sr)
@@ -173,8 +173,8 @@ class Client:
         episode_name_upper = episode_name.upper()
         candidates = []
 
-        for epid, episode in episodes.items():
-            candidates.append(str(epid))
+        for episode in episodes:
+            candidates.append(str(episode.get_id()))
             candidates.append(episode.get_title().upper())
             candidates.append(episode.get_sae())
 
@@ -191,9 +191,9 @@ class Client:
             raise NoMatchException(episode_name, close_matches)
 
         # Got an exact match
-        for epid, episode in episodes.items():
+        for episode in episodes:
             search_items = [
-                str(epid),
+                str(episode.get_id()),
                 episode.get_title().upper(),
                 episode.get_sae()
             ]

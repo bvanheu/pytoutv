@@ -110,15 +110,17 @@ class JsonTransport(Transport):
 
     def get_emission_episodes(self, emission, short_version=False):
         if short_version:
-            if len(emission.get_episodes()) > 0:
-                return emission.get_episodes()
+            episodes = emission.get_episodes()
+            if len(episodes) > 0:
+                return episodes
 
-        episodes = {}
+        episodes = []
 
         url = '{}/presentation/{}'.format(toutv.config.TOUTV_BASE_URL, emission.Url)
         params = {'v': 2, 'excludeLineups': False, 'd': 'android'}
         emission_dto = self._do_query_json_url(url, params)
         seasons = emission_dto['SeasonLineups']
+
         for season in seasons:
             episodes_dto = season['LineupItems']
             for episode_dto in episodes_dto:
@@ -134,15 +136,7 @@ class JsonTransport(Transport):
                 episode.CategoryId = emission.Id
                 episode.SeasonAndEpisode = toutv.client.Client._find_last(r'/.*/(.*)$', episode_dto['Url'])
                 episode.set_emission(emission)
-                episodes[episode.Id] = episode
-
-        if len(episodes) == 0:
-            params = {'emissionid': str(emission.Id)}
-            episodes_dto = self._do_query_json_endpoint('GetEpisodesForEmission', params)
-            for episode_dto in episodes_dto:
-                episode = self._mapper.dto_to_bo(episode_dto, bos.Episode)
-                episode.set_emission(emission)
-                episodes[episode.Id] = episode
+                episodes.append(episode)
 
         return episodes
 
