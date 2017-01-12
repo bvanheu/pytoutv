@@ -85,8 +85,6 @@ class JsonTransport(Transport):
         return json['d']
 
     def get_emissions(self):
-        emissions = []
-
         # All emissions, including those only available in Extra
         # We don't have much information about them, except their id, title, and URL, but that is enough to be able to fetch them at least.
         url = '{}/presentation/search'.format(toutv.config.TOUTV_BASE_URL)
