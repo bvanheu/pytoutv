@@ -1,3 +1,4 @@
+import glob
 import os
 import unittest
 
@@ -56,19 +57,23 @@ class ToutvCliAppRealTest(unittest.TestCase):
 
     def _testFetch(self, expected_filename, args):
         # Delete the file if it exists prior to the test.
-        if os.path.exists(expected_filename):
-            os.unlink(expected_filename)
+        for file in glob.glob(expected_filename):
+            os.unlink(file)
 
         args = ['--verbose', 'fetch', '-qMIN'] + args
 
         self.assertEqual(app.App(args).run(), 0)
 
-        self.assertTrue(os.path.exists(expected_filename))
+        file_exists = False;
+        for file in glob.glob(expected_filename):
+            file_exists = True
+
+        self.assertTrue(file_exists)
 
         # Be nice and leave no trace.
-        if os.path.exists(expected_filename):
-            os.unlink(expected_filename)
+        for file in glob.glob(expected_filename):
+            os.unlink(file)
 
     def testFetch(self):
-        self._testFetch('Coup.de.pouce.pour.la.planète.S2012E01.Épisode.01.560kbps.ts',
+        self._testFetch('Coup.de.pouce.*.S2012E01.*.01.*kbps.ts',
                         ['COUP DE POUCE POUR LA PLANÈTE', 'S2012E01'])
