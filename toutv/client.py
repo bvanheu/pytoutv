@@ -140,33 +140,38 @@ class Client:
 
         return search
 
-    def get_emission_by_name(self, emission_name):
-        emissions = self.get_emissions()
-        emission_name_upper = emission_name.upper()
-        candidates = []
+    def get_emission_by_whatever(self, query):
+        shows = self.get_emissions()
+        query_upper = query.upper()
+        # Map candidates to shows, so that when we get a match between the
+        # query string and a candidate string, it's easy to go back to the<
+        # corresponding show.
+        candidates_to_shows = {}
 
         # Fill candidates
-        for emission in emissions:
-            candidates.append(str(emission.get_id()))
-            candidates.append(emission.get_title().upper())
+        for show in shows:
+            candidates_to_shows[str(show.get_id())] = show
+            candidates_to_shows[show.get_title().upper()] = show
+            # The Url property looks like '/infoman', so we strip the leading /.
+            candidates_to_shows[show.Url.upper()[1:]] = show
 
         # Get close matches
-        close_matches = difflib.get_close_matches(emission_name_upper,
-                                                  candidates)
+        close_matches = difflib.get_close_matches(
+            query_upper, candidates_to_shows.keys())
 
-        # No match at all
         if not close_matches:
-            raise NoMatchException(emission_name)
+            # No match at all
+            raise NoMatchException(query)
 
-        # No exact match
-        if close_matches[0] != emission_name_upper:
-            raise NoMatchException(emission_name, close_matches)
+        # Matches are sorted by how close they look like the query, so if we
+        # have an exact match, it should be first in the list.
+        first_match = close_matches[0]
+        if first_match != query_upper:
+            # No exact match
+            raise NoMatchException(query, close_matches)
 
-        # Exact match
-        for emission in emissions:
-            exact_matches = [emission.get_id(), emission.get_title().upper()]
-            if emission_name_upper in exact_matches:
-                return emission
+        # There is an exact match! Return the corresponding show.
+        return candidates_to_shows[first_match]
 
     def get_episode_by_name(self, emission, episode_name, short_version=False):
         episodes = self.get_emission_episodes(emission, short_version)
@@ -208,70 +213,3 @@ class Client:
 
         return results[-1]
 
-    def get_emission_from_url(self, url):
-        timeout = 10
-
-        try:
-            r = requests.get(url, proxies=self._proxies, timeout=timeout)
-            if r.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url, r.status_code)
-        except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeoutError(url, timeout)
-
-        # Extract emission ID
-        regex = r'program-(\d+)'
-        emission_m = Client._find_last(regex, r.text)
-        if emission_m is None:
-            raise ClientError('Cannot read emission information for URL "{}"'.format(url))
-
-        try:
-            emission = self.get_emission_by_name(emission_m)
-        except NoMatchException as e:
-            # Still, it we have emission and episode IDs, that might be enough (for example, to fetch an episode)
-            emission = toutv.bos.Emission()
-            emission.Id = emission_m
-            emission.Title = emission.Id
-
-        return emission
-
-    def get_episode_from_url(self, episode_url, emission=None, emission_url=None):
-        timeout = 10
-
-        try:
-            r = requests.get(episode_url, proxies=self._proxies, timeout=timeout)
-            if r.status_code != 200:
-                raise toutv.exceptions.UnexpectedHttpStatusCodeError(episode_url, r.status_code)
-        except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeoutError(episode_url, timeout)
-
-        # Extract episode ID
-        regex = r'media-(\d+)'
-        episode_m = Client._find_last(regex, r.text)
-        if episode_m is None:
-            raise ClientError('Cannot read episode information for URL "{}"'.format(episode_url))
-
-        if emission is None:
-            # Get emission
-            if emission_url is None:
-                regex = r'(https?://[^/]+/[^/]+)/([^/]*)/?'
-                results = re.findall(regex, episode_url)
-                emission_url = results[0][0]
-            emission = self.get_emission_from_url(emission_url)
-
-        try:
-            episode = self.get_episode_by_name(emission, episode_m)
-        except NoMatchException as e:
-            # Still, it we have emission and episode IDs, that might be enough (for example, to fetch an episode)
-            episode = toutv.bos.Episode()
-            episode.set_auth(self._auth)
-            episode._emission = emission
-            episode.CategoryId = emission.Id
-            episode.Id = episode_m
-            episode.Title = episode.Id
-
-            regex = r'codepage" content="id(\d+)'
-            episode.PID = Client._find_last(regex, r.text)
-            if episode.PID is None:
-                raise ClientError('Cannot find emission PID information for URL "{}"'.format(episode_url))
-
-        return episode

@@ -413,7 +413,7 @@ command. The episode can be specified using its name, number or id.
         # See doc of _parse_show_episode_from_args for the acceptable values.
         show_spec, episode_spec = self._parse_show_episode_from_args(first, second)
 
-        show = self._toutv_client.get_emission_by_name(show_spec)
+        show = self._toutv_client.get_emission_by_whatever(show_spec)
 
         if episode_spec:
             episode = self._toutv_client.get_episode_by_name(show, episode_spec)
@@ -619,10 +619,6 @@ command. The episode can be specified using its name, number or id.
             for line in infos_lines:
                 print(line)
 
-    def _print_info_emission_name(self, emission_name):
-        emission = self._toutv_client.get_emission_by_name(emission_name)
-        self._print_info_emission(emission)
-
     @staticmethod
     def _print_info_episode(episode):
         emission = episode.get_emission()
@@ -656,11 +652,6 @@ command. The episode can be specified using its name, number or id.
         print('\n\nInfos:\n')
         for line in infos_lines:
             print(line)
-
-    def _print_info_episode_name(self, emission_name, episode_name):
-        emission = self._toutv_client.get_emission_by_name(emission_name)
-        episode = self._toutv_client.get_episode_by_name(emission, episode_name)
-        self._print_info_episode(episode)
 
     @staticmethod
     def _get_average_bitrate(qualities):
@@ -811,3 +802,6 @@ def run():
     _register_sigint()
 
     return app.run()
+
+if __name__ == '__main__':
+    run()
