@@ -619,10 +619,6 @@ command. The episode can be specified using its name, number or id.
             for line in infos_lines:
                 print(line)
 
-    def _print_info_emission_name(self, emission_name):
-        emission = self._toutv_client.get_emission_by_name(emission_name)
-        self._print_info_emission(emission)
-
     @staticmethod
     def _print_info_episode(episode):
         emission = episode.get_emission()
@@ -656,11 +652,6 @@ command. The episode can be specified using its name, number or id.
         print('\n\nInfos:\n')
         for line in infos_lines:
             print(line)
-
-    def _print_info_episode_name(self, emission_name, episode_name):
-        emission = self._toutv_client.get_emission_by_name(emission_name)
-        episode = self._toutv_client.get_episode_by_name(emission, episode_name)
-        self._print_info_episode(episode)
 
     @staticmethod
     def _get_average_bitrate(qualities):
