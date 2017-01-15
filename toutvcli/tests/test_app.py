@@ -34,20 +34,3 @@ class ToutvCliAppTest(unittest.TestCase):
         # Wrong URL formats
         self._testArgParsingRaises('http://ici.tou.tv/infoman/S17E12/something', None)
         self._testArgParsingRaises('http://ici.tou.tv/', None)
-
-    def testInfo(self):
-        self.assertEqual(app.App(['--verbose', 'info', 'Le show caché 2']).run(), 0)
-        self.assertEqual(app.App(['--verbose', 'info', 'Infoman']).run(), 0)
-        self.assertEqual(app.App(['--verbose', 'info', 'http://ici.tou.tv/infoman']).run(), 0)
-        self.assertEqual(app.App(['--verbose', 'info', 'Infoman', 'S17E12']).run(), 0)
-        self.assertEqual(app.App(['--verbose', 'info', 'http://ici.tou.tv/infoman/S17E12?lectureauto=1']).run(), 0)
-
-    def testList(self):
-        self.assertEqual(app.App(['--verbose', 'list', 'Le show caché 2']).run(), 0)
-        self.assertEqual(app.App(['--verbose', 'list', 'Infoman']).run(), 0)
-        self.assertEqual(app.App(['--verbose', 'list', 'http://ici.tou.tv/infoman']).run(), 0)
-
-    def testSearch(self):
-        self.assertEqual(app.App(['--verbose', 'search', 'Le show caché 2']).run(), 0)
-        self.assertEqual(app.App(['--verbose', 'search', 'Infoman']).run(), 0)
-
