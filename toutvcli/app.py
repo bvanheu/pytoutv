@@ -811,3 +811,6 @@ def run():
     _register_sigint()
 
     return app.run()
+
+if __name__ == '__main__':
+    run()
