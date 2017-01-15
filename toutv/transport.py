@@ -61,7 +61,11 @@ class JsonTransport(Transport):
     def set_auth(self, auth):
         self._auth = auth
 
-    def _do_query_url(self, url, params={}, timeout=20):
+    def _do_query_url(self, url, params=None, retry_on_timeout=False, num_retries=0):
+        if retry_on_timeout:
+            timeout = 5
+        else:
+            timeout = 10
         try:
             headers = toutv.config.HEADERS
 
@@ -73,15 +77,19 @@ class JsonTransport(Transport):
 
             return r
         except requests.exceptions.Timeout:
+            if retry_on_timeout and num_retries < 5:
+                # Retry this request up to 5 times...
+                print("Timeout with {}; will retry...".format(url))
+                return self._do_query_url(url, params, retry_on_timeout, num_retries+1)
             raise toutv.exceptions.RequestTimeoutError(url, timeout)
 
-    def _do_query_json_url(self, url, params={}):
-        r = self._do_query_url(url, params)
+    def _do_query_json_url(self, url, params=None, retry_on_timeout=False):
+        r = self._do_query_url(url, params, retry_on_timeout)
         return r.json()
 
-    def _do_query_json_endpoint(self, endpoint, params={}):
+    def _do_query_json_endpoint(self, endpoint, params=None):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
-        json = self._do_query_json_url(url, params)
+        json = self._do_query_json_url(url, params, retry_on_timeout=True)
         return json['d']
 
     def get_emissions(self):
