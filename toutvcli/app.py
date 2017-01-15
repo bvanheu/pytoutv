@@ -413,7 +413,7 @@ command. The episode can be specified using its name, number or id.
         # See doc of _parse_show_episode_from_args for the acceptable values.
         show_spec, episode_spec = self._parse_show_episode_from_args(first, second)
 
-        show = self._toutv_client.get_emission_by_name(show_spec)
+        show = self._toutv_client.get_emission_by_whatever(show_spec)
 
         if episode_spec:
             episode = self._toutv_client.get_episode_by_name(show, episode_spec)
