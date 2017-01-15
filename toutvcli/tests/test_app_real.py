@@ -22,9 +22,6 @@ class ToutvCliAppRealTest(unittest.TestCase):
       $ PYTOUTV_RUN_REAL_TESTS=1 pytest test_app_real.py
     """
 
-    def setUp(self):
-        self._app = app.App([])
-
     def _testInfo(self, args):
         args = ['--verbose', 'info'] + args
 
