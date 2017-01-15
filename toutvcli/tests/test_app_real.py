@@ -64,11 +64,7 @@ class ToutvCliAppRealTest(unittest.TestCase):
 
         self.assertEqual(app.App(args).run(), 0)
 
-        file_exists = False;
-        for file in glob.glob(expected_filename):
-            file_exists = True
-
-        self.assertTrue(file_exists)
+        self.assertTrue(len(glob.glob(expected_filename)) > 0)
 
         # Be nice and leave no trace.
         for file in glob.glob(expected_filename):
