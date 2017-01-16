@@ -244,7 +244,8 @@ class EmissionsTreeModel(Qt.QAbstractItemModel):
 
     def fetch_error(self, parent, ex):
         if type(ex) is toutv.client.ClientError:
-            msg = 'Client error: {}'.format(ex)
+            # msg = 'Client error: {}'.format(ex)
+            pass
         else:
             logging.error('Error: {}'.format(ex))
 
@@ -360,7 +361,8 @@ class EmissionsTreeModelFetcher(Qt.QObject):
             return
 
         # Sort
-        key_func = lambda ekey: int(episodes[ekey].get_episode_number())
+        def key_func(ekey):
+            return int(episodes[ekey].get_episode_number())
         episodes_keys = list(episodes.keys())
         episodes_keys.sort(key=key_func)
 

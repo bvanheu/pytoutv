@@ -82,7 +82,7 @@ class ShelveCache(Cache):
             self.shelve = shelve.open(shelve_filename)
 
             if ('cache_version' not in self.shelve or
-                self.shelve['cache_version'] != self._cache_version):
+                    self.shelve['cache_version'] != self._cache_version):
                 self._logger.debug('Incompatible cache version, invalidating.')
                 self.invalidate()
 

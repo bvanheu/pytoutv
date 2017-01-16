@@ -31,7 +31,6 @@ import argparse
 import distutils.version
 import locale
 import os
-import re
 import sys
 import time
 import logging
@@ -802,6 +801,7 @@ def run():
     _register_sigint()
 
     return app.run()
+
 
 if __name__ == '__main__':
     run()

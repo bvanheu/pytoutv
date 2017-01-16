@@ -65,7 +65,7 @@ setup_requires = [
     'pytest-runner',
 ]
 
-tests_require=[
+tests_require = [
     'pytest',
 ]
 
@@ -83,4 +83,4 @@ setup(name='pytoutv',
       setup_requires=setup_requires,
       tests_require=tests_require,
       entry_points=entry_points,
-)
+      )

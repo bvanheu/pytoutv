@@ -240,7 +240,7 @@ class QDownloadsTableModel(Qt.QAbstractTableModel):
     def _on_download_created_delayed(self, work):
         self._delayed_update_calls.append((self._on_download_created, [work]))
 
-    def _on_download_started_delayed(self,  work, dl_progress, filename,
+    def _on_download_started_delayed(self, work, dl_progress, filename,
                                      total_segments):
         now = datetime.datetime.now()
         self._delayed_update_calls.append(

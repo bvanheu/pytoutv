@@ -32,6 +32,7 @@ import requests
 import toutv.config
 import toutv.exceptions
 
+
 class Auth:
 
     def __init__(self, token=None):
@@ -39,11 +40,11 @@ class Auth:
 
     def get_claims(self, token):
         headers = {
-                "Authorization"     : "Bearer " + token,
-                "User-Agent"        : toutv.config.USER_AGENT,
-                "Accept"            : "application/json",
-                "Host"              : "services.radio-canada.ca",
-                }
+            "Authorization": "Bearer " + token,
+            "User-Agent": toutv.config.USER_AGENT,
+            "Accept": "application/json",
+            "Host": "services.radio-canada.ca",
+        }
 
         r = requests.get(toutv.config.TOUTV_AUTH_CLAIMS_URL.format(token), headers=headers)
 
@@ -59,25 +60,25 @@ class Auth:
         sessionid = self._get_sessionid()
 
         payload = {
-                "sessionID": sessionid,
-                "action": "login",
-                "client_id": toutv.config.TOUTV_AUTH_CLIENT_ID,
-                "redirect_uri" : "http://ici.tou.tv/login/loginCallback",
-                "client-domain": "icitv",
-                "client-platform": "android",
-                "login-email": username,
-                "login-password": password,
-                "form-submit-btn": "Ouvrir une session"
-                }
+            "sessionID": sessionid,
+            "action": "login",
+            "client_id": toutv.config.TOUTV_AUTH_CLIENT_ID,
+            "redirect_uri": "http://ici.tou.tv/login/loginCallback",
+            "client-domain": "icitv",
+            "client-platform": "android",
+            "login-email": username,
+            "login-password": password,
+            "form-submit-btn": "Ouvrir une session"
+        }
 
         headers = {
-                "User-Agent"        : toutv.config.USER_AGENT,
-                "Accept"            : "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                "Origin"            : "https://services.radio-canada.ca",
-                "X-Requested-With"  : "tv.tou.android",
-                "Referer"           : toutv.config.TOUTV_AUTH_SESSION_URL,
-                "Content-type"      : "application/x-www-form-urlencoded",
-                }
+            "User-Agent": toutv.config.USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Origin": "https://services.radio-canada.ca",
+            "X-Requested-With": "tv.tou.android",
+            "Referer": toutv.config.TOUTV_AUTH_SESSION_URL,
+            "Content-type": "application/x-www-form-urlencoded",
+        }
 
         r = requests.post(toutv.config.TOUTV_AUTH_TOKEN_URL, headers=headers, data=payload, allow_redirects=False)
 
@@ -88,11 +89,11 @@ class Auth:
 
     def _get_sessionid(self):
         headers = {
-                "User-Agent"        : toutv.config.USER_AGENT,
-                "Accept"            : "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-                "Origin"            : "https://services.radio-canada.ca",
-                "X-Requested-With"  : "tv.tou.android"
-                }
+            "User-Agent": toutv.config.USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Origin": "https://services.radio-canada.ca",
+            "X-Requested-With": "tv.tou.android"
+        }
 
         r = requests.get(toutv.config.TOUTV_AUTH_SESSION_URL, headers=headers)
 
@@ -102,4 +103,3 @@ class Auth:
         sessionId = re.search("name=\"sessionID\" value=\"([^\"]*)\"", r.text).group(1)
 
         return sessionId
-

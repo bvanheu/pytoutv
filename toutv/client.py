@@ -25,16 +25,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import os
 import re
 import difflib
-import requests
 import toutv.cache
 import toutv.mapper
 import toutv.transport
 import toutv.config
 import toutv.dl
-from toutv import m3u8
 
 
 class NoMatchException(Exception):
@@ -212,4 +209,3 @@ class Client:
             return None
 
         return results[-1]
-

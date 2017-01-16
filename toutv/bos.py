@@ -540,7 +540,6 @@ class Episode(_Bo, _ThumbnailProvider):
 
     def get_available_qualities(self):
         # Get playlist
-        proxies = self.get_proxies()
         playlist, cookies = self.get_playlist_cookies()
 
         # Get video qualities
