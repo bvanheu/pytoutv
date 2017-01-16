@@ -77,7 +77,7 @@ class JsonTransport(Transport):
                 if i < num_tries:
                     self._logger.warning("Timeout with %s; will retry...", url)
                 else:
-                    raise toutv.exceptions.RequestTimeoutError(url, timeout*num_tries) from e
+                    raise toutv.exceptions.RequestTimeoutError(url, timeout * num_tries) from e
 
     def _do_one_query_url(self, url, params=None, timeout=10):
         headers = toutv.config.HEADERS
