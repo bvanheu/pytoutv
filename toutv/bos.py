@@ -545,7 +545,7 @@ class Episode(_Bo, _ThumbnailProvider):
             # parse M3U8 file
             m3u8_file = r.text
             self._playlist = toutv.m3u8.parse(m3u8_file, os.path.dirname(url))
-            self._cookies = r.cookies;
+            self._cookies = r.cookies
 
         return self._playlist, self._cookies
 
