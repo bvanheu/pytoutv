@@ -25,6 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import logging
 import requests
 import toutv.exceptions
 import toutv.mapper
@@ -55,6 +56,8 @@ class JsonTransport(Transport):
         self.set_proxies(proxies)
         self.set_auth(auth)
 
+        self._logger = logging.getLogger(self.__class__.__name__)
+
     def set_proxies(self, proxies):
         self._proxies = proxies
 
@@ -70,11 +73,11 @@ class JsonTransport(Transport):
         for i in range(num_tries):
             try:
                 return self._do_one_query_url(url, params, timeout)
-            except requests.exceptions.Timeout:
+            except requests.exceptions.Timeout as e:
                 if i < num_tries:
-                    print("Timeout with {}; will retry...".format(url))
+                    self._logger.warning("Timeout with %s; will retry...", url)
                 else:
-                    raise toutv.exceptions.RequestTimeoutError(url, timeout*num_tries)
+                    raise toutv.exceptions.RequestTimeoutError(url, timeout*num_tries) from e
 
     def _do_one_query_url(self, url, params=None, timeout=10):
         headers = toutv.config.HEADERS
