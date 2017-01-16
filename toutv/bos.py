@@ -30,7 +30,6 @@ import datetime
 import logging
 import os
 import re
-import sys
 import requests
 import toutv.dl
 import toutv.config
@@ -531,7 +530,7 @@ class Episode(_Bo, _ThumbnailProvider):
                     raise RuntimeError(response_obj['message'])
                 return response_obj['url']
             except ValueError as e:
-                if i+1 < num_tries:
+                if i + 1 < num_tries:
                     logging.warning("GetPlaylistURL failed. Will retry...")
                 else:
                     raise RuntimeError("Error: GetPlaylistURL failed.") from e
