@@ -775,6 +775,8 @@ command. The episode can be specified using its name, number or id.
             except Exception as e:
                 tmpl = 'Error: cannot fetch "{}": {}'
                 print(tmpl.format(title, e), file=sys.stderr)
+                if self._verbose:
+                    traceback.print_exc()
 
     @staticmethod
     def _sort_episodes(episodes):
