@@ -25,6 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import logging
 import requests
 import toutv.exceptions
 import toutv.mapper
@@ -55,33 +56,46 @@ class JsonTransport(Transport):
         self.set_proxies(proxies)
         self.set_auth(auth)
 
+        self._logger = logging.getLogger(self.__class__.__name__)
+
     def set_proxies(self, proxies):
         self._proxies = proxies
 
     def set_auth(self, auth):
         self._auth = auth
 
-    def _do_query_url(self, url, params={}, timeout=20):
-        try:
-            headers = toutv.config.HEADERS
+    def _do_query_url(self, url, params=None, num_tries=1):
+        if num_tries > 1:
+            timeout = 5
+        else:
+            timeout = 10
 
-            r = requests.get(url, params=params, headers=headers,
-                             proxies=self._proxies, timeout=timeout)
-            if r.status_code != 200:
-                code = r.status_code
-                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url, code)
+        for i in range(num_tries):
+            try:
+                return self._do_one_query_url(url, params, timeout)
+            except requests.exceptions.Timeout as e:
+                if i < num_tries:
+                    self._logger.warning("Timeout with %s; will retry...", url)
+                else:
+                    raise toutv.exceptions.RequestTimeoutError(url, timeout*num_tries) from e
 
-            return r
-        except requests.exceptions.Timeout:
-            raise toutv.exceptions.RequestTimeoutError(url, timeout)
+    def _do_one_query_url(self, url, params=None, timeout=10):
+        headers = toutv.config.HEADERS
 
-    def _do_query_json_url(self, url, params={}):
-        r = self._do_query_url(url, params)
+        r = requests.get(url, params=params, headers=headers, proxies=self._proxies, timeout=timeout)
+        if r.status_code != 200:
+            code = r.status_code
+            raise toutv.exceptions.UnexpectedHttpStatusCodeError(url, code)
+
+        return r
+
+    def _do_query_json_url(self, url, params=None, num_tries=1):
+        r = self._do_query_url(url, params, num_tries)
         return r.json()
 
-    def _do_query_json_endpoint(self, endpoint, params={}):
+    def _do_query_json_endpoint(self, endpoint, params=None):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
-        json = self._do_query_json_url(url, params)
+        json = self._do_query_json_url(url, params, num_tries=5)
         return json['d']
 
     def get_emissions(self):
