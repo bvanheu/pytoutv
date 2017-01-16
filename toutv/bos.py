@@ -30,6 +30,7 @@ import datetime
 import logging
 import os
 import re
+import sys
 import requests
 import toutv.dl
 import toutv.config
@@ -520,13 +521,20 @@ class Episode(_Bo, _ThumbnailProvider):
         params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
         params['idMedia'] = self.PID
 
-        r = self._do_request(url, params=params)
-        response_obj = r.json()
+        num_tries = 3
 
-        if response_obj['errorCode']:
-            raise RuntimeError(response_obj['message'])
-
-        return response_obj['url']
+        for i in range(num_tries):
+            r = self._do_request(url, params=params)
+            try:
+                response_obj = r.json()
+                if response_obj['errorCode']:
+                    raise RuntimeError(response_obj['message'])
+                return response_obj['url']
+            except ValueError as e:
+                if i+1 < num_tries:
+                    logging.warning("GetPlaylistURL failed. Will retry...")
+                else:
+                    raise RuntimeError("Error: GetPlaylistURL failed.") from e
 
     def get_playlist_cookies(self):
         url = self._get_playlist_url()

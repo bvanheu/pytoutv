@@ -736,8 +736,7 @@ command. The episode can be specified using its name, number or id.
         if self._quiet:
             print("Done.")
 
-    def _fetch_emission_episodes(self, emission, output_dir, bitrate, quality,
-                                 overwrite):
+    def _fetch_emission_episodes(self, emission, output_dir, bitrate, quality, overwrite):
         episodes = self._toutv_client.get_emission_episodes(emission, True)
 
         if not episodes:
@@ -748,13 +747,12 @@ command. The episode can be specified using its name, number or id.
         for episode in App._sort_episodes(episodes):
             title = episode.get_title()
 
-            if self._stop:
-                raise toutv.dl.CancelledByUserError()
             try:
+                if self._stop:
+                    raise toutv.dl.CancelledByUserError()
                 if episode.PID is None:
                     episode = self._toutv_client.get_episode_by_name(emission, str(episode.Id))
-                self._fetch_episode(episode, output_dir, bitrate, quality,
-                                    overwrite)
+                self._fetch_episode(episode, output_dir, bitrate, quality, overwrite)
                 sys.stdout.write('\n')
                 sys.stdout.flush()
             except toutv.exceptions.RequestTimeoutError:
@@ -764,7 +762,7 @@ command. The episode can be specified using its name, number or id.
                 tmpl = 'Error: cannot fetch "{}": unexpected HTTP status code'
                 print(tmpl.format(title), file=sys.stderr)
             except toutv.exceptions.NetworkError as e:
-                tmpl = 'Error: cannot fetch "{}": {}'
+                tmpl = 'Error: cannot fetch "{}": NetworkError - {}'
                 print(tmpl.format(title, e), file=sys.stderr)
             except toutv.dl.FileExistsError as e:
                 tmpl = 'Error: cannot fetch "{}": destination file {} already exists'
@@ -772,7 +770,7 @@ command. The episode can be specified using its name, number or id.
             except toutv.dl.CancelledByUserError as e:
                 raise e
             except toutv.dl.DownloadError as e:
-                tmpl = 'Error: cannot fetch "{}": {}'
+                tmpl = 'Error: cannot fetch "{}": DownloadError - {}'
                 print(tmpl.format(title, e), file=sys.stderr)
             except Exception as e:
                 tmpl = 'Error: cannot fetch "{}": {}'
