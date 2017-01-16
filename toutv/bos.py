@@ -523,22 +523,18 @@ class Episode(_Bo, _ThumbnailProvider):
 
         num_tries = 0
 
-        def finished():
-            return num_tries == 3
-
-        while not finished():
+        for i in range(num_tries):
             r = self._do_request(url, params=params)
             try:
                 response_obj = r.json()
                 if response_obj['errorCode']:
                     raise RuntimeError(response_obj['message'])
                 return response_obj['url']
-            except ValueError:
-                num_tries += 1
-                if not finished():
-                    print("GetPlaylistURL failed. Will retry...", file=sys.stderr)
-
-        raise RuntimeError("Error: GetPlaylistURL failed.")
+            except ValueError as e:
+                if i+1 < num_tries:
+                    logging.warning("GetPlaylistURL failed. Will retry...")
+                else:
+                    raise RuntimeError("Error: GetPlaylistURL failed.") from e
 
     def get_playlist_cookies(self):
         url = self._get_playlist_url()
