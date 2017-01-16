@@ -521,7 +521,7 @@ class Episode(_Bo, _ThumbnailProvider):
         params = dict(toutv.config.TOUTV_PLAYLIST_PARAMS)
         params['idMedia'] = self.PID
 
-        num_tries = 0
+        num_tries = 3
 
         for i in range(num_tries):
             r = self._do_request(url, params=params)
