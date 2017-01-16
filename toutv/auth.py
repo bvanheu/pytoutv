@@ -37,21 +37,24 @@ class Auth:
 
     def __init__(self, token=None):
         self._token = token
+        self._claims = None
 
     def get_claims(self, token):
-        headers = {
-            "Authorization": "Bearer " + token,
-            "User-Agent": toutv.config.USER_AGENT,
-            "Accept": "application/json",
-            "Host": "services.radio-canada.ca",
-        }
+        if not self._claims:
+            headers = {
+                "Authorization": "Bearer " + token,
+                "User-Agent": toutv.config.USER_AGENT,
+                "Accept": "application/json",
+                "Host": "services.radio-canada.ca",
+            }
 
-        r = requests.get(toutv.config.TOUTV_AUTH_CLAIMS_URL.format(token), headers=headers)
+            r = requests.get(toutv.config.TOUTV_AUTH_CLAIMS_URL.format(token), headers=headers)
 
-        if r.status_code != 200:
-            raise toutv.exceptions.UnexpectedHttpStatusCodeError(toutv.config.TOUTV_AUTH_CLAIMS_URL.format(token), r.status_code)
+            if r.status_code != 200:
+                raise toutv.exceptions.UnexpectedHttpStatusCodeError(toutv.config.TOUTV_AUTH_CLAIMS_URL.format(token), r.status_code)
 
-        return r.json()["claims"]
+            self._claims = r.json()["claims"]
+        return self._claims
 
     def get_token(self):
         return self._token
