@@ -5,6 +5,13 @@ python:
   - "3.5"
   - "nightly"
 # command to install dependencies
-install: "pip install ."
+install:
+  - pip install .
+  - pip install flake8
 # command to run tests
 script: pytest
+
+# Static analysis
+before_script:
+  # E501: long lines
+  - flake8 --ignore E501
