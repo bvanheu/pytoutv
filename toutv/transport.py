@@ -61,35 +61,38 @@ class JsonTransport(Transport):
     def set_auth(self, auth):
         self._auth = auth
 
-    def _do_query_url(self, url, params=None, retry_on_timeout=False, num_retries=0):
-        if retry_on_timeout:
+    def _do_query_url(self, url, params=None, num_tries=1):
+        if num_tries > 1:
             timeout = 5
         else:
             timeout = 10
-        try:
-            headers = toutv.config.HEADERS
 
-            r = requests.get(url, params=params, headers=headers,
-                             proxies=self._proxies, timeout=timeout)
-            if r.status_code != 200:
-                code = r.status_code
-                raise toutv.exceptions.UnexpectedHttpStatusCodeError(url, code)
+        for i in range(num_tries):
+            try:
+                return self._do_one_query_url(url, params, timeout)
+            except requests.exceptions.Timeout:
+                if i < num_tries:
+                    print("Timeout with {}; will retry...".format(url))
+                else:
+                    raise toutv.exceptions.RequestTimeoutError(url, timeout*num_tries)
 
-            return r
-        except requests.exceptions.Timeout:
-            if retry_on_timeout and num_retries < 5:
-                # Retry this request up to 5 times...
-                print("Timeout with {}; will retry...".format(url))
-                return self._do_query_url(url, params, retry_on_timeout, num_retries+1)
-            raise toutv.exceptions.RequestTimeoutError(url, timeout)
+    def _do_one_query_url(self, url, params=None, timeout=10):
+        headers = toutv.config.HEADERS
 
-    def _do_query_json_url(self, url, params=None, retry_on_timeout=False):
-        r = self._do_query_url(url, params, retry_on_timeout)
+        r = requests.get(url, params=params, headers=headers, proxies=self._proxies, timeout=timeout)
+        if r.status_code != 200:
+            code = r.status_code
+            raise toutv.exceptions.UnexpectedHttpStatusCodeError(url, code)
+
+        return r
+
+    def _do_query_json_url(self, url, params=None, num_tries=1):
+        r = self._do_query_url(url, params, num_tries)
         return r.json()
 
     def _do_query_json_endpoint(self, endpoint, params=None):
         url = '{}{}'.format(toutv.config.TOUTV_JSON_URL_PREFIX, endpoint)
-        json = self._do_query_json_url(url, params, retry_on_timeout=True)
+        json = self._do_query_json_url(url, params, num_tries=5)
         return json['d']
 
     def get_emissions(self):
