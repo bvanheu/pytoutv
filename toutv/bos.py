@@ -423,6 +423,8 @@ class Episode(_Bo, _ThumbnailProvider):
         self.UrlEmission = None
         self.Year = None
         self.iTunesLinkUrl = None
+        self._playlist = None
+        self._cookies = None
 
     def get_title(self):
         return self.Title
@@ -536,14 +538,16 @@ class Episode(_Bo, _ThumbnailProvider):
                     raise RuntimeError("Error: GetPlaylistURL failed.") from e
 
     def get_playlist_cookies(self):
-        url = self._get_playlist_url()
-        r = self._do_request(url)
+        if not self._playlist or not self._cookies:
+            url = self._get_playlist_url()
+            r = self._do_request(url)
 
-        # parse M3U8 file
-        m3u8_file = r.text
-        playlist = toutv.m3u8.parse(m3u8_file, os.path.dirname(url))
+            # parse M3U8 file
+            m3u8_file = r.text
+            self._playlist = toutv.m3u8.parse(m3u8_file, os.path.dirname(url))
+            self._cookies = r.cookies
 
-        return playlist, r.cookies
+        return self._playlist, self._cookies
 
     def get_available_qualities(self):
         # Get playlist

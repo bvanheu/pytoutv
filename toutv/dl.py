@@ -434,8 +434,8 @@ class Downloader:
     def download(self):
         self._logger.debug('starting download')
 
-        self._seg_provider.initialize()
         self._seg_handler.initialize()
+        self._seg_provider.initialize()
 
         # Get the number of segments.
         num_segments = self._seg_provider.num_segments()

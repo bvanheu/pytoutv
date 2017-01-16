@@ -72,7 +72,7 @@ class EmptyCache(Cache):
 
 class ShelveCache(Cache):
 
-    _cache_version = 3
+    _cache_version = 4
 
     def __init__(self, shelve_filename):
         self._logger = logging.getLogger(self.__class__.__name__)
