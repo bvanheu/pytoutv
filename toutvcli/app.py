@@ -313,6 +313,13 @@ command. The episode can be specified using its name, number or id.
                 if not os.path.exists(home_cache_path):
                     os.makedirs(home_cache_path)
                 cache_path = os.path.join(home_cache_path, cache_name)
+        elif platform.system() == 'Windows':
+            if 'APPDATA' in os.environ:
+                cache_dir = os.environ['APPDATA']
+                appdata_cache_path = os.path.join(cache_dir, 'toutv')
+                if not os.path.exists(appdata_cache_path):
+                    os.makedirs(appdata_cache_path)
+                cache_path = os.path.join(appdata_cache_path, cache_name)
 
         return cache_path
 
