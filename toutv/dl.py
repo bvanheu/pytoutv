@@ -27,7 +27,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import re
 import os
 import errno
 import struct
@@ -114,15 +113,15 @@ class FilesystemSegmentHandler(SegmentHandler):
     def __init__(self,
                  episode,
                  bitrate,
-                 filename_qualifier,
                  output_dir,
+                 filename,
                  overwrite=False):
         self._episode = episode
         self._bitrate = bitrate
         self._output_dir = output_dir
         self._overwrite = overwrite
 
-        self._filename = self._gen_filename(filename_qualifier)
+        self._filename = filename
         self._output_path = os.path.join(self._output_dir, self._filename)
 
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -138,24 +137,6 @@ class FilesystemSegmentHandler(SegmentHandler):
     @property
     def output_dir(self):
         return self._output_dir
-
-    def _gen_filename(self, filename_qualifier):
-        emission_title = self._episode.get_emission().Title
-        episode_title = self._episode.Title
-
-        if self._episode.SeasonAndEpisode is not None:
-            sae = self._episode.SeasonAndEpisode
-            episode_title = '{} {}'.format(sae, episode_title)
-
-        episode_title = '{}.{}'.format(episode_title, filename_qualifier)
-        filename = '{}.{}.ts'.format(emission_title, episode_title)
-
-        # remove illegal characters from filename
-        regex = r'[^ \'a-zA-Z0-9áàâäéèêëíìîïóòôöúùûüÁÀÂÄÉÈÊËÍÌÎÏÓÒÔÖÚÙÛÜçÇ()._-]'
-        filename = re.sub(regex, '', filename)
-        filename = re.sub(r'\s', '.', filename)
-
-        return filename
 
     def _get_segment_file_path(self, segindex):
         fmt = '.toutv-{}-{}-{}-{}.ts'

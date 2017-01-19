@@ -37,6 +37,7 @@ import logging
 import textwrap
 import platform
 import getpass
+import re
 import toutv.dl
 import toutv.client
 import toutv.cache
@@ -707,25 +708,46 @@ command. The episode can be specified using its name, number or id.
         total_bytes = num_bytes_completed_segments + num_bytes_partial_segment
         self._print_cur_pb(num_completed_segments, total_bytes, False)
 
+    @staticmethod
+    def _get_fetch_filename_for_episode(episode, quality_level):
+        emission_title = episode.get_emission().Title
+        episode_title = episode.Title
+
+        if episode.SeasonAndEpisode is not None:
+            sae = episode.SeasonAndEpisode
+            episode_title = '{} {}'.format(sae, episode_title)
+
+        episode_title = '{}.{}'.format(episode_title, quality_level)
+        filename = '{}.{}.ts'.format(emission_title, episode_title)
+
+        # remove illegal characters from filename
+        regex = r'[^ \'a-zA-Z0-9áàâäéèêëíìîïóòôöúùûüÁÀÂÄÉÈÊËÍÌÎÏÓÒÔÖÚÙÛÜçÇ()._-]'
+        filename = re.sub(regex, '', filename)
+        filename = re.sub(r'\s', '.', filename)
+
+        return filename
+
     def _fetch_episode(self, episode, output_dir, bitrate, quality, overwrite):
         # Get available bitrates for episode
         qualities = episode.get_available_qualities()
 
-        filename_qualifier = "qAVG"
+        quality_level = "qAVG"
         # Choose bitrate
         if bitrate is None:
             if quality == App.QUALITY_MIN:
                 bitrate = qualities[0].bitrate
-                filename_qualifier = "qMIN"
+                quality_level = "qMIN"
             elif quality == App.QUALITY_MAX:
                 bitrate = qualities[-1].bitrate
-                filename_qualifier = "qMAX"
+                quality_level = "qMAX"
             elif quality == App.QUALITY_AVG:
                 bitrate = App._get_average_bitrate(qualities)
 
+        filename = App._get_fetch_filename_for_episode(episode, quality_level)
+
         # Create segment handler
         self._seg_handler = toutv.dl.FilesystemSegmentHandler(
-            episode=episode, bitrate=bitrate, filename_qualifier=filename_qualifier, output_dir=output_dir,
+            episode=episode, bitrate=bitrate, output_dir=output_dir, filename=filename,
             overwrite=overwrite)
 
         seg_provider = toutv.dl.ToutvApiSegmentProvider(
