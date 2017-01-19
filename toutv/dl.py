@@ -114,6 +114,7 @@ class FilesystemSegmentHandler(SegmentHandler):
     def __init__(self,
                  episode,
                  bitrate,
+                 filename_qualifier,
                  output_dir,
                  overwrite=False):
         self._episode = episode
@@ -121,7 +122,7 @@ class FilesystemSegmentHandler(SegmentHandler):
         self._output_dir = output_dir
         self._overwrite = overwrite
 
-        self._filename = self._gen_filename()
+        self._filename = self._gen_filename(filename_qualifier)
         self._output_path = os.path.join(self._output_dir, self._filename)
 
         self._logger = logging.getLogger(self.__class__.__name__)
@@ -138,7 +139,7 @@ class FilesystemSegmentHandler(SegmentHandler):
     def output_dir(self):
         return self._output_dir
 
-    def _gen_filename(self):
+    def _gen_filename(self, filename_qualifier):
         emission_title = self._episode.get_emission().Title
         episode_title = self._episode.Title
 
@@ -146,8 +147,7 @@ class FilesystemSegmentHandler(SegmentHandler):
             sae = self._episode.SeasonAndEpisode
             episode_title = '{} {}'.format(sae, episode_title)
 
-        br = self._bitrate // 1000
-        episode_title = '{} {}kbps'.format(episode_title, br)
+        episode_title = '{}.{}'.format(episode_title, filename_qualifier)
         filename = '{}.{}.ts'.format(emission_title, episode_title)
 
         # remove illegal characters from filename

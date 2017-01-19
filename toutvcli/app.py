@@ -711,18 +711,21 @@ command. The episode can be specified using its name, number or id.
         # Get available bitrates for episode
         qualities = episode.get_available_qualities()
 
+        filename_qualifier = "qAVG"
         # Choose bitrate
         if bitrate is None:
             if quality == App.QUALITY_MIN:
                 bitrate = qualities[0].bitrate
+                filename_qualifier = "qMIN"
             elif quality == App.QUALITY_MAX:
                 bitrate = qualities[-1].bitrate
+                filename_qualifier = "qMAX"
             elif quality == App.QUALITY_AVG:
                 bitrate = App._get_average_bitrate(qualities)
 
         # Create segment handler
         self._seg_handler = toutv.dl.FilesystemSegmentHandler(
-            episode=episode, bitrate=bitrate, output_dir=output_dir,
+            episode=episode, bitrate=bitrate, filename_qualifier=filename_qualifier, output_dir=output_dir,
             overwrite=overwrite)
 
         seg_provider = toutv.dl.ToutvApiSegmentProvider(
