@@ -71,5 +71,5 @@ class ToutvCliAppRealTest(unittest.TestCase):
             os.unlink(file)
 
     def testFetch(self):
-        self._testFetch('Coup.de.pouce.*.S2012E01.*.01.*kbps.ts',
+        self._testFetch('Coup.de.pouce.*.S2012E01.*.01.qMIN.ts',
                         ['COUP DE POUCE POUR LA PLANÈTE', 'S2012E01'])
