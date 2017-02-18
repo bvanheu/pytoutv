@@ -158,11 +158,6 @@ you may install pytoutv directly using its `setup.py` script:
 
         $ sudo ./setup.py install
 
-On Debian, Ubuntu and Fedora, you might need to specify you want to use Python 3
-to run the program:
-
-    $ sudo python3 ./setup.py install
-
 
 Library
 =======
