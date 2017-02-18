@@ -169,21 +169,17 @@ La documentation de la librairie n'est pas encore disponible.
 Ligne de commande
 =================
 
-Quatre commandes sont disponibles en utilisant l'outil en ligne de commande
-qui, après installation, se nomme simplement `toutv` :
+L'outil en ligne de commande se nomme simplement `toutv`.  Les commandes les
+plus couramment utilisées sont:
 
-  * `list` : liste les émissions et épisodes d'une émission donnée
-  * `info` : écrit les informations d'une émission ou d'un épisode
-  * `fetch` : télécharge un épisode ou tous les épisodes d'une émission donnée
-  * `search` : recherche parmi les émissions et épisodes
+  * `list`: afficher les émissions ou les épisodes d'une émission donnée
+  * `info`: afficher les informations d'une émission ou d'un épisode
+  * `fetch`: télécharger un épisode ou tous les épisodes d'une émission donnée
+  * `search`: chercher un mot-clé parmi les émissions et épisodes
+  * `login`: fournir les informations de connexion pour Tou.TV Extra
 
-D'autres fonctionnalités dont disponibles, tels que le téléchargement ou
-l'obtention d'informations en utilisant une URL TOU.TV, ou encore un mécanisme
-de cache qui permet d'accélérer les requêtes. Utilisez
-
-    $ toutv <commande> -h
-
-afin d'obtenir une liste détaillée des options pour la commande `<commande>`.
+Utilisez `toutv -h` et `toutv <commande> -h` pour obtenir plus d'informations à
+propos des commandes et de leur utilisation.
 
 
 Proxy

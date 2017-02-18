@@ -173,22 +173,15 @@ Package documentation is not available yet.
 CLI
 ===
 
-Four commands are available using the command line interface tool,
-which, after installing, is simply named `toutv`:
+The command line tool is simply called `toutv`.  Commonly used commands are:
 
-  * `list`: lists emissions (shows) and episodes of a given emission
-  * `info`: outputs informations about an emission or an episode
-  * `fetch`: fetches (downloads) a complete episode or all episodes of
-    a given emission
-  * `search`: searches amongst emissions and episodes
+  * `list`: list available shows or available episodes of a show
+  * `info`: output informations about a show or episode
+  * `fetch`: fetch (download) a show or all episodes of a show
+  * `search`: search for a keyword amongst shows and episodes
+  * `login`: provide credentials for Tou.TV Extra
 
-Additionnal features are available, like fetching or getting infos
-using a TOU.TV URL, or a caching mechanism which accelerates
-requests. Use
-
-    $ toutv <command> -h
-
-to get a detailed list of options for command `<command>`.
+See `toutv -h` and `toutv <command> -h` for more complete information about commands and their usage.
 
 
 Proxy
