@@ -584,7 +584,8 @@ command. The episode can be specified using its name, number or id.
         for episode in App._sort_episodes(episodes):
             sae = episode.get_sae()
             title = episode.get_title()
-            print('  * {} - {} - {}'.format(episode.Id, sae, title))
+            date = episode.get_air_date()
+            print('  * {} - {} - {}'.format(sae, title, date))
 
     def _print_info_emission(self, emission):
         if emission.get_description() is None:
