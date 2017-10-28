@@ -335,7 +335,7 @@ command. The episode can be specified using its name, number or id.
         try:
             with open(App._build_cache_path(toutv.config.TOUTV_AUTH_TOKEN_PATH), 'r') as token_file:
                 auth = toutv.auth.Auth(token_file.read())
-        except:
+        except Exception:
             pass
 
         return auth
@@ -353,7 +353,7 @@ command. The episode can be specified using its name, number or id.
         else:
             try:
                 cache = App._build_cache()
-            except:
+            except Exception:
                 print('Warning: not using cache (multiple instances of toutv?)',
                       file=sys.stderr)
 

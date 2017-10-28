@@ -78,7 +78,7 @@ class _QTouTvApp(Qt.QApplication):
             logging.debug('Directory "{}" does not exist'.format(value))
             try:
                 os.makedirs(value)
-            except:
+            except Exception:
                 # Ignore; should fail later
                 logging.warning('Cannot create directory "{}"'.format(value))
                 pass

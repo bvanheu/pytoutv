@@ -170,7 +170,7 @@ class FilesystemSegmentHandler(SegmentHandler):
 
         try:
             os.remove(segpath)
-        except:
+        except Exception:
             # not the end of the world...
             self._logger.warn('cannot remove segment file "{}"'.format(segpath))
 
