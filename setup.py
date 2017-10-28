@@ -58,7 +58,9 @@ package_data = {
 install_requires = [
     'pycrypto>=2.0.0',
     'requests>=2.0.0',
-    'setuptools>=3.0'
+    'setuptools>=3.0',
+    # Workaround for bug on Travis with Python nightly
+    'setuptools_scm',
 ]
 
 setup_requires = [
