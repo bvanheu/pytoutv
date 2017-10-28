@@ -60,15 +60,14 @@ class Auth:
         return self._token
 
     def login(self, username, password):
-        sessionid = self._get_sessionid()
+        session = self._get_session()
 
         payload = {
-            "sessionID": sessionid,
             "action": "login",
-            "client_id": toutv.config.TOUTV_AUTH_CLIENT_ID,
-            "redirect_uri": "http://ici.tou.tv/login/loginCallback",
-            "client-domain": "icitv",
-            "client-platform": "android",
+            "sessionID": session['sessionID'],
+            "sessionData": session['sessionData'],
+            "authzRequestUri": session['authzRequestUri'],
+            "lang": session['lang'],
             "login-email": username,
             "login-password": password,
             "form-submit-btn": "Ouvrir une session"
@@ -83,14 +82,28 @@ class Auth:
             "Content-type": "application/x-www-form-urlencoded",
         }
 
-        r = requests.post(toutv.config.TOUTV_AUTH_TOKEN_URL, headers=headers, data=payload, allow_redirects=False)
+        r = requests.post(toutv.config.TOUTV_AUTH_LOGIN_URL, headers=headers, data=payload, allow_redirects=False)
+
+        if r.status_code != 200:
+            raise toutv.exceptions.UnexpectedHttpStatusCodeError(toutv.config.TOUTV_AUTH_TOKEN_URL, r.status_code)
+
+        headers['Referer'] = toutv.config.TOUTV_AUTH_LOGIN_URL
+
+        payload = {
+            "action": "grant",
+            "sessionID": session['sessionID'],
+            "sessionData": re.search("name=\"sessionData\" .*value=\"([^\"]*)\"", r.text).group(1),
+            "lang": session['lang']
+        }
+
+        r = requests.post(toutv.config.TOUTV_AUTH_CONSENT_URL, headers=headers, data=payload, allow_redirects=False)
 
         if r.status_code != 302:
             raise toutv.exceptions.UnexpectedHttpStatusCodeError(toutv.config.TOUTV_AUTH_TOKEN_URL, r.status_code)
 
         self._token = re.search("access_token=([^&]*)", r.headers["Location"]).group(1)
 
-    def _get_sessionid(self):
+    def _get_session(self):
         headers = {
             "User-Agent": toutv.config.USER_AGENT,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -103,6 +116,11 @@ class Auth:
         if r.status_code != 200:
             raise toutv.exceptions.UnexpectedHttpStatusCodeError(toutv.config.TOUTV_AUTH_SESSION_URL, r.status_code)
 
-        sessionId = re.search("name=\"sessionID\" value=\"([^\"]*)\"", r.text).group(1)
+        session = {
+            'sessionID': re.search("name=\"sessionID\" .*value=\"([^\"]*)\"", r.text).group(1),
+            'sessionData': re.search("name=\"sessionData\" .*value=\"([^\"]*)\"", r.text).group(1),
+            'authzRequestUri': re.search("name=\"authzRequestUri\" .*value=\"([^\"]*)\"", r.text).group(1),
+            'lang': re.search("name=\"lang\" .*value=\"([^\"]*)\"", r.text).group(1)
+        }
 
-        return sessionId
+        return session
