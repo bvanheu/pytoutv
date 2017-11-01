@@ -135,22 +135,40 @@ class JsonTransport(Transport):
         emission_dto = self._do_query_json_url(url, params)
         seasons = emission_dto['SeasonLineups']
 
-        for season in seasons:
-            episodes_dto = season['LineupItems']
-            for episode_dto in episodes_dto:
-                episode = toutv.bos.Episode()
-                episode.Title = episode_dto['Title']
-                episode.Description = episode_dto['Description']
-                if 'Description' in episode_dto['Details']:
-                    episode.Description = episode_dto['Details']['Description']
-                episode.PID = episode_dto['IdMedia']
-                episode.Id = episode_dto['Key'][6:]
-                episode.Url = episode_dto['Url']
-                episode.AirDateLongString = episode_dto['Details']['AirDate']
-                episode.CategoryId = emission.Id
+        # Create an Episode object from the received JSON.
+        def parse_episode(episode_dto, has_season):
+            episode = toutv.bos.Episode()
+            episode.Title = episode_dto['Title']
+            episode.Description = episode_dto['Description']
+            if 'Description' in episode_dto['Details']:
+                episode.Description = episode_dto['Details']['Description']
+            episode.PID = episode_dto['IdMedia']
+            episode.Id = episode_dto['Key'][6:]
+            episode.Url = episode_dto['Url']
+            episode.AirDateLongString = episode_dto['Details']['AirDate']
+            episode.CategoryId = emission.Id
+            if has_season:
                 episode.SeasonAndEpisode = toutv.client.Client._find_last(r'/.*/(.*)$', episode_dto['Url'])
-                episode.set_emission(emission)
-                episodes.append(episode)
+            else:
+                episode.SeasonAndEpisode = None
+            episode.set_emission(emission)
+            return episode
+
+        # Sometimes we have a non-NULL SeasonLineups attribute, it is a list of
+        # season, where each season contains a list of episodes.
+        if seasons is not None:
+            for season in seasons:
+                episodes_dto = season['LineupItems']
+                for episode_dto in episodes_dto:
+                    episode = parse_episode(episode_dto, True)
+                    episodes.append(episode)
+        else:
+            # But SeasonLineups is sometimes None, most likely because there's
+            # a single video/episode.  We can then treat the top-level object
+            # as the episode.  The important value is idMedia, which will be
+            # used to fetch the playlist when fetching the video.
+            episode = parse_episode(emission_dto, False)
+            episodes = [episode]
 
         return episodes
 
