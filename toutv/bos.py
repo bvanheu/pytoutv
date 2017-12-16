@@ -457,7 +457,7 @@ class Episode(_Bo, _ThumbnailProvider):
         return self.EpisodeNumber
 
     def get_sae(self):
-        return self.SeasonAndEpisode
+        return self.SeasonAndEpisode or 'S00E00'
 
     def get_description(self):
         if self.Description is None:
