@@ -1,210 +1,208 @@
-[![Build Status](https://travis-ci.org/bvanheu/pytoutv.svg?branch=master)](https://travis-ci.org/bvanheu/pytoutv)
+(See [`README.en.md`](README.en.md) for an English version.)
 
-(Voir [`README.fr.md`](README.fr.md) pour une version française.)
+***pytoutv*** est une librairie écrite en Python 3 qui implémente un client
+pour [TOU.TV](http://tou.tv/).
 
-***pytoutv*** is a [TOU.TV](http://tou.tv/) client library written in
-Python 3.
+Ce dépôt contient aussi une interface en ligne de commande.
 
-This repository also holds a command line interface.
+pytoutv, grâce à l'API publique de TOU.TV (voir
+[`toutv/config.py`](toutv/config.py) pour les URL publiques), est en
+mesure de récupérer les listes d'émissions et d'épisodes, obtenir des
+informations sur des émissions ou des épisodes ou télécharger n'importe quel
+fichier vidéo distribué publiquement par le service TOU.TV. Les informations
+téléchargées, incluant les fichiers vidéo, sont destinées à un usage personnel
+et ne devraient pas être redistribuées, à moins d'une autorisation préalable
+fournie par les propriétaires de TOU.TV.
 
-pytoutv, thanks to TOU.TV's public API (see
-[`toutv/config.py`](toutv/config.py) for public URLs), is able to
-retrieve lists of emissions (shows) and episodes, get emissions and episodes
-informations and fetch any video file publicly distributed by the TOU.TV
-service. Informations, including video files, downloaded using pytoutv are
-for personal use only and should not be redistributed unless otherwise
-authorized by TOU.TV owners.
+Le projet pytoutv n'est pas affilié, connecté ou associé à la Société Radio-Canada
+ou à CBFT-DT. La Société Radio-Canada ou CBFT-DT ne parrainent pas, n'approuvent
+pas ou n'endossent pas le projet pytoutv.
 
-The pytoutv project is not affiliated, connected or associated with the Canadian
-Broadcasting Corporation or CBFT-DT. The Canadian Broadcasting Corporation or
-CBFT-DT do not sponsor, approve of, or endorse pytoutv.
-
-_Note_: although this is pytoutv 2, there's no such thing as pytoutv 1. This
-project was previously known as _Tou.tv-console-application_ and targeted
-at Python 2. Its refactoring and renaming to pytoutv led to its version 2.
-The CLI remains mostly compatible with the previous version.
+_Note_ : bien qu'on parle de pytoutv 2, il n'existe pas de version 1 de
+pytoutv. Ce projet était auparavant connu sous le nom
+_Tou.tv-console-application_ et ciblait Python 2. Son réusinage et son
+changement de nom vers pytoutv a mené à sa version 2. L'interface en ligne
+de commande demeure assez compatible avec la version précédente.
 
 
-Dependencies
+Dépendances
 ============
 
-pytoutv needs:
+pytoutv requiert :
 
-  * Python 3.3+, with:
+  * Python 3.3+, avec :
     * [PyCrypto](https://www.dlitz.net/software/pycrypto/)
-      ([available on PyPI](https://pypi.python.org/pypi/pycrypto))
+      ([disponible sur PyPI](https://pypi.python.org/pypi/pycrypto))
     * [Requests](http://python-requests.org/)
-      ([available on PyPI](https://pypi.python.org/pypi/requests))
+      ([disponible sur PyPI](https://pypi.python.org/pypi/requests))
     * [setuptools](https://pythonhosted.org/setuptools/)
-      ([available on PyPI](https://pypi.python.org/pypi/setuptools))
+      ([disponible sur PyPI](https://pypi.python.org/pypi/setuptools))
 
-Optional dependencies:
+Dépendances facultatives :
 
   * termcolor
-    ([available on PyPI](https://pypi.python.org/pypi/termcolor)):
-    colors in terminal (CLI)
+    ([disponible sur PyPI](https://pypi.python.org/pypi/termcolor)):
+    couleurs dans le terminal (CLI)
   * [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download):
-    Qt interface
+    interface Qt
 
-pytoutv is known to work on Ubuntu, Debian, Fedora, Arch Linux
-and Mac OS X.
-
-
-Installing
-==========
-
-There are several ways to install pytoutv, the easiest being using pip.
-
-Please note that you need Python 3.3+ whatever the method you choose.
+pytoutv est réputé fonctionner sur Ubuntu, Debian, Fedora, Arch Linux et Mac OS X.
 
 
-Install dependencies
---------------------
+Installation
+============
 
-The pip and `setup.py` install methods will automatically install Python
-dependencies for you. However, it might be a better idea to have them
-installed using your package manager if you have any.
+Il existe plusieurs méthodes pour installer pytoutv, la plus facile étant en
+passant par l'outil pip.
 
-On Debian and Ubuntu, here's how it's done:
+Veuillez noter que Python 3.3+ est requis peu importe la méthode utilisée.
+
+
+Installation des dépendances
+----------------------------
+
+Les méthodes d'installation avec pip et `setup.py` vont automatiquement installer
+les dépendances Python pour vous. Ceci dit, il peut être préférable de les
+installer avec le gestionnaire de paquetages de votre distribution :
+
+Sur Debian et Ubuntu, voici comment faire :
 
     $ sudo aptitude install python3-crypto python3-requests python3-setuptools
 
-On Fedora:
+Sur Fedora:
 
     $ sudo yum install python3-crypto python3-requests python3-setuptools
 
-On Arch Linux:
+Sur Arch Linux :
 
     $ sudo pacman -Sy python-crypto python-requests python-setuptools
 
 
-Using pip
----------
+Avec pip
+--------
 
-Make sure you have [pip](http://www.pip-installer.org/en/latest/) and
-[setuptools](https://pypi.python.org/pypi/setuptools). Your favorite
-distribution should provide a way to get both.
+Assurez-vous d'avoir [pip](http://www.pip-installer.org/en/latest/) et
+[setuptools](https://pypi.python.org/pypi/setuptools). Votre distribution
+favorite devrait fournir une façon d'obtenir ces paquetages.
 
-Then install pytoutv using pip:
+Installez ensuite pytoutv à l'aide de pip :
 
     $ sudo pip install pytoutv
 
 
-### Ubuntu and Debian
+### Ubuntu et Debian
 
-On Debian and Ubuntu, pip uses the Python 2 dependencies by default.
-To fix this, you can download the Python 3 version of pip:
+Sur Debian et Ubuntu, pip utilise par défaut les dépendances en Python 2.
+Pour régler ce problème, vous pouvez télécharger la version Python 3 de pip :
 
     $ sudo aptitude install python3-pip
 
-You can then run the installation using this package:
+Par la suite, il ne suffit que de lancer l'installation avec ce paquet:
 
     $ sudo pip3 install pytoutv
 
 
 ### Fedora
 
-On Fedora, pip uses the Python 2 dependencies by default.
-To fix this, you can download the Python 3 version of pip:
+Sur Fedora, pip utilise par défaut les dépendances en Python 2.
+Pour régler ce problème, vous pouvez télécharger la version Python 3 de pip :
 
     $ sudo yum install python3-pip
 
-You can then run the installation using this package:
+Par la suite, il ne suffit que de lancer l'installation avec ce paquet:
 
     $ sudo python3-pip install pytoutv
 
 
 ### Mac OS X
 
-First, make sure you have the latest version of Python installed.
-Apple provides their own build of Python 2.7, but you'll need
-3.3 or more for pytoutv.
+Apple fournissent leur propre version de Python 2.7, pré-installé avec
+le système d'exploitation. C'est bien, mais nous avons besoin de 3.3
+minimum.
 
-You can download the latest build for your version of Mac OS X
-on here: https://www.python.org/download/
+Rendez-vous sur https://www.python.org/download/ pour télécharger
+la dernière version de Python compatible avec votre système.
 
-To check if it has installed correctly, simply run 'python3.X'
-(where X is the subversion, like '3.4').
+Installez-le et ouvrez votre terminal. Si l'exécution de "python3.X"
+(X étant la sous-version installée, comme 3.3 ou 3.4) vous
+ouvre le mode de commande de Python 3.3+, tout est correct.
 
-If you have the Python prompt with the correct version stated,
-you're ready for the next step!
+Quittez Python et exécutez:
 
-Exit the Python prompt (if not back to your usual terminal)
-and run:
+"sudo pip3 install pytoutv"
 
-    $ sudo pip3 install pytoutv
-
-Now, have fun!
+Si tout se passe bien, vous devriez ensuite pouvoir l'exécuter!
 
 
-PLEASE NOTE:
-It seems the autoinstall script doesn't add pytoutv's path
-to the global paths file.
-Add "/Library/Frameworks/Python.framework/Versions/3.4/bin"
-to "/etc/paths/" and you should be in business!
+À NOTER:
+Il semble que le script d'installation ne place pas de chemin global.
+Ajoutez: "/Library/Frameworks/Python.framework/Versions/3.4/bin" à
+"/etc/paths".
 
 
-Using setup.py
---------------
+Avec setup.py
+-------------
 
-As long as you have [setuptools](https://pypi.python.org/pypi/setuptools),
-you may install pytoutv directly using its `setup.py` script:
+Tant que vous avez [setuptools](https://pypi.python.org/pypi/setuptools),
+vous pouvez installer pytoutv directement en utilisant son script `setup.py` :
 
-  1. Clone the repo:
+  1. Clonez le dépôt :
 
         $ git clone https://github.com/bvanheu/pytoutv && cd pytoutv
 
-  2. Run the setup script:
+  2. Lancez le script d'installation :
 
         $ sudo ./setup.py install
 
 
-Library
-=======
+Librairie
+=========
 
-Package documentation is not available yet.
+La documentation de la librairie n'est pas encore disponible.
 
 
-CLI
-===
+Ligne de commande
+=================
 
-The command line tool is simply called `toutv`.  Commonly used commands are:
+L'outil en ligne de commande se nomme simplement `toutv`.  Les commandes les
+plus couramment utilisées sont:
 
-  * `list`: list available shows or available episodes of a show
-  * `info`: output informations about a show or episode
-  * `fetch`: fetch (download) a show or all episodes of a show
-  * `search`: search for a keyword amongst shows and episodes
-  * `login`: provide credentials for Tou.TV Extra
+  * `list`: afficher les émissions ou les épisodes d'une émission donnée
+  * `info`: afficher les informations d'une émission ou d'un épisode
+  * `fetch`: télécharger un épisode ou tous les épisodes d'une émission donnée
+  * `search`: chercher un mot-clé parmi les émissions et épisodes
+  * `login`: fournir les informations de connexion pour Tou.TV Extra
 
-See `toutv -h` and `toutv <command> -h` for more complete information about commands and their usage.
+Utilisez `toutv -h` et `toutv <commande> -h` pour obtenir plus d'informations à
+propos des commandes et de leur utilisation.
 
 
 Proxy
 -----
 
-Please note `toutv` honors the `HTTP_PROXY` and `HTTPS_PROXY` environment
-variables, which should contain the full URLs of HTTP(S) proxies to use, including
-the scheme (`http://`, `https://`).
+Veuillez noter que `toutv` honore les variables d'environnement `HTTP_PROXY` et
+`HTTPS_PROXY`, qui devraient contenir les URL complètes des proxies à utiliser,
+incluant le schéma (`http://`, `https://`).
 
 
-Examples
+Exemples
 --------
 
-Here are a few CLI usage examples.
+Voici quelques exemples d'utilisation de l'interface en ligne de commande.
 
-### Login to the extra section of tou.tv
+### Se connecter à la section extra de tou.tv
 
-This is required to be able to download 720p files, and to fetch any episode only available to Extra members, but otherwise optional.
+Ceci est requis pour pouvoir télécharger la version 720p des vidéos, et pour télécharger les émissions qui sont exclusives aux membres de la section Extra. Pour les autres cas, le login est optionnel.
 
-     $ toutv login <USERNAME>
-     Password: <PASSWORD>
-     Login successful
-     Token: c3458d85-6094-4030-9454-114380b2dec0
+    $ toutv login <USERNAME>
+    Password: <PASSWORD>
+    Login successful
+    Token: c3458d85-6094-4030-9454-114380b2dec0
 
 
-### Listing all emissions
+### Liste de toutes les émissions
 
-Note: this will list all emissions, including those only available to Extra members.
+Note: toutes les émissions, incluant celles qui sont exclusives aux membres de la section Extra.
 
     $ toutv list
     2416249839: 2030, Le Big Bang démographique
@@ -218,7 +216,7 @@ Note: this will list all emissions, including those only available to Extra memb
     ...
 
 
-### Listing episodes of a given emission
+### Liste des épisodes d'une émission
 
     $ toutv list 'physique ou chimie'
     Physique ou chimie:
@@ -236,7 +234,7 @@ Note: this will list all emissions, including those only available to Extra memb
       ...
 
 
-### Getting information about an emission
+### Informations d'une émission
 
     $ toutv info 'physique ou chimie'
     Physique ou chimie  [Unknown country]
@@ -254,7 +252,7 @@ Note: this will list all emissions, including those only available to Extra memb
       * Tags: jeunesse, rogers
 
 
-### Getting information about an episode
+### Informations d'un épisode
 
     $ toutv info 'Série noire' S01E08
     Série noire
@@ -277,19 +275,19 @@ Note: this will list all emissions, including those only available to Extra memb
         * 1324 kbps
 
 
-### Fetching an episode
+### Téléchargement d'un épisode
 
     $ toutv fetch Enquete S2014E11
     Enquête.S2014E11.La.guerre.d...    28.8 MiB    24/260 [##-----------------]   9%
 
 
-### Fetching an episode at maximum available video quality
+### Téléchargement d'un épisode avec la meilleure qualité vidéo disponible
 
     $ toutv fetch -q MAX 'série noire' s01e05
     Série.noire.S01E05.Épisode.5...    63.7 MiB    38/260 [###----------------]  14%
 
 
-### Fetching all episodes of a given emission at average quality
+### Téléchargement de tous les épisodes d'une émission donnée avec une qualité moyenne
 
     $ toutv fetch 'en audition avec simon'
     En.audition.avec.Simon.S01E01...    16.5 MiB   15/15 [####################] 100%
@@ -298,9 +296,9 @@ Note: this will list all emissions, including those only available to Extra memb
     ...
 
 
-### Using URL instead of emission or episode name
+### Spécifier une émission ou un épisode avec un URL
 
-You can use tou.tv URLs instead of emission or episode names, for the `fetch`, `info`, and `list` commands.
+Vous pouvez utiliser un URL tou.tv au lieu d'un nom pour une émission ou un épisode, pour les commandes `fetch`, `info`, et `list`.
 
     $ toutv fetch http://ici.tou.tv/le-show-cache-2
     $ toutv fetch http://ici.tou.tv/le-show-cache-2/S2014E02
@@ -309,7 +307,7 @@ You can use tou.tv URLs instead of emission or episode names, for the `fetch`, `
     $ toutv list http://ici.tou.tv/le-show-cache-2
 
 
-### Searching for episodes and emissions
+### Recherche d'émissions et d'épisodes
 
     $ toutv search politique
     Effective query: politique
@@ -362,62 +360,68 @@ You can use tou.tv URLs instead of emission or episode names, for the `fetch`, `
 
     ...
 
+Bogues
+======
 
-Bugs
-====
-
-pytoutv is known to work as of the date of the last repo commit. Should you encounter
-any problem, please [create an issue](https://github.com/bvanheu/pytoutv/issues/new)
-and give details about your situation and what's not working as expected.
-
-
-Contributing
-============
-
-To contribute to any part of this project, send us a GitHub pull request. Make sure
-your Python code follows [PEP-8](http://legacy.python.org/dev/peps/pep-0008/),
-except for long lines that cannot be broken (e.g. long strings).
+pytoutv est réputé fonctionner en date du dernier _commit_ de ce dépôt. Si vous
+rencontrez un bogue quelconque, nous vous saurons gré de
+[créer un problème](https://github.com/bvanheu/pytoutv/issues/new) et de
+fournir le plus de détails possibles à propos de votre situation, en plus de
+spécifier ce qui ne fonctionne pas tel que prévu.
 
 
-Python workflow
----------------
+Contribuer
+==========
 
-The best way to develop pytoutv locally without installing it globally is to
-create a [virtualenv](http://www.virtualenv.org/en/latest/). If you don't
-have virtualenv, get it now (most distributions provide it as a package).
+Afin de contribuer à n'importe quelle composante de ce projet, envoyez-nous un
+_pull request_ GitHub. Assurez-vous que votre code Python suive
+[PEP-8](http://legacy.python.org/dev/peps/pep-0008/), sauf pour de très
+longues lignes qui ne peuvent pas être cassées (longues chaines, par exemple).
 
-  1. In the root of the repo, create the virtualenv:
+
+Flux de travail avec Python
+---------------------------
+
+La meilleure façon de développer pytoutv localement sans avoir à l'installer
+globalement est de créer un
+[virtualenv](http://www.virtualenv.org/en/latest/). Si vous n'avez pas
+virtualenv, procurez-vous le (la plupart des distributions le fournissent en
+tant que paquetage).
+
+  1. Dans la racine du dépôt, créez le virtualenv :
 
         $ virtualenv virt
 
-  2. Activate the virtualenv:
+  2. Activez le virtualenv :
 
         $ . ./virt/bin/activate
 
-  3. Use the `develop` command of `setup.py`:
+  3. Utilisez la commande `develop` du script `setup.py` :
 
         $ ./setup.py develop
 
-     The first time this executes, if you don't have any of the dependencies,
-     they will be downloaded and installed (locally, in `virt`).
+     La première fois que ceci s'exécute, si vous n'avez pas toutes les
+     dépendances du projet, elles seront téléchargées et installées (localement,
+     dans `virt`).
 
-After step 3, you may execute `toutv` (which now resolves to the local version
-of the command). You may as well launch ipython and import `toutv` modules;
-the local modules will be imported.
-
-
-Semantic versioning
--------------------
-
-pytoutv follows [semantic versioning](http://semver.org/). If you submit a bugfix
-patch, we'll bump the patch version. If you submit a new feature, we'll bump the
-minor version. No version 3 of pytoutv is planned.
+Suite à l'étape 3, vous pouvez exécuter `toutv` (qui pointe maintenant vers la
+version locale de la commande). Vous pouvez aussi lancer ipython et importer
+des modules de `toutv`; les versions locales seront importées.
 
 
-Contributors
-============
+Versionnage sémantique
+----------------------
 
-Special thanks to:
+pytoutv suit un [versionnage sémantique](http://semver.org/). Si vous soumettez
+un simple correctif, nous incrémenterons la version de _patch_. Si vous soumettez
+une nouvelle fonctionnalité, nous incrémenterons la version mineure. Aucune version
+3 de pytoutv n'est prévu pour l'instant.
+
+
+Contributeurs
+=============
+
+Nous tenons à remercier spécialement :
 
   * [Benjamin Vanheuverzwijn](https://github.com/bvanheu)
   * Alexandre Vézina
