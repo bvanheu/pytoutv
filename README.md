@@ -1,5 +1,8 @@
 (See [`README.en.md`](README.en.md) for an English version.)
 
+**NOTE: En date du 25 septembre 2019, pytoutv ne fonctionne pas avec l'API de
+TOU.TV et n'est donc pas fonctionnel (voir [problème #134](https://github.com/bvanheu/pytoutv/issues/134).**
+
 ***pytoutv*** est une librairie écrite en Python 3 qui implémente un client
 pour [TOU.TV](http://tou.tv/).
 

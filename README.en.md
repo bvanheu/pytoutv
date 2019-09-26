@@ -1,5 +1,8 @@
 [![Build Status](https://travis-ci.org/bvanheu/pytoutv.svg?branch=master)](https://travis-ci.org/bvanheu/pytoutv)
 
+**NOTE: As of September 25, 2019, pytoutv doesn't work with the TOU.TV API and is
+therefore not usable (see [issue #134](https://github.com/bvanheu/pytoutv/issues/134).**
+
 ***pytoutv*** is a [TOU.TV](http://tou.tv/) client library written in
 Python 3.
 
